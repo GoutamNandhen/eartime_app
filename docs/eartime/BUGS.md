@@ -11,3 +11,13 @@
 - **[Phase 6] Missing Live State on Boot (Test B)**: `SYNC_STATE` payload mismatch. Kotlin sends `connectedDevices` at root, but Flutter `TrackingEvent.fromJson` ignores it, booting with a wiped state.
 - **[Phase 6] Infinite Timer on Pause (Test D/E)**: `PLAYBACK_PAUSED` logic fails to set `currentPlaybackStartTime` to null, causing `LiveTimerWidget` to continue ticking.
 - **[Phase 6] Crash on Reopen (Test G)**: `ForegroundServiceDidNotStartInTimeException`. When the service is already running (e.g., restarted by OS), reopening the app triggers `startForegroundService` but skips `startForeground` due to `isInitialized == true`.
+
+## Phase 6 Fixes (A/B Issues Resolved)
+* Confirmed SYNC_STATE contract bug where Kotlin sent connectedDevices at the root of the JSON map instead of inside the device key, causing Dart to falsely evaluate connected devices as empty.
+* Confirmed Multi-Route Removal Bug where removing an SCO route falsely removed the physical device identity from connectedDevices, even if the A2DP route was still active.
+* Exact Fixes: 
+    * Wrapped SYNC_STATE payload inside a device key in Kotlin.
+    * Modified onAudioDevicesRemoved to ensure no other remaining AudioManager output devices map to the same stableId before emitting DEVICE_DISCONNECTED.
+* Tests added: Dart unit tests for TrackingEvent JSON deserialization.
+* Current A/B Status: Fixes implemented. Ready for physical testing.
+* Current G Status: Remains PASS.

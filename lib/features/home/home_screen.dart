@@ -15,12 +15,14 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('[GFLOW] HomeScreen.build START');
     final theme = Theme.of(context);
     final liveSessionState = ref.watch(liveSessionProvider);
     final activeDevice = liveSessionState.activeDevice;
     final analyticsDataAsync = ref.watch(analyticsDataProvider);
     final wellbeingDataAsync = ref.watch(wellbeingDataProvider);
     final recentEventsAsync = ref.watch(recentEventsProvider);
+    debugPrint('[GFLOW] HomeScreen.build END');
 
     return Scaffold(
       body: Stack(

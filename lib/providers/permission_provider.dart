@@ -12,22 +12,37 @@ enum PermissionStatusState {
 class PermissionNotifier extends Notifier<PermissionStatusState> {
   @override
   PermissionStatusState build() {
+    debugPrint('[GFLOW] permissionProvider initialization START');
     // Schedule check after the first frame is rendered to avoid blocking the engine
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.waitUntilFirstFrameRasterized.then((_) {
       checkPermissions();
     });
+    debugPrint('[GFLOW] permissionProvider initialization END');
     return PermissionStatusState.checking;
   }
 
   Future<void> checkPermissions() async {
+    debugPrint('[GFLOW] permission check START');
     if (!Platform.isAndroid) {
       state = PermissionStatusState.granted;
+      debugPrint('[GFLOW] permission check END (Not Android)');
       return;
     }
 
+    debugPrint('[GFLOW] native MethodChannel call START (bluetoothConnect)');
+    debugPrint('[GFLOW] WAITING on bluetoothConnect');
     final hasBluetoothConnect = await Permission.bluetoothConnect.isGranted;
+    debugPrint('[GFLOW] native MethodChannel call RETURN (bluetoothConnect)');
+
+    debugPrint('[GFLOW] native MethodChannel call START (bluetooth)');
+    debugPrint('[GFLOW] WAITING on bluetooth');
     final hasBluetooth = await Permission.bluetooth.isGranted;
+    debugPrint('[GFLOW] native MethodChannel call RETURN (bluetooth)');
+
+    debugPrint('[GFLOW] native MethodChannel call START (notification)');
+    debugPrint('[GFLOW] WAITING on notification');
     final hasNotification = await Permission.notification.isGranted;
+    debugPrint('[GFLOW] native MethodChannel call RETURN (notification)');
     
     // On Android 12+ (SDK 31+), bluetoothConnect is required.
     // On Android < 12, bluetooth is required.
@@ -60,6 +75,7 @@ class PermissionNotifier extends Notifier<PermissionStatusState> {
     } else {
       state = PermissionStatusState.denied;
     }
+    debugPrint('[GFLOW] permission check END');
   }
 
   Future<bool> requestPermissions() async {

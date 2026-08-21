@@ -38,17 +38,19 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('[GFLOW] AppShell.build START');
     // Check permission state first
     final permissionState = ref.watch(permissionProvider);
     
     if (permissionState != PermissionStatusState.granted) {
+      debugPrint('[GFLOW] AppShell.build END (Permission Screen)');
       return const PermissionScreen();
     }
 
     // Wake up tracking pipeline passively ONLY if permissions are granted
     ref.watch(trackingPipelineProvider);
 
-    return Scaffold(
+    final widget = Scaffold(
       extendBody: true, // Important for floating glass nav
       appBar: AppBar(
         title: const Text('EarTime', style: TextStyle(fontWeight: FontWeight.w300, letterSpacing: 2.0)),
@@ -76,8 +78,6 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: GlassNavigation(
               currentIndex: _currentIndex,
               onIndexChanged: (index) {
-                // If settings icon (index 4) was somehow clicked in nav (wait, we have 5 items in nav!)
-                // DevicesScreen is index 4. The icons are: grid_view, bar_chart, history, health, settings.
                 if (index == 4) {
                   _openSettings();
                   return;
@@ -91,5 +91,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         ],
       ),
     );
+    debugPrint('[GFLOW] AppShell.build END (Main Screen)');
+    return widget;
   }
 }

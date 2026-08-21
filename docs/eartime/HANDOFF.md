@@ -53,3 +53,13 @@ We already have the diagnosis for A2. Before implementing the timer fixes (B/D/E
 **FUTURE ENGINEERING RULE**: Every future feature, bug fix, architectural change, protocol change, state-model change, test, or important engineering discovery MUST update the persistent engineering documentation (including `CURRENT_STATE.md`, `TEST_RESULTS.md`, `BUGS.md`, and this `HANDOFF.md`) in the same implementation task.
 
 You must leave enough information behind that another agent can read these files and immediately resume work.
+
+## Phase 6 Fixes (A/B Issues Resolved)
+* Confirmed SYNC_STATE contract bug where Kotlin sent connectedDevices at the root of the JSON map instead of inside the device key, causing Dart to falsely evaluate connected devices as empty.
+* Confirmed Multi-Route Removal Bug where removing an SCO route falsely removed the physical device identity from connectedDevices, even if the A2DP route was still active.
+* Exact Fixes: 
+    * Wrapped SYNC_STATE payload inside a device key in Kotlin.
+    * Modified onAudioDevicesRemoved to ensure no other remaining AudioManager output devices map to the same stableId before emitting DEVICE_DISCONNECTED.
+* Tests added: Dart unit tests for TrackingEvent JSON deserialization.
+* Current A/B Status: Fixes implemented. Ready for physical testing.
+* Current G Status: Remains PASS.

@@ -19,3 +19,13 @@
   - Earbud identity is successfully located via BLE.
   - Raw OPOv1 diagnostic payloads are successfully streaming into the Flutter UI via the Native tracking service.
   - We are currently awaiting manual packet analysis by the user.
+
+## Phase 6 Fixes (A/B Issues Resolved)
+* Confirmed SYNC_STATE contract bug where Kotlin sent connectedDevices at the root of the JSON map instead of inside the device key, causing Dart to falsely evaluate connected devices as empty.
+* Confirmed Multi-Route Removal Bug where removing an SCO route falsely removed the physical device identity from connectedDevices, even if the A2DP route was still active.
+* Exact Fixes: 
+    * Wrapped SYNC_STATE payload inside a device key in Kotlin.
+    * Modified onAudioDevicesRemoved to ensure no other remaining AudioManager output devices map to the same stableId before emitting DEVICE_DISCONNECTED.
+* Tests added: Dart unit tests for TrackingEvent JSON deserialization.
+* Current A/B Status: Fixes implemented. Ready for physical testing.
+* Current G Status: Remains PASS.

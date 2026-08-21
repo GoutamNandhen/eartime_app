@@ -15,8 +15,10 @@ import '../data/tracking_platform.dart';
 
 // --- Database & Infrastructure ---
 final databaseProvider = Provider<AppDatabase>((ref) {
+  debugPrint('[GFLOW] databaseProvider initialization START');
   final db = AppDatabase();
   ref.onDispose(db.close);
+  debugPrint('[GFLOW] databaseProvider initialization END');
   return db;
 });
 
@@ -39,6 +41,7 @@ final bleDiscoveryResultProvider = StreamProvider<Map<String, dynamic>>((ref) {
 class LiveSessionNotifier extends Notifier<LiveSessionState> {
   @override
   LiveSessionState build() {
+    debugPrint('[GFLOW] liveSessionProvider START/END');
     return const LiveSessionState(isInitialized: false);
   }
 
@@ -51,6 +54,7 @@ final liveSessionProvider = NotifierProvider<LiveSessionNotifier, LiveSessionSta
 
 // A pure side-effect provider that listens to the native stream and inserts into DB
 final trackingPipelineProvider = Provider<void>((ref) {
+  debugPrint('[GFLOW] trackingPipelineProvider initialization START');
   final db = ref.watch(databaseProvider);
   final liveNotifier = ref.read(liveSessionProvider.notifier);
   
@@ -62,6 +66,7 @@ final trackingPipelineProvider = Provider<void>((ref) {
   String? lastPlaybackState;
   int lastPlaybackStateTime = 0;
 
+  debugPrint('[GFLOW] trackingPipelineProvider EventChannel.listen setup');
   TrackingPlatform.eventStream.listen((event) async {
     try {
       if (event.type == 'DEVICE_CONNECTED' && event.device != null) {
@@ -177,31 +182,45 @@ final trackingPipelineProvider = Provider<void>((ref) {
       debugPrint('[PIPELINE] Error inserting event: $e');
     }
   });
+  debugPrint('[GFLOW] trackingPipelineProvider initialization END');
 });
 
 // Remove MonitoringStateNotifier as tracking is now purely passive
 
 // --- Data Streams ---
 final allEventsProvider = StreamProvider<List<EarTimeEvent>>((ref) {
+  debugPrint('[GFLOW] allEventsProvider initialization START');
   final db = ref.watch(databaseProvider);
-  return db.watchAllEvents().map((entities) => entities.map((e) => EarTimeEvent(
-    id: e.id,
-    canonicalDeviceId: e.canonicalDeviceId,
-    deviceName: e.deviceName,
-    connectionType: e.connectionType,
-    eventType: e.eventType,
-    playbackState: e.playbackState,
-    timestamp: DateTime.fromMillisecondsSinceEpoch(e.timestamp),
-  )).toList().reversed.toList()); // Reverse so chronological
+  debugPrint('[GFLOW] allEventsProvider watchAllEvents START');
+  final stream = db.watchAllEvents().map((entities) {
+    debugPrint('[GFLOW] allEventsProvider watchAllEvents database query returned: ${entities.length} events');
+    return entities.map((e) => EarTimeEvent(
+      id: e.id,
+      canonicalDeviceId: e.canonicalDeviceId,
+      deviceName: e.deviceName,
+      connectionType: e.connectionType,
+      eventType: e.eventType,
+      playbackState: e.playbackState,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(e.timestamp),
+    )).toList().reversed.toList();
+  }); // Reverse so chronological
+  debugPrint('[GFLOW] allEventsProvider initialization END');
+  return stream;
 });
 
 final recentEventsProvider = Provider<AsyncValue<List<EarTimeEvent>>>((ref) {
+  debugPrint('[GFLOW] recentEventsProvider START/END');
   return ref.watch(allEventsProvider).whenData((events) => events.reversed.toList());
 });
 
 final sessionManagerProvider = Provider<AsyncValue<List<ListeningSession>>>((ref) {
   return ref.watch(allEventsProvider).whenData((events) {
-    return SessionManager.reconstruct(events);
+    debugPrint('[GFLOW] SessionManager.reconstruct START. Number of events: ${events.length}');
+    final startTime = DateTime.now();
+    final sessions = SessionManager.reconstruct(events);
+    final duration = DateTime.now().difference(startTime).inMilliseconds;
+    debugPrint('[GFLOW] SessionManager.reconstruct END. Duration: ${duration}ms');
+    return sessions;
   });
 });
 
@@ -225,9 +244,10 @@ final knownDevicesProvider = Provider<AsyncValue<List<AudioDevice>>>((ref) {
 });
 
 final analyticsDataProvider = Provider<AsyncValue<AnalyticsData?>>((ref) {
+  debugPrint('[GFLOW] analyticsDataProvider START');
   final sessionsAsync = ref.watch(sessionManagerProvider);
   
-  return sessionsAsync.whenData((sessions) {
+  final result = sessionsAsync.whenData((sessions) {
     var totalTime = Duration.zero;
 
     for (final s in sessions) {
@@ -242,8 +262,11 @@ final analyticsDataProvider = Provider<AsyncValue<AnalyticsData?>>((ref) {
       deviceUsagePercentages: const <String, double>{},
     );
   });
+  debugPrint('[GFLOW] analyticsDataProvider END');
+  return result;
 });
 
 final wellbeingDataProvider = FutureProvider<WellbeingData?>((ref) async {
+  debugPrint('[GFLOW] wellbeingDataProvider START/END');
   return null;
 });

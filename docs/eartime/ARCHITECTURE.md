@@ -19,3 +19,13 @@ EarTime relies on a persistent native background layer and a Flutter UI layer.
 ## Event Architecture
 All events flow one way:
 `Android OS` → `AudioTrackingService` → `TrackingEventBroker (EventChannel)` → `trackingPipelineProvider (Dart)` → `LiveSessionNotifier` / `Drift Database`.
+
+## Phase 6 Fixes (A/B Issues Resolved)
+* Confirmed SYNC_STATE contract bug where Kotlin sent connectedDevices at the root of the JSON map instead of inside the device key, causing Dart to falsely evaluate connected devices as empty.
+* Confirmed Multi-Route Removal Bug where removing an SCO route falsely removed the physical device identity from connectedDevices, even if the A2DP route was still active.
+* Exact Fixes: 
+    * Wrapped SYNC_STATE payload inside a device key in Kotlin.
+    * Modified onAudioDevicesRemoved to ensure no other remaining AudioManager output devices map to the same stableId before emitting DEVICE_DISCONNECTED.
+* Tests added: Dart unit tests for TrackingEvent JSON deserialization.
+* Current A/B Status: Fixes implemented. Ready for physical testing.
+* Current G Status: Remains PASS.

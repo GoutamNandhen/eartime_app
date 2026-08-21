@@ -5,11 +5,26 @@ import 'features/shell/app_shell.dart';
 import 'features/settings/settings_screen.dart';
 
 void main() {
+  debugPrint('[GFLOW] main START');
+  debugPrint('[GFLOW] runApp CALL');
   runApp(
     const ProviderScope(
       child: EarTimeApp(),
     ),
   );
+  debugPrint('[GFLOW] runApp RETURN');
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    debugPrint('[GFLOW] FIRST FLUTTER POST-FRAME CALLBACK');
+  });
+
+  int frameCount = 0;
+  WidgetsBinding.instance.addPersistentFrameCallback((_) {
+    if (frameCount < 5) {
+      frameCount++;
+      debugPrint('[GFLOW] FLUTTER FRAME $frameCount');
+    }
+  });
 }
 
 class EarTimeApp extends ConsumerWidget {
@@ -17,9 +32,10 @@ class EarTimeApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('[GFLOW] EarTimeApp.build START');
     final themeMode = ref.watch(themeModeProvider);
 
-    return MaterialApp(
+    final widget = MaterialApp(
       title: 'EarTime',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
@@ -27,5 +43,7 @@ class EarTimeApp extends ConsumerWidget {
       themeMode: themeMode,
       home: const AppShell(),
     );
+    debugPrint('[GFLOW] EarTimeApp.build END');
+    return widget;
   }
 }
