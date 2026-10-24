@@ -5,17 +5,19 @@ Latest continuation: reports/recorded goal streaks, widget variants/navigation
 and integrated native journal export/confirmed transactional restore/recovery.
 Reports checkpoint `a3d60dcfdff542eb074c38bda05d8ab670d3ab76` is remote-verified;
 remote main remains `13ae6609d22cb2a0daf8890fca081fb97c93b36b`.
-Full gates: 140 Flutter / 222 native, analyzer clean, both Kotlin variants and
+Full gates: 140 Flutter / 237 native, analyzer clean, both Kotlin variants and
 debug APK pass, including the final command-owner recheck. Count: 25 IMPLEMENTED /
 78 IN_PROGRESS / 16 NOT_STARTED (119). H17/H18 remain partial: native-only archives
 exclude legacy history/preferences. This is NOT feature-complete or RELEASE_READY.
 See `JOURNAL_ARCHIVES.md` and `REPORTS_AND_NAVIGATION.md`. No service edits.
-Warm-navigation correction is proven: Settings covered the selected main view.
-An actual-shell native-hint test failed before Navigator stack dismissal and
-passes after it. Next priority: public per-device A2DP streaming observations,
-with owner/failure/clock evidence. False can mean service/API failure; no route
-lease is enabled by research alone. Then full legacy/preferences backup/restore/
-deletion and the rest of the matrix. Production playback remains UNVERIFIED.
+Warm-navigation correction `7be2bbb9ae6e8c5a85435de106fd8dba4d4c5930` is remote-
+verified; actual-shell failure/fix is tested. Public per-device A2DP acquisition
+is now integrated into existing durable OUTPUT_EVIDENCE, still UNKNOWN attribution
+and not live-eligible. See `A2DP_OBSERVATIONS.md` for API/error/ownership limits.
+Next: persistent endpoint/physical identity and reversible aliases, then validated
+route-specific continuity/projection integration. Continue full legacy/preferences
+backup/restore/deletion and the rest of the matrix. No feature-count increase is
+claimed for raw A2DP observations. Physical G/output/telemetry remain pending.
 Review branch `codex/production-checkpoint-20261024`; protected baseline `0a8be43`.
 Initial publication verified at `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`;
 the follow-up adds known-device pagination without changing listening accounting.
@@ -203,7 +205,7 @@ observations, not full-app data, and must never be published. Stalled-provider
 hard cancellation, whole-app backup/deletion and physical durability remain open.
 Schema/projection stay 3; existing fault evidence/preferences/legacy are retained.
 Latest ignored debug APK SHA-256:
-`CCCC186377E739AA3A27594480E2A3ACA905475252AECE7E5AA4CAFF818935C2`.
+`B9CC2833BF3C2A011A1178034AF872920AF3E20A912404801B34D41E3F38E570`.
 Artifact was not installed, signed for production, released or published.
 
 Latest reports/widgets/navigation validation: 132 Flutter tests passed, 188

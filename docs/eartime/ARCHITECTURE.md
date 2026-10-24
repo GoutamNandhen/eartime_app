@@ -6,6 +6,12 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Passive public per-device A2DP queries now add nested transport observations to
+the same OUTPUT_EVIDENCE journal path. This is acquisition, not a route-duration
+producer: addresses are not promoted to physical IDs, false/empty API fallbacks
+remain ambiguous, and confidence/live eligibility are UNKNOWN/false. No second
+writer/projection or service-file edit. See `A2DP_OBSERVATIONS.md`.
+
 Explicit native journal archives use bounded versioned JSON lines with source/
 sequence cutoff and an integrity footer. Document I/O has its own worker; source
 pages still belong to the journal owner. Restore retains a private recovery file

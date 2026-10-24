@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: reports/widgets/archives and navigation correction, 140 Flutter / 222 native
+Latest checkpoint: reports/widgets/archives/navigation and passive A2DP acquisition, 140 Flutter / 237 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -46,6 +46,27 @@ PHYSICAL_PENDING. No signed release or installation. Next: data management and
 the remaining exact approved matrix, not additional scope.
 
 ## Implementation phases
+
+### Public A2DP Acquisition
+
+Continued after remote-verified navigation commit `7be2bbb9ae6e8c5a85435de106fd8dba4d4c5930`.
+Implemented passive public profile proxy acquisition/query/cleanup on native
+workers; fresh per-device streaming candidates now enter the existing durable
+OUTPUT_EVIDENCE path. No new service hooks, routing writes, GATT or reflection.
+API false/empty fallback stays ambiguous; endpoint address is not a physical ID.
+Confidence and live eligibility remain UNKNOWN/false. No confirmed duration,
+second timer/projection or extra feature-complete claim. Count stays 25/78/16.
+
+14 probe regressions, actual API 24/28/35 backend wiring and one durable ingress
+case cover owner/request generations, late/off-main cleanup, bounded reservations,
+fresh queries, false/empty/permission states, duplicate identity and clock/owner
+loss. Full gates: 140 Flutter, 237 native in 21 suites with zero failures/errors/
+skips; analyzer clean; Kotlin debug/release and debug APK pass. Guard checks all
+preexisting service lines against `0a8be43`. Physical G/routing/energy pending.
+Unresolved proxy callbacks/failed cleanup retain bounded reservations, so capacity
+may stay unavailable until process restart; do not call that recovery complete.
+Next: persistent endpoint/physical identity/aliases and evidence-gated canonical
+continuity, then remaining data/product scope. See `A2DP_OBSERVATIONS.md`.
 
 ### Warm Navigation Correction
 

@@ -7,6 +7,11 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+Passive A2DP acquisition gates: 140 Flutter / 237 native, analyzer clean, debug/
+release Kotlin and debug APK. Real API candidates still have UNKNOWN attribution
+and no live eligibility. Raw endpoint identifiers remain private data; only
+synthetic fixture addresses are public. Source guard/service hooks unchanged.
+
 Latest native archive gates: 139 Flutter / 222 native, clean analyzer, both Kotlin
 variants/debug APK. H17/H18 remain partial; legacy/preferences are separate.
 Recovery archives and staging files are private user data, never publication

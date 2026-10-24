@@ -37,6 +37,9 @@ Executable evidence keys:
 - X: `JournalArchiveTest`, `JournalFileTransferTest`, restore-boundary ingress
   case and `test/journal_transfer_test.dart`. Native-only transfers; full-app
   backup is unfinished. See `JOURNAL_ARCHIVES.md`.
+- Y: `A2dpStreamProbeTest` (14 native cases), actual backend API 24/28/35 and
+  durable candidate ingress. `A2DP_OBSERVATIONS.md`: raw public-API acquisition
+  is integrated; confidence/live eligibility are still UNKNOWN/false.
 - OPEN: executable production acceptance test is missing. Add it with the
   implementation; never count this row as passing based on a source review.
 
@@ -50,7 +53,7 @@ Executable evidence keys:
 | A4 | Closed UI/Recents/screen-off collection | IN_PROGRESS; J models Flutter absence; physical service continuity pending |
 | A5 | Reopen continuity and gaps | IN_PROGRESS; J/P/U durable recovery and B02 opening pass; physical/liveness OPEN |
 | A6 | Reject stale earbuds during speaker playback | IN_PROGRESS; L after disconnect; connected speaker proof OPEN |
-| A7 | Classic/A2DP/LE routes | IN_PROGRESS; R contracts; verified collector OPEN |
+| A7 | Classic/A2DP/LE routes | IN_PROGRESS; R/Y public per-device A2DP samples durably acquired; identity/continuity integration and LE attribution OPEN |
 | A8 | Wired 3.5 mm | IN_PROGRESS; inherited detection; physical/projection OPEN |
 | A9 | USB-C/USB audio | IN_PROGRESS; inherited detection; physical/projection OPEN |
 | A10 | Multiple devices/output switching | IN_PROGRESS; L/R isolation; actual route selection OPEN |
@@ -147,7 +150,7 @@ Executable evidence keys:
 | G3 | Serialized sequence/transactions | IMPLEMENTED / AUTOMATED_PASS J/R |
 | G4 | Duplicate-safe processing/replay | IMPLEMENTED / AUTOMATED_PASS J/P/U; product reads native projection, hints not history |
 | G5 | Device-scoped state | IN_PROGRESS; L/R; legacy global context remains |
-| G6 | Evidence-backed attribution | IN_PROGRESS; C rejects inventory/global/communication/predicted route claims; actual third-party route proof OPEN |
+| G6 | Evidence-backed attribution | IN_PROGRESS; C/Y rejects inventory/global/communication/predicted claims, acquires per-device A2DP stream candidates; canonical route evidence/lease integration OPEN |
 | G7 | One authoritative interval projection | IMPLEMENTED / AUTOMATED_PASS P/U/W; production confirmed attribution/liveness remain gated |
 | G8 | Live/history agreement | IN_PROGRESS; P/U B02 observed opening corrected; validated production live lease OPEN |
 | G9 | Durable recovery/migrations | IN_PROGRESS; J/P/X migrations/replay plus transactional native archive restore/recovery/queued-event fence; full-app legacy/preferences restoration OPEN |
@@ -160,7 +163,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 140 Flutter/222 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 140 Flutter/237 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

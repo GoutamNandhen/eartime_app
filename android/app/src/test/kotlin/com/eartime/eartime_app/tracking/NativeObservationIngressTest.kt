@@ -16,6 +16,30 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], manifest = Config.NONE, application = Application::class)
 class NativeObservationIngressTest {
+    @Test fun a2dpPublicApiCandidateIsDurableWithoutImplicitIdentityOrConfirmedListening() {
+        val context = RuntimeEnvironment.getApplication()
+        val name = "a-${UUID.randomUUID().toString().take(6)}.db"
+        val ingress = NativeObservationIngress(context, {}, {}, name)
+        try {
+            val saved = CompletableFuture<Boolean>()
+            ingress.submitObserver(mapOf("type" to "OUTPUT_EVIDENCE", "timestamp" to 1000L,
+                "a2dpTransport" to mapOf("contractVersion" to 1, "apiSource" to "BluetoothA2dp.isA2dpPlaying",
+                    "state" to "SAMPLED", "confidence" to "UNKNOWN", "liveListeningEligible" to false,
+                    "devices" to listOf(mapOf("endpointAddress" to "02:11:22:33:44:55", "streamState" to "STREAMING_REPORTED")))),
+                android.os.SystemClock.elapsedRealtime(), saved::complete)
+            assertTrue(saved.get(20, TimeUnit.SECONDS))
+            val row = (page(ingress)["observations"] as List<*>).last() as Map<*, *>
+            assertEquals("UNKNOWN", row["confidence"])
+            val payload = row["payload"] as Map<*, *>
+            val sample = payload["a2dpTransport"] as Map<*, *>
+            assertEquals("STREAMING_REPORTED", ((sample["devices"] as List<*>).single() as Map<*, *>)["streamState"])
+            assertFalse(payload.containsKey("physicalDeviceId"))
+            val result = CompletableFuture<Map<String, Any?>>()
+            ingress.readListening(0, 100000, "UTC", 0, 100, result::complete, { result.completeExceptionally(IllegalStateException(it)) })
+            assertEquals(0L, result.get(20, TimeUnit.SECONDS)["confirmedMs"])
+        } finally { ingress.close(); context.deleteDatabase(name) }
+    }
+
     @Test fun restorePublishesAfterCommitAndFencesObservationsQueuedBeforeTheRestoreBoundary() {
         val context = RuntimeEnvironment.getApplication()
         val name = "r-${UUID.randomUUID().toString().take(6)}.db"

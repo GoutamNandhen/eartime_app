@@ -13,7 +13,7 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 | --- | --- |
 | Flutter full suite | 140 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 222 passed in 20 suites, 0 failures/errors/skips |
+| Android native suite | 237 passed in 21 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |
@@ -64,3 +64,10 @@ large-text fixture initially tapped an off-screen/lazily built row; it now
 scrolls and scales the Navigator/dialog as well as the page. Final owner-fenced
 Kotlin debug/release and debug packaging pass. Phone process death, stalled
 document providers and power-loss durability are not established by these models.
+
+Public A2DP producer: 14 probe owner/failure/fresh-query cases and one durable
+candidate ingress case added. Existing API 24/28/35 backend tests additionally
+verify the actual integrated source contract and UNKNOWN/false eligibility.
+Full 140 Flutter / 237 native, analyzer clean, debug/release Kotlin and debug APK
+pass. Service guard still allows exactly four old hooks. No confirmed route/live
+time is enabled. `A2DP_OBSERVATIONS.md` records source/API limits and next work.

@@ -23,6 +23,10 @@ class AndroidAudioObservationBackendTest {
             assertTrue(sample["globalMusicActive"] is Boolean)
             assertFalse(sample.containsKey("physicalDeviceId"))
             assertEquals(android.os.Build.VERSION.SDK_INT >= 33, sample["predictedMediaSupported"])
+            val a2dp = sample["a2dpTransport"] as Map<*, *>
+            assertEquals("BluetoothA2dp.isA2dpPlaying", a2dp["apiSource"])
+            assertEquals("UNKNOWN", a2dp["confidence"])
+            assertEquals(false, a2dp["liveListeningEligible"])
         } finally { registration.close() }
     }
 }

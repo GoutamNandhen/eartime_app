@@ -19,6 +19,8 @@ internal class AndroidAudioObservationBackend(
 ) : AudioObservationBackend {
     private val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         ?: throw IllegalStateException("AudioManager unavailable")
+    private val a2dp = A2dpStreamProbe(AndroidA2dpProfileConnector(context.applicationContext, changed),
+        { AudioSampleTime(System.currentTimeMillis(), SystemClock.elapsedRealtime()) }, changed)
     override fun register(): AutoCloseable {
         val devices = object : AudioDeviceCallback() {
             override fun onAudioDevicesAdded(added: Array<out AudioDeviceInfo>) = changed()
@@ -31,12 +33,16 @@ internal class AndroidAudioObservationBackend(
         var deviceRegistered = false
         var playbackRegistered = false
         fun cleanup() {
-            try { if (deviceRegistered) audio.unregisterAudioDeviceCallback(devices) }
-            finally { if (playbackRegistered && playback != null) audio.unregisterAudioPlaybackCallback(playback) }
+            try { a2dp.close() }
+            finally {
+                try { if (deviceRegistered) audio.unregisterAudioDeviceCallback(devices) }
+                finally { if (playbackRegistered && playback != null) audio.unregisterAudioPlaybackCallback(playback) }
+            }
         }
         try {
             audio.registerAudioDeviceCallback(devices, handler); deviceRegistered = true
             if (playback != null) { audio.registerAudioPlaybackCallback(playback, handler); playbackRegistered = true }
+            a2dp.start()
         } catch (error: Exception) {
             try { cleanup() } catch (cleanup: Exception) { error.addSuppressed(cleanup) }
             throw error
@@ -57,7 +63,7 @@ internal class AndroidAudioObservationBackend(
             "communicationDevice" to communication, "predictedMediaDevices" to predicted.map(::device),
             "predictedMediaSupported" to (Build.VERSION.SDK_INT >= 33),
             "activityObservation" to if (Build.VERSION.SDK_INT >= 26) "callback_and_poll" else "poll",
-            "actualOutputKnown" to false)
+            "actualOutputKnown" to false, "a2dpTransport" to a2dp.sample())
     }
 }
 
