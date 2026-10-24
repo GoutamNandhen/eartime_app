@@ -2,6 +2,11 @@
 
 Last verified implementation baseline: 2026-10-24.
 
+Device-history continuation adds 8 API 28/35 executions and five Flutter tests:
+native-scoped union/pages/rebuild/index upgrade, strict channel scope, actual
+Devices navigation/large text and B3 edit/cancel/save/error/recreation. All raw
+identity/source rows and consumer cursors survive the v4 -> v5 cache migration.
+
 Latest endpoint continuation: 24 new API 28/35 identity cases, one queued retired-
 owner case, two widget unknown-connection cases and six Flutter identity client/UI
 cases. Full executed gates below supersede earlier checkpoint counts. Alias
@@ -17,9 +22,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 146 passed, 0 failures |
+| Flutter full suite | 151 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 264 passed in 22 suites, 0 failures/errors/skips |
+| Android native suite | 272 passed in 22 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

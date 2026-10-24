@@ -153,7 +153,7 @@ class EndpointIdentityTest {
         journal = ObservationJournal(context, name)
         assertEquals(id, devices().single()["id"]); assertEquals(before, journal.readAfter(0))
         assertEquals(2L, journal.cursor("identity-fixture")); assertEquals(3, journal.stats()["schemaVersion"])
-        assertEquals(4, snapshot()["projectionVersion"])
+        assertEquals(5, snapshot()["projectionVersion"])
     }
 
     @Test fun archiveRoundTripRestoresTheExactEndpointIdsWithoutHardwarePromotion() = run {

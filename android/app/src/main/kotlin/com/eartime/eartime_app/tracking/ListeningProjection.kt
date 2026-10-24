@@ -11,7 +11,7 @@ import kotlin.math.abs
 /** A disposable, versioned read model. Observations are always the source of truth. */
 internal class ListeningProjection(private val db: SQLiteDatabase) {
     companion object {
-        const val VERSION = 4
+        const val VERSION = 5
         fun create(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE listening_projection (
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1), version INTEGER NOT NULL,
@@ -22,6 +22,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 duration_ms INTEGER NOT NULL CHECK(duration_ms >= 0), open INTEGER NOT NULL,
                 close_reason TEXT, start_sequence INTEGER NOT NULL, end_sequence INTEGER NOT NULL)""")
             db.execSQL("CREATE INDEX listening_interval_window ON listening_intervals(end_utc_ms, start_utc_ms)")
+            createDeviceIndex(db)
             createDevices(db)
             EndpointIdentityProjection.create(db)
         }
@@ -30,6 +31,9 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 device_id TEXT PRIMARY KEY NOT NULL, connected INTEGER NOT NULL,
                 last_seen_utc_ms INTEGER NOT NULL, device_json TEXT NOT NULL)""")
             db.execSQL("CREATE INDEX listening_device_recent ON listening_devices(connected, last_seen_utc_ms)")
+        }
+        private fun createDeviceIndex(db: SQLiteDatabase) {
+            db.execSQL("CREATE INDEX IF NOT EXISTS listening_interval_device_window ON listening_intervals(device_id, start_utc_ms, end_utc_ms)")
         }
     }
 
@@ -48,10 +52,11 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
     fun requiresUpgrade(): Boolean = db.rawQuery("SELECT version FROM listening_projection WHERE singleton=1", null).use {
         if (!it.moveToFirst()) true
         else if (it.getInt(0) == VERSION) false
-        else { check(it.getInt(0) in 2..3) { "Unsupported listening projection version; source retained" }; true }
+        else { check(it.getInt(0) in 2..4) { "Unsupported listening projection version; source retained" }; true }
     }
 
     fun reset() {
+        createDeviceIndex(db)
         EndpointIdentityProjection.create(db)
         db.delete("listening_endpoint_aliases", null, null)
         db.delete("listening_intervals", null, null)
@@ -212,15 +217,18 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
 
     /** Intervals are clipped once here for all consumers. Overlapping routes are unioned, not added. */
     fun snapshot(from: Long, until: Long, zoneId: String, now: ObservationTime?, offset: Int = 0, limit: Int = 100,
-        deviceOffset: Int = 0, healthTime: ObservationTime? = now): Map<String, Any?> {
+        deviceOffset: Int = 0, healthTime: ObservationTime? = now, deviceId: String? = null): Map<String, Any?> {
         require(until > from && until - from in 1L..(367L * 86400000) &&
             offset in 0..(Int.MAX_VALUE - 100) && deviceOffset in 0..(Int.MAX_VALUE - 100) && limit in 1..100)
         require(zoneId in TimeZone.getAvailableIDs()) { "Unknown calendar time zone" }
+        require(deviceId == null || EndpointIdentity.validId(deviceId)) { "Invalid device history identity" }
         val root = state()
         val routes = root.getJSONObject("routes")
         val segments = mutableListOf<Map<String, Any?>>()
-        db.rawQuery("SELECT * FROM listening_intervals WHERE start_utc_ms < ? AND (end_utc_ms >= ? OR open = 1) ORDER BY start_sequence DESC LIMIT 100001",
-            arrayOf(until.toString(), from.toString())).use { cursor ->
+        val deviceClause = if (deviceId == null) "" else " AND device_id = ?"
+        val intervalArgs = listOf(until.toString(), from.toString()) + listOfNotNull(deviceId)
+        db.rawQuery("SELECT * FROM listening_intervals WHERE start_utc_ms < ? AND (end_utc_ms >= ? OR open = 1)$deviceClause ORDER BY start_sequence DESC LIMIT 100001",
+            intervalArgs.toTypedArray()).use { cursor ->
             var scanned = 0
             while (cursor.moveToNext()) {
                 check(++scanned <= 100000) { "Projection window exceeds work limit; select a shorter date range" }
@@ -279,12 +287,15 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             days.add(mapOf("startUtcMs" to start, "endUtcMs" to end,
                 "confirmedMs" to duration(confirmed, start, end), "unverifiedMs" to duration(unverified, start, end)))
         }
-        val devices = db.rawQuery("SELECT device_json FROM listening_devices ORDER BY connected DESC, last_seen_utc_ms DESC, device_id LIMIT 100 OFFSET ?",
-            arrayOf(deviceOffset.toString())).use {
+        val deviceWhere = if (deviceId == null) "" else " WHERE device_id = ?"
+        val devices = db.rawQuery("SELECT device_json FROM listening_devices$deviceWhere ORDER BY connected DESC, last_seen_utc_ms DESC, device_id LIMIT 100 OFFSET ?",
+            (listOfNotNull(deviceId) + deviceOffset.toString()).toTypedArray()).use {
             buildList { while (it.moveToNext()) add(JournalJson.toValue(JSONObject(it.getString(0)))) }
         }
-        val deviceCount = db.rawQuery("SELECT COUNT(*) FROM listening_devices", null).use { it.moveToFirst(); it.getLong(0) }
+        val deviceCount = db.rawQuery("SELECT COUNT(*) FROM listening_devices$deviceWhere", listOfNotNull(deviceId).toTypedArray())
+            .use { it.moveToFirst(); it.getLong(0) }
         return mapOf("projectionVersion" to VERSION, "sequence" to cursor(), "fromUtcMs" to from, "untilUtcMs" to until,
+            "filterDeviceId" to deviceId,
             "confirmedMs" to confirmedTotal, "unverifiedMs" to duration(unverified, from, until),
             "longestMs" to (confirmed.maxOfOrNull { it.second - it.first } ?: 0),
             "averageMs" to if (confirmed.isEmpty()) 0L else confirmedTotal / confirmed.size,

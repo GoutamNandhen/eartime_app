@@ -104,7 +104,7 @@ class ListeningHistoryLoadTest {
         }
         journal = ObservationJournal(context, name)
         val corrected = journal.listeningSnapshot(0, 100000, "UTC")
-        assertEquals(4, corrected["projectionVersion"]); assertEquals(4000L, corrected["unverifiedMs"])
+        assertEquals(5, corrected["projectionVersion"]); assertEquals(4000L, corrected["unverifiedMs"])
         assertEquals(false, ((corrected["intervals"] as List<*>).single() as Map<*, *>)["open"])
         assertEquals(observations, journal.readAfter(0)); assertEquals(source, journal.stats()["sourceId"])
         assertEquals(4L, journal.cursor("migration_fixture")); assertEquals(3, journal.stats()["schemaVersion"])

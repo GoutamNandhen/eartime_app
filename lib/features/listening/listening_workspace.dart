@@ -10,8 +10,9 @@ enum ListeningView { home, timeline, analytics, devices, wellbeing }
 enum ListeningRange { today, week, month, year, custom }
 
 class ListeningWorkspace extends ConsumerStatefulWidget {
-  const ListeningWorkspace({super.key, required this.view});
+  const ListeningWorkspace({super.key, required this.view, this.deviceId});
   final ListeningView view;
+  final String? deviceId;
   @override
   ConsumerState<ListeningWorkspace> createState() => _ListeningWorkspaceState();
 }
@@ -45,6 +46,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
       end,
       offset: _offset,
       deviceOffset: _deviceOffset,
+      deviceId: widget.deviceId,
     );
   }
 
@@ -93,7 +95,8 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
         0;
     final title = switch (widget.view) {
       ListeningView.home => 'TOTAL LISTEN TIME',
-      ListeningView.timeline => 'Timeline',
+      ListeningView.timeline =>
+        widget.deviceId == null ? 'Timeline' : 'Device timeline',
       ListeningView.analytics => 'Analytics',
       ListeningView.devices => 'Devices',
       ListeningView.wellbeing => 'Wellbeing',
@@ -178,6 +181,11 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
             data: (snapshot) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (widget.deviceId != null)
+                  const _Notice(
+                    'Unattributed playback and other recorded device identities are excluded.',
+                    Icons.filter_alt_outlined,
+                  ),
                 _Notice(snapshot.collectorHealth.label, Icons.sensors),
                 if (snapshot.lastError != null || snapshot.failedCount > 0)
                   const _Notice(
@@ -358,6 +366,17 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                               'Audio device',
                         ),
                         subtitle: Text(formatListeningDuration(total.duration)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => openDeviceHistory(
+                          total.deviceId,
+                          snapshot.devices
+                                  .where(
+                                    (device) => device.id == total.deviceId,
+                                  )
+                                  .firstOrNull
+                                  ?.name ??
+                              'Audio device',
+                        ),
                       ),
                     ),
                   ],
@@ -430,6 +449,19 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
     ),
   ];
 
+  Future<void> openDeviceHistory(String id, String name) =>
+      Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: Text(name)),
+            body: ListeningWorkspace(
+              view: ListeningView.timeline,
+              deviceId: id,
+            ),
+          ),
+        ),
+      );
+
   List<Widget> deviceRows(ListeningSnapshot snapshot, {bool details = false}) {
     if (snapshot.devices.isEmpty) {
       return [const Text('No devices observed yet.')];
@@ -479,6 +511,16 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                                 Text(
                                   'Last observation: ${date(device.lastSeen!)} ${clock(device.lastSeen!)}',
                                 ),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.history),
+                                title: const Text('Device history'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  openDeviceHistory(device.id, device.name);
+                                },
+                              ),
                               if (device.hasEndpointIdentity)
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,

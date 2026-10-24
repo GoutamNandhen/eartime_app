@@ -5,8 +5,8 @@ Updated 2026-10-24. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **25 IMPLEMENTED, 78 IN_PROGRESS, 16 NOT_STARTED = 119**.
-New software-complete IDs: E10, F6, I1, I2, I3. Hardware-dependent acceptance
+Implementation count: **26 IMPLEMENTED, 77 IN_PROGRESS, 16 NOT_STARTED = 119**.
+Latest software-complete ID: B3; earlier additions E10, F6, I1, I2, I3. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -46,6 +46,10 @@ Executable evidence keys:
   widget unknown-state regressions; `test/device_identity_test.dart` (6 cases).
   `ENDPOINT_IDENTITY.md`: durable random endpoint UUIDs, explicit reversible
   associations and replay/migration/restore, not verified physical identity.
+  Four further API 28/35 projection cases (8 executions) and five Flutter
+  `device_history_test.dart` cases cover scoped union/paging/index migration,
+  actual Devices navigation, native-scope rejection and name edit/cancel/error/
+  owner recreation. `DEVICE_HISTORY.md`; source schema stays 3, projection 5.
 
 ## A: Core Listening
 
@@ -70,8 +74,8 @@ Executable evidence keys:
 | --- | --- | --- |
 | B1 | Evidence-backed physical identity | IN_PROGRESS; R/Z persistent endpoint association integrated; physical/cross-profile proof OPEN |
 | B2 | Device/route/endpoint/alias/name distinction | IN_PROGRESS; R/Z journal-backed random UUIDs and reversible user associations; LE/wired/USB integration OPEN |
-| B3 | Editable device names | IN_PROGRESS; Q/P/Z display-only overrides persist through endpoint reconnect/reopen/replay; physical identity/rename acceptance pending |
-| B4 | Device history/totals | IN_PROGRESS; P native per-device union/known-device pages; provisional identities not merged; history drilldown OPEN |
+| B3 | Editable device names | IMPLEMENTED / AUTOMATED_PASS Q/P/Z; actual UI cancel/save/error/recreation and UUID-keyed overrides through endpoint reconnect/reopen/replay; PHYSICAL_PENDING, no physical identity promotion |
+| B4 | Device history/totals | IN_PROGRESS; P/Z indexed native-scoped history, Devices/Analytics drilldown and 105-interval pages integrated; real confirmed route producer/physical acceptance OPEN, provisional identities not merged |
 | B5 | Left/right battery | NOT_STARTED; standard/vendor observation tests OPEN |
 | B6 | Case battery | NOT_STARTED; compatibility/physical evidence OPEN |
 | B7 | Charging indicators | NOT_STARTED; capability/freshness tests OPEN |
@@ -106,7 +110,7 @@ Executable evidence keys:
 | D3 | Session durations | IN_PROGRESS; P/U corrected canonical interval durations; grouped sessions/liveness OPEN |
 | D4 | Pause/resume segments | IMPLEMENTED / AUTOMATED_PASS P/U; paused time excluded |
 | D5 | Connection/output transitions | IN_PROGRESS; connections only; route evidence OPEN |
-| D6 | Device details | IN_PROGRESS; candidate identities; persistence/UI OPEN |
+| D6 | Device details | IN_PROGRESS; Z persistent endpoint association/reset, names and device history UI; verified physical matching/telemetry OPEN |
 | D7 | Date filters | IN_PROGRESS; U native query windows/date picker; exhaustive picker interaction acceptance OPEN |
 | D8 | Incomplete/uncertain labels | IMPLEMENTED / AUTOMATED_PASS P/U; gaps/lost continuity/unverified attribution visible |
 | D9 | Restart-correct durations | IMPLEMENTED / AUTOMATED_PASS P/J; close at last evidence, never bridge process gap; OS death pending |
@@ -167,7 +171,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 146 Flutter/264 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 151 Flutter/272 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

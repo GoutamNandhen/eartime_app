@@ -205,10 +205,10 @@ class NativeObservationIngress(
     }
 
     fun readListening(from: Long, until: Long, zoneId: String, offset: Int, limit: Int,
-        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0) {
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0, deviceId: String? = null) {
         // A process clock is not a collector-liveness lease. The protected service has no durable
         // destruction/health hook, so production reads never extend beyond durable evidence.
-        command({ ensureStarted().listeningSnapshot(from, until, zoneId, null, offset, limit, deviceOffset, now()) + health() }, failure, success)
+        command({ ensureStarted().listeningSnapshot(from, until, zoneId, null, offset, limit, deviceOffset, now(), deviceId) + health() }, failure, success)
     }
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
@@ -343,10 +343,10 @@ object NativeJournalRuntime {
     }
 
     fun readListening(from: Long, until: Long, zoneId: String, offset: Int, limit: Int,
-        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0) {
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0, deviceId: String? = null) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized")
-        else target.readListening(from, until, zoneId, offset, limit, success, failure, deviceOffset)
+        else target.readListening(from, until, zoneId, offset, limit, success, failure, deviceOffset, deviceId)
     }
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {

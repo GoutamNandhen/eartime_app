@@ -32,7 +32,7 @@ committed EventChannel invalidation hints`.
 
 `EarTimeApplication` initializes the native worker without awaiting Flutter.
 Journal schema 3 owns raw source observations, source identity, sequence and
-replay/ack cursors. Projection version 4 owns disposable interval/device/alias rows and
+replay/ack cursors. Projection version 5 owns disposable interval/device/alias rows and
 its transactional replay cursor. A separate SQLite reader verifies both source
 and projection commit visibility before publication. Flutter never writes this DB.
 
@@ -41,6 +41,11 @@ read `readListeningProjection`. Clipping, union and calendar bucket calculations
 run in native code. Flutter formats values and sends bounded queries; events
 invalidate data rather than reconstructing product history. Native-backed
 preferences hold display names, themes and personal duration goals.
+
+Optional device UUID scope uses indexed SQL before canonical aggregation and
+paging. Devices/details and Analytics link to the same Timeline workspace;
+unattributed playback cannot enter a device history by name matching. Global
+goals are not applied to device-only totals. See `DEVICE_HISTORY.md`.
 
 Native ListeningReport derives selected-window recorded goal streaks and duration
 insights from those same daily buckets. It is not a second reducer or persisted

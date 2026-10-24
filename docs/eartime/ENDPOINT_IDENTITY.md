@@ -21,6 +21,8 @@ Associations are raw ENDPOINT_IDENTITY journal observations, not another source
 database. Derived projection version 4 adds an indexed disposable alias cache;
 v2/v3 caches replay, source schema stays 3. Reopening, rebuilding and native
 archive restore retain the exact UUIDs. Future cache versions still fail closed.
+The later device-history query uses derived version 5, preserving these same
+source associations and adding a device/window lookup index; see DEVICE_HISTORY.md.
 
 ## Explicit Changes
 

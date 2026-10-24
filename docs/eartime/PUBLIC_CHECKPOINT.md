@@ -7,6 +7,12 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+Device-history/B3 gates: 151 Flutter / 272 native, analyzer clean, both Kotlin
+variants/debug APK pass. Native source schema 3 is preserved; disposable cache 5
+adds indexed device history. Counts now 26/77/16; B3 names software-complete,
+not physical identity. `cbfb3106849615d5dd47222803f3d8bda08102b6` was remote-
+verified before continuation. New collector-service changes: none.
+
 Latest endpoint integration: 146 Flutter / 264 native (22 suites), analyzer clean,
 both Kotlin variants/debug APK pass. Endpoint UUIDs and user associations remain
 unverified physical identity; raw addresses/private archives are not publication

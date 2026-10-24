@@ -1,6 +1,28 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
+Latest device-history continuation: canonical indexed device UUID filtering,
+Devices-details/Analytics -> Timeline navigation, date ranges and independent
+interval paging. Strict scope validation refuses a global/wrong-device reply.
+B3 software acceptance is complete: actual name edit/cancel/save/error/recreation
+plus native reconnect/replay persistence. Count: 26 IMPLEMENTED / 77 IN_PROGRESS /
+16 NOT_STARTED = 119. B1/B2/B4 still need physical/route/transport acceptance.
+Full gates: 151 Flutter / 272 native in 22 suites, both Kotlin variants and debug
+APK pass. Source schema stays 3; disposable projection 5 replays v2/v3/v4 and adds
+an index, retaining raw observations, identity records and consumer cursors.
+Prior endpoint checkpoint `cbfb3106849615d5dd47222803f3d8bda08102b6` was pushed
+and remote-verified; main stayed `13ae6609d22cb2a0daf8890fca081fb97c93b36b`.
+Next safe hardening: inherited BleDiscoveryManager automatically connects and
+writes vendor CCCD, and developer diagnostics trigger on open. Remove automatic
+device interaction/vendor writes, require explicit one-shot consent and bounded
+read-only diagnostics without new collector-service edits. Then continue the
+remaining exact matrix, route-specific continuity and full-app data management.
+No new physical or telemetry support is claimed. See `DEVICE_HISTORY.md`.
+Debug APK SHA-256 (ignored/unpublished):
+`B5A75DE1CDAEC152A0E2A888E20AD3B87519B4D0B2565ABDA599D81C6A73356E`.
+
+## Endpoint Checkpoint
+
 Latest resumed implementation: durable endpoint identities/reversible associations,
 owner/revision/source fencing and truthful unknown-connection rendering. Full
 gates: 146 Flutter / 264 native (22 suites, zero failures/errors/skips), analyzer

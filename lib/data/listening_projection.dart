@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'listening_report.dart';
+import 'device_identity.dart';
 
 class ProjectionCancellation {
   bool _cancelled = false;
@@ -17,11 +18,13 @@ class ListeningWindow {
     this.until, {
     this.offset = 0,
     this.deviceOffset = 0,
+    this.deviceId,
   });
   final DateTime from;
   final DateTime until;
   final int offset;
   final int deviceOffset;
+  final String? deviceId;
 
   @override
   bool operator ==(Object other) =>
@@ -29,9 +32,10 @@ class ListeningWindow {
       from == other.from &&
       until == other.until &&
       offset == other.offset &&
-      deviceOffset == other.deviceOffset;
+      deviceOffset == other.deviceOffset &&
+      deviceId == other.deviceId;
   @override
-  int get hashCode => Object.hash(from, until, offset, deviceOffset);
+  int get hashCode => Object.hash(from, until, offset, deviceOffset, deviceId);
 }
 
 class ProjectedInterval {
@@ -200,7 +204,7 @@ class ListeningSnapshot {
       nextDeviceOffset =
           map['nextDeviceOffset'] as int? ?? (map['devices'] as List).length,
       hasMoreDevices = map['hasMoreDevices'] as bool? ?? false {
-    if (![1, 2, 3, 4].contains(map['projectionVersion']) ||
+    if (![1, 2, 3, 4, 5].contains(map['projectionVersion']) ||
         sequence < 0 ||
         confirmed.isNegative ||
         unverified.isNegative ||
@@ -261,6 +265,8 @@ class ListeningProjectionClient {
     ProjectionCancellation? cancellation,
   }) async {
     if (!window.until.isAfter(window.from) ||
+        (window.deviceId != null &&
+            !DeviceIdentityClient.validId(window.deviceId)) ||
         window.offset < 0 ||
         window.deviceOffset < 0 ||
         window.offset > 2147483547 ||
@@ -291,6 +297,7 @@ class ListeningProjectionClient {
             'offset': window.offset,
             'limit': 100,
             'deviceOffset': window.deviceOffset,
+            if (window.deviceId != null) 'deviceId': window.deviceId,
           })
           .then(
             (value) {
@@ -316,7 +323,16 @@ class ListeningProjectionClient {
         raw['untilUtcMs'] != window.until.millisecondsSinceEpoch ||
         snapshot.intervals.length > 100 ||
         snapshot.devices.length > 100 ||
-        snapshot.deviceOffset != window.deviceOffset) {
+        snapshot.deviceOffset != window.deviceOffset ||
+        raw['filterDeviceId'] != window.deviceId ||
+        (window.deviceId != null &&
+            (snapshot.intervals.any(
+                  (item) => item.deviceId != window.deviceId,
+                ) ||
+                snapshot.devices.any((item) => item.id != window.deviceId) ||
+                snapshot.perDevice.any(
+                  (item) => item.deviceId != window.deviceId,
+                )))) {
       throw const FormatException('Listening window does not match request');
     }
     return snapshot;

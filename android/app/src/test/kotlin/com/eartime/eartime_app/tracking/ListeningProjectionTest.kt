@@ -43,6 +43,72 @@ class ListeningProjectionTest {
     private fun total() = snapshot()["confirmedMs"]
     @Suppress("UNCHECKED_CAST") private fun intervals() = snapshot()["intervals"] as List<Map<String, Any?>>
 
+    @Test fun deviceDrilldownReusesCanonicalUnionAndExcludesOtherDevicesAndLegacyActivity() = run {
+        journal.append(raw("PLAYBACK_STARTED", 500))
+        journal.append(route(1000, route = "a", device = deviceA))
+        journal.append(route(2000, route = "a2", device = deviceA))
+        journal.append(route(3000, route = "b", device = deviceB))
+        journal.append(route(5000, false, "a", deviceA))
+        journal.append(route(6000, false, "a2", deviceA))
+        journal.append(route(8000, false, "b", deviceB))
+        journal.append(raw("PLAYBACK_PAUSED", 9000))
+        ListeningPreferences(context).update(mapOf("dailyGoalMinutes" to 30))
+        val global = snapshot()
+        val scoped = journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceA)
+        assertEquals(7000L, global["confirmedMs"]); assertEquals(8500L, global["unverifiedMs"])
+        assertEquals(5000L, scoped["confirmedMs"]); assertEquals(0L, scoped["unverifiedMs"])
+        assertEquals(deviceA, scoped["filterDeviceId"])
+        assertEquals(1L, scoped["deviceCount"])
+        assertEquals(deviceA, ((scoped["devices"] as List<*>).single() as Map<*, *>)["id"])
+        assertEquals(2, scoped["intervalCount"])
+        assertEquals(5000L, ((scoped["perDevice"] as List<*>).single() as Map<*, *>)["durationMs"])
+        assertEquals(5000L, (scoped["days"] as List<*>).sumOf { ((it as Map<*, *>)["confirmedMs"] as Long) })
+        assertEquals(0, (scoped["report"] as Map<*, *>)["goalMinutes"])
+        val clipped = journal.listeningSnapshot(3000, 4500, "UTC", deviceId = deviceA)
+        assertEquals(1500L, clipped["confirmedMs"])
+    }
+
+    @Test fun deviceHistoryPagesDoNotFilterOnlyTheFirstGlobalPageAndSurviveReplay() = run {
+        repeat(105) { index ->
+            val at = 1000L + index * 100
+            journal.append(route(at, device = deviceA)); journal.append(route(at + 10, false, device = deviceA))
+            journal.append(route(at + 20, route = "b", device = deviceB)); journal.append(route(at + 30, false, "b", deviceB))
+        }
+        val first = journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceA)
+        val last = journal.listeningSnapshot(0, 100000, "UTC", offset = 100, deviceId = deviceA)
+        assertEquals(105, first["intervalCount"]); assertEquals(100, (first["intervals"] as List<*>).size)
+        assertEquals(5, (last["intervals"] as List<*>).size)
+        assertEquals(1050L, first["confirmedMs"]); assertEquals(first["confirmedMs"], last["confirmedMs"])
+        assertTrue(((first["intervals"] as List<*>) + (last["intervals"] as List<*>)).all { (it as Map<*, *>)["deviceId"] == deviceA })
+        journal.rebuildListeningProjection(); assertEquals(first, journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceA))
+        journal.close(); journal = ObservationJournal(context, name)
+        assertEquals(last, journal.listeningSnapshot(0, 100000, "UTC", offset = 100, deviceId = deviceA))
+    }
+
+    @Test fun malformedOrUnknownDeviceFilterNeverFallsBackToGlobalTotals() = run {
+        journal.append(route(1000)); journal.append(route(5000, false))
+        assertThrows(IllegalArgumentException::class.java) { journal.listeningSnapshot(0, 100000, "UTC", deviceId = "same model") }
+        val empty = journal.listeningSnapshot(0, 100000, "UTC", deviceId = UUID.randomUUID().toString())
+        assertEquals(0L, empty["confirmedMs"]); assertEquals(0, empty["intervalCount"]); assertEquals(0L, empty["deviceCount"])
+    }
+
+    @Test fun versionFourCacheAddsDeviceHistoryIndexWithoutChangingSourceOrCursors() = run {
+        journal.append(route(1000)); journal.append(route(5000, false)); journal.acknowledge("device-history", 2)
+        val raw = journal.readAfter(0); val source = journal.stats()["sourceId"]
+        journal.close()
+        SQLiteDatabase.openDatabase(context.getDatabasePath(name).path, null, SQLiteDatabase.OPEN_READWRITE).use {
+            it.execSQL("UPDATE listening_projection SET version=4")
+            it.execSQL("DROP INDEX listening_interval_device_window")
+        }
+        journal = ObservationJournal(context, name)
+        assertEquals(4000L, journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceA)["confirmedMs"])
+        assertEquals(raw, journal.readAfter(0)); assertEquals(source, journal.stats()["sourceId"])
+        assertEquals(2L, journal.cursor("device-history"))
+        SQLiteDatabase.openDatabase(context.getDatabasePath(name).path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+            db.rawQuery("SELECT name FROM sqlite_master WHERE type='index' AND name='listening_interval_device_window'", null).use { assertTrue(it.moveToFirst()) }
+        }
+    }
+
     @Test fun b02SyncRetainsDurableOpeningRatherThanFlutterTimestamp() = run {
         journal.append(raw("PLAYBACK_STARTED", 1000))
         journal.append(raw("SYNC_STATE", 5000, payload = mapOf("connectedDevices" to emptyList<Any>(), "isPlaying" to true)))

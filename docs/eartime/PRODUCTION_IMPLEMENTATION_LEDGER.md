@@ -4,9 +4,34 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: durable endpoint associations, 146 Flutter / 264 native
+Latest checkpoint: device history/name acceptance, 151 Flutter / 272 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Canonical Device History And B3 Acceptance
+
+Endpoint checkpoint `cbfb3106849615d5dd47222803f3d8bda08102b6` was pushed and
+remote-verified before this phase; remote main stayed unchanged. Added native SQL
+device filtering before all canonical aggregates/pages, a composite device/window
+index and the real Devices/Analytics -> device Timeline path. Echoed scope and
+returned IDs are checked in Flutter, including provider-cache identity. Global
+goals are not relabeled as device goals; legacy global activity stays unattributed.
+Derived v2/v3/v4 caches replay as v5, source schema remains 3. See DEVICE_HISTORY.md.
+
+Four API 28/35 projection tests (8 executions) cover union/clipping/global
+reconciliation, 105 device intervals interleaved with another identity, replay/
+reopen, invalid/unknown UUIDs and v4-index migration/raw/consumer preservation.
+Five Flutter acceptance tests cover strict method-channel scope rejection, actual
+normal/large-font navigation/paging and name cancel/save/error/UI recreation.
+Native identity tests already prove UUID/name persistence through reconnect/
+reopen/replay. B3 therefore becomes IMPLEMENTED / AUTOMATED_PASS / PHYSICAL_PENDING;
+physical identity itself is B1, still partial. Counts: 26/77/16 = 119.
+Full gates: 151 Flutter / 272 native (22 suites, zero failures/errors/skips), debug/
+release Kotlin and debug APK pass. Analyzer block-style findings in new tests were
+fixed without suppressions. Baseline guard permits exactly the previous four
+hooks; no new service edit or physical validation. Public audit required before
+publication. Inherited automatic BLE connection/vendor CCCD writes were found by
+source inspection; next phase must gate/remove these, not enable vendor telemetry.
 
 ## Interrupted Endpoint Work Resumed
 
