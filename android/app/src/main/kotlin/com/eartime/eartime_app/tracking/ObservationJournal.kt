@@ -292,6 +292,14 @@ class ObservationJournal(
             mapOf("sourceId" to sourceId(db), "sequence" to lastSequence(db)) }
     }
 
+    internal fun diagnosticEndpoint(source: String, aliasId: String, revision: Long): String {
+        val db = database(); catchUpProjection(db)
+        require(source == sourceId(db)) { "Journal source changed" }
+        val alias = EndpointIdentityProjection(db).byId(aliasId) ?: throw IllegalArgumentException("Unknown endpoint")
+        require(revision == alias["revision"]) { "Endpoint association changed" }
+        return alias["address"] as String
+    }
+
     fun changeEndpointIdentity(source: String, aliasId: String, expectedRevision: Long, targetDeviceId: String?,
         time: ObservationTime, processGeneration: String): Map<String, Any?> {
         val db = database(); catchUpProjection(db)

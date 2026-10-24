@@ -4,9 +4,38 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: device history/name acceptance, 151 Flutter / 272 native
+Latest checkpoint: consent-only diagnostics, 155 Flutter / 297 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Read-Only Diagnostic Privacy Hardening
+
+Started after remote-verified `00a0e17eafb8996cf83b5049df8d4060d50245ab`.
+Source inspection proved automatic inventory GATT connections, vendor CCCD writes
+and screen-open diagnostic interaction. Replaced the manager outside the protected
+service with explicit ephemeral endpoint consent and bounded off-main read-only
+catalog inspection. No characteristic reads, subscriptions, vendor writes or
+notification-payload forwarding remain in that path. Owner/source/revision fences
+keep private address resolution native. Dedicated diagnostic source/provenance
+is durable before committed broker delivery. See READ_ONLY_DIAGNOSTICS.md.
+
+22 API 28/35 safety cases, 2 private-resolution cases, 1 captured-source ingress
+case and 4 Flutter consent cases added. Full-suite run first failed twice on an
+oversized live catalog: finally closed with finished before error handling. This
+was a real reason-label defect, not a bounds escape. Success/error closure was
+separated; unchanged assertions passed. Final full gates: 155 Flutter / 297 native
+in 23 suites, zero failures/errors/skips; analyzer clean; debug/release Kotlin and
+debug APK pass. No new service-file change, device interaction, physical G or
+telemetry compatibility evidence. Inherited deprecation/SDK XML warnings remain.
+
+A fresh primary API review verified the generic attribution platform boundary:
+AudioPlaybackConfiguration.getAudioDeviceInfo is documented as never populated;
+owned-player AudioRouting and predicted attributes are not a replacement for
+other apps' actual output. A1 is explicitly BLOCKED_BY_PLATFORM without changing
+its acceptance requirement. Narrower A2DP candidate work remains possible/open.
+Counts: 26 implemented / 76 partial / 16 not started / 1 platform-blocked = 119.
+This is not a completion claim. Next: opt-in canonical daily/weekly summaries and
+quiet/permission controls (F4/F5), not fabricated live-dependent reminders.
 
 ## Canonical Device History And B3 Acceptance
 

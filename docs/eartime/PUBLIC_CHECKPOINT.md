@@ -7,6 +7,13 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+Latest consent-only diagnostic hardening: 155 Flutter / 297 native, analyzer clean,
+debug/release Kotlin and debug APK pass. One real catalog-error labeling defect
+was caught and fixed; no assertions removed. Explicit one-shot read-only service
+inspection is not vendor telemetry support. A1 generic output is platform-blocked
+with primary evidence; counts 26/76/16/1 = 119. No new service-file/hardware/release
+changes. Source/alias/revision lookup and diagnostic clock provenance are tested.
+
 Device-history/B3 gates: 151 Flutter / 272 native, analyzer clean, both Kotlin
 variants/debug APK pass. Native source schema 3 is preserved; disposable cache 5
 adds indexed device history. Counts now 26/77/16; B3 names software-complete,

@@ -5,7 +5,10 @@ Updated 2026-10-24. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **26 IMPLEMENTED, 77 IN_PROGRESS, 16 NOT_STARTED = 119**.
+Implementation count: **26 IMPLEMENTED, 76 IN_PROGRESS, 16 NOT_STARTED,
+1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
+explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
+verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
 Latest software-complete ID: B3; earlier additions E10, F6, I1, I2, I3. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
@@ -50,12 +53,16 @@ Executable evidence keys:
   `device_history_test.dart` cases cover scoped union/paging/index migration,
   actual Devices navigation, native-scope rejection and name edit/cancel/error/
   owner recreation. `DEVICE_HISTORY.md`; source schema stays 3, projection 5.
+- O: `BleDiagnosticSafetyTest` (22 API 28/35 executions), private endpoint
+  resolution and dedicated-source ingress, plus four Flutter consent cases.
+  `READ_ONLY_DIAGNOSTICS.md`: no automatic GATT or vendor subscriptions/writes;
+  bounded explicitly authorized catalog inspection is not telemetry support.
 
 ## A: Core Listening
 
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
-| A1 | Actual playback duration | IN_PROGRESS; P/U canonical accounting; real CONFIRMED route/liveness collector OPEN |
+| A1 | Actual playback duration | BLOCKED_BY_PLATFORM; P/U canonical accounting exists, but generic third-party actual output lacks a populated public configuration-route API; PLATFORM_ATTRIBUTION_LIMITS.md; narrower A2DP work remains A7, not full completion |
 | A2 | Connected/listening/paused/idle states | IN_PROGRESS; L; authoritative idle/gap projection OPEN |
 | A3 | Play/pause/reconnect transitions | IN_PROGRESS; L; physical route tests pending |
 | A4 | Closed UI/Recents/screen-off collection | IN_PROGRESS; J models Flutter absence; physical service continuity pending |
@@ -83,7 +90,7 @@ Executable evidence keys:
 | B9 | Independent wearing durations | NOT_STARTED; wearing interval tests OPEN |
 | B10 | Unknown/unsupported/stale telemetry | IN_PROGRESS; U/W unknown batteries/wearing; T prevents false per-ear claims; freshness collector OPEN |
 | B11 | Optional OnePlus vendor telemetry | NOT_STARTED; historical research must be reviewed; adapter gating OPEN |
-| B12 | Capability discovery/reconnect/freshness | IN_PROGRESS; inherited experimental discovery; safe adapter OPEN |
+| B12 | Capability discovery/reconnect/freshness | IN_PROGRESS; O explicit source/revision/owner-fenced bounded read-only catalog, no automatic connect/write; standard/vendor acquisition, reconnect/freshness OPEN |
 | B13 | Other-earbud fallback | IN_PROGRESS; generic display; unsupported-state acceptance OPEN |
 
 ## C: Home
@@ -171,7 +178,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 151 Flutter/272 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 155 Flutter/297 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -187,12 +194,12 @@ Executable evidence keys:
 | H7 | Devices | IN_PROGRESS; U native known-device next/previous pages/details/name overrides; verified aliases/telemetry OPEN |
 | H8 | Wellbeing | IN_PROGRESS; Q/U persisted goals/native summaries; reminders OPEN |
 | H9 | Settings | IN_PROGRESS; Q/X themes/goals, native archive controls/recovery, legacy/journal diagnostics; full backup/delete OPEN |
-| H10 | Developer diagnostics | IN_PROGRESS; D journal screen delivered; safe vendor controls OPEN |
+| H10 | Developer diagnostics | IN_PROGRESS; D/O journal and consent-only read-only catalog paths; vendor values/compatibility remain unknown, full diagnostics/privacy acceptance OPEN |
 | H11 | Android widgets | IN_PROGRESS; W multi-device dark two-column native provider; unknown battery honest; physical launcher/freshness pending |
 | H12 | Foreground notification/controls | IN_PROGRESS; inherited notification; control/status tests OPEN |
 | H13 | Goals/reminders/preferences | IN_PROGRESS; Q native goals/themes/names; reminders/quiet-hours OPEN |
 | H14 | Data-management settings | IN_PROGRESS; X native export/confirmed restore and recovery UI; full-app backup/confirmed deletion OPEN |
-| H15 | Local-first privacy | IN_PROGRESS; OS cloud/transfer backup excluded; inherited native logs/BLE discovery audit OPEN |
+| H15 | Local-first privacy | IN_PROGRESS; OS cloud/transfer backup excluded; O automatic BLE and vendor writes removed, explicit ephemeral consent; protected collector logs/full privacy audit OPEN |
 | H16 | Offline functionality | IN_PROGRESS; native/local queries and system fonts; full offline acceptance OPEN |
 | H17 | Export | IN_PROGRESS; X integrated streaming versioned native journal export/checksum/cutoff; legacy/preferences export OPEN, not full-app backup |
 | H18 | Backup/restore | IN_PROGRESS; X explicit transactional native restore, synced recovery, idempotence/conflict/crash/cancel/reopen and 1500-session tests; full legacy/preferences backup OPEN |

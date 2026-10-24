@@ -87,4 +87,17 @@ class DeviceIdentityClient {
       throw const FormatException('Invalid identity update result');
     }
   }
+
+  Future<void> inspect({required String sourceId, required Map alias}) async {
+    final result = await _channel
+        .invokeMapMethod<dynamic, dynamic>('inspectDeviceEndpoint', {
+          'sourceId': sourceId,
+          'aliasId': alias['id'],
+          'expectedRevision': alias['revision'],
+          'confirmed': true,
+        });
+    if (result?['queued'] != true) {
+      throw const FormatException('Endpoint inspection was not queued');
+    }
+  }
 }

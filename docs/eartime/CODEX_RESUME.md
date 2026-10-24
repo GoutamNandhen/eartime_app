@@ -1,6 +1,34 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
+Latest hardening: inherited automatic GATT/vendor CCCD writes replaced with
+consent-only bounded read-only service catalogs. Diagnostic opening/cancel do not
+connect. Endpoint UI uses source/alias/revision and current-owner rechecks; private
+resolution stays native. Diagnostic observations have their own source and
+captured clocks, not legacy audio-service provenance. Source schema 3/projection 5
+unchanged. See READ_ONLY_DIAGNOSTICS.md for ownership/bounds/Binder limits.
+Full actual gates: 155 Flutter / 297 native in 23 suites (zero failures/errors/
+skips), analyzer clean, both Kotlin variants and debug APK pass. Full-suite bounds
+test first exposed wrong error labeling; control flow fixed, assertions retained.
+No collector-service edits; strict previous-four-hook guard passes. No hardware,
+vendor telemetry, physical G, signed release or production readiness claim.
+Count: 26 IMPLEMENTED / 76 IN_PROGRESS / 16 NOT_STARTED / 1 BLOCKED_BY_PLATFORM =
+119. A1 generic cross-app actual-output evidence is explicitly platform-blocked;
+the public configuration-route field was documented as never populated. Narrower
+A2DP acquisition is still independent work, not a generic solution. See
+PLATFORM_ATTRIBUTION_LIMITS.md; do not waive the listening proof requirement.
+Prior history checkpoint `00a0e17eafb8996cf83b5049df8d4060d50245ab` was pushed
+and remote-verified; remote main remains `13ae6609d22cb2a0daf8890fca081fb97c93b36b`.
+Next safe phase: F4/F5 opt-in native daily/weekly recorded summaries, quiet hours,
+notification permission/channel controls, inexact scheduling and reboot/timezone
+recovery using canonical queries. F2/F3 live-dependent reminders stay gated until
+actual confirmed-route continuity exists. Then full-app data controls and exact
+remaining matrix. No notification scheduling implementation is claimed yet.
+Local debug APK SHA-256 (ignored/unpublished):
+`53342EB136CD2D2BDD51A0BF76701DF84A358C62C8F46E2B3D1A23CF48C7E2D0`.
+
+## Device History Checkpoint
+
 Latest device-history continuation: canonical indexed device UUID filtering,
 Devices-details/Analytics -> Timeline navigation, date ranges and independent
 interval paging. Strict scope validation refuses a global/wrong-device reply.

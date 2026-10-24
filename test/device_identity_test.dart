@@ -41,6 +41,13 @@ class IdentityFixture extends DeviceIdentityClient {
   bool fail = false;
   final changes = <String?>[];
   final offsets = <int>[];
+  int inspections = 0;
+  @override
+  Future<void> inspect({required String sourceId, required Map alias}) async {
+    if (fail) throw StateError('Synthetic unavailable inspection');
+    inspections++;
+  }
+
   @override
   Future<Map<dynamic, dynamic>> read(
     String deviceId, {
@@ -67,6 +74,26 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('identity_fixture');
   const client = DeviceIdentityClient(channel: channel);
+  test(
+    'inspection carries explicit consent and alias revision, never a raw address',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            expect(call.method, 'inspectDeviceEndpoint');
+            expect(call.arguments, {
+              'sourceId': source,
+              'aliasId': aliasId,
+              'expectedRevision': 2,
+              'confirmed': true,
+            });
+            return {'queued': true};
+          });
+      await client.inspect(
+        sourceId: source,
+        alias: (identityPage()['aliases'] as List).single as Map,
+      );
+    },
+  );
   tearDown(
     () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null),
@@ -152,6 +179,34 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Other model'));
     await tester.pumpAndSettle();
+  }
+
+  for (final fail in [false, true]) {
+    testWidgets(
+      'endpoint inspection requires confirmation and handles unavailable transport=$fail',
+      (tester) async {
+        final fixture = IdentityFixture()..fail = fail;
+        await show(tester, fixture);
+        await tester.tap(find.byTooltip('Inspect services (read-only)'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(fixture.inspections, 0);
+        await tester.tap(find.byTooltip('Inspect services (read-only)'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Inspect services'));
+        await tester.pumpAndSettle();
+        expect(fixture.inspections, fail ? 0 : 1);
+        expect(
+          find.textContaining(
+            fail
+                ? 'Inspection unavailable.'
+                : 'Read-only inspection requested.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
   }
 
   testWidgets('cancelled explicit association never mutates native history', (

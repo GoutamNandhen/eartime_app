@@ -2,6 +2,12 @@
 
 Last verified implementation baseline: 2026-10-24.
 
+Read-only diagnostic hardening adds 25 native executions (22 safety, 2 private
+endpoint resolution, 1 own-source captured-clock ingress) and four Flutter cases.
+Full run initially failed 2/296 on wrong oversized-catalog error labeling; the
+production finally/control-flow defect was repaired with assertions unchanged.
+Final complete counts below include that fix and the dedicated-source regression.
+
 Device-history continuation adds 8 API 28/35 executions and five Flutter tests:
 native-scoped union/pages/rebuild/index upgrade, strict channel scope, actual
 Devices navigation/large text and B3 edit/cancel/save/error/recreation. All raw
@@ -22,9 +28,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 151 passed, 0 failures |
+| Flutter full suite | 155 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 272 passed in 22 suites, 0 failures/errors/skips |
+| Android native suite | 297 passed in 23 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

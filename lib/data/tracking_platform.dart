@@ -41,9 +41,13 @@ class TrackingPlatform {
     return Map<String, dynamic>.from(result);
   }
 
-  static Future<void> startBleDiagnostic(String hardwareAddress) async {
+  static Future<void> startBleDiagnostic(
+    String hardwareAddress, {
+    required bool confirmed,
+  }) async {
     await _methodChannel.invokeMethod('startBleDiagnostic', {
       'address': hardwareAddress,
+      'confirmed': confirmed,
     });
   }
 

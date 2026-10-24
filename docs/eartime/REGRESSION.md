@@ -31,7 +31,7 @@ based only on a local model test. Repository commands were reviewed: local
 build/test writes only; initial Robolectric download was separately authorized
 through the tool boundary. No device install/data mutation.
 
-Current evidence: Flutter 151 pass; JVM 272 pass; analyzer exit 0/no issues;
+Current evidence: Flutter 155 pass; JVM 297 pass; analyzer exit 0/no issues;
 debug/release Kotlin compile and debug packaging exit 0. Fifteen former
 placeholders now have real assertions. Signing refusal without keys is an
 expected exit 1, not a signed release success. Exact artifact: `CODEX_RESUME.md`.

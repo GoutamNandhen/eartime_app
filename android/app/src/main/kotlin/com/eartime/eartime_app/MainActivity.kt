@@ -138,7 +138,32 @@ class MainActivity : FlutterActivity() {
         // Method Channel for starting/stopping tracking
         Log.i("EarTimeDiag", "[GFLOW] MethodChannel REGISTERED")
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
+            fun inspect(address: String) {
+                if (!owner.isActive || navigationOwner != owner.token || call.argument<Boolean>("confirmed") != true) {
+                    result.error("CONFIRMATION_REQUIRED", "Current owner and explicit endpoint inspection consent required", null)
+                    return
+                }
+                try {
+                    com.eartime.eartime_app.tracking.BleDiagnosticAuthorization.consent.grant(address)
+                    startService(Intent(this, AudioTrackingService::class.java).apply {
+                        action = "ACTION_START_BLE_DIAGNOSTIC"
+                        putExtra("address", address)
+                    })
+                    result.success(mapOf("queued" to true))
+                } catch (_: Exception) {
+                    com.eartime.eartime_app.tracking.BleDiagnosticAuthorization.consent.revoke()
+                    result.error("INSPECTION_UNAVAILABLE", "Read-only endpoint inspection unavailable", null)
+                }
+            }
             when (call.method) {
+                "inspectDeviceEndpoint" -> {
+                    if (!owner.isActive || navigationOwner != owner.token || call.argument<Boolean>("confirmed") != true)
+                        result.error("CONFIRMATION_REQUIRED", "Explicit endpoint inspection consent required", null)
+                    else NativeJournalRuntime.diagnosticEndpoint(call.argument<String>("sourceId") ?: "",
+                        call.argument<String>("aliasId") ?: "", call.argument<Number>("expectedRevision")?.toLong() ?: -1,
+                        { address -> Handler(Looper.getMainLooper()).post { owner.runIfActive { inspect(address) } } },
+                        { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("INSPECTION_UNAVAILABLE", "Endpoint association changed; refresh and retry", null) } } })
+                }
                 "readDeviceIdentity" -> NativeJournalRuntime.deviceIdentity(call.argument<String>("deviceId") ?: "",
                     call.argument<Number>("aliasOffset")?.toInt() ?: 0, call.argument<Number>("candidateOffset")?.toInt() ?: 0,
                     { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
@@ -230,13 +255,7 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
                 "startBleDiagnostic" -> {
-                    val address = call.argument<String>("address")
-                    val intent = Intent(this, AudioTrackingService::class.java).apply {
-                        action = "ACTION_START_BLE_DIAGNOSTIC"
-                        putExtra("address", address)
-                    }
-                    startService(intent)
-                    result.success(null)
+                    inspect(call.argument<String>("address") ?: "")
                 }
                 "getAudioDiagnostics" -> {
                     com.eartime.eartime_app.tracking.AudioDiagnosticHelper.getDiagnostics(this) { diagInfo ->

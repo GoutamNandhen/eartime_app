@@ -108,6 +108,59 @@ class _DeviceIdentityScreenState extends State<DeviceIdentityScreen> {
     }
   }
 
+  Future<void> inspect(Map alias) async {
+    if (_busy || _page == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: const Text('Inspect endpoint services?'),
+        content: const Text(
+          'Connect once to this Bluetooth endpoint and read its service catalog. No characteristic values, subscriptions or vendor commands will be sent. The connection closes after inspection or timeout. This does not verify battery, wearing state or physical identity.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Inspect services'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.client.inspect(
+        sourceId: _page!['sourceId'] as String,
+        alias: alias,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Read-only inspection requested. Telemetry remains unverified.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Inspection unavailable. Refresh the endpoint association and retry.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(widget.name)),
@@ -153,6 +206,11 @@ class _DeviceIdentityScreenState extends State<DeviceIdentityScreen> {
               ),
               Wrap(
                 children: [
+                  IconButton(
+                    onPressed: _busy ? null : () => inspect(raw as Map),
+                    tooltip: 'Inspect services (read-only)',
+                    icon: const Icon(Icons.manage_search),
+                  ),
                   IconButton(
                     onPressed: _busy ? null : () => change(raw as Map),
                     tooltip: 'Change association',

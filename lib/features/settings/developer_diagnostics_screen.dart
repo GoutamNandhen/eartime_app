@@ -43,22 +43,6 @@ class _DeveloperDiagnosticsScreenState
   String _gattState = 'Unknown';
   String? _gattMessage;
 
-  @override
-  void initState() {
-    super.initState();
-    // Trigger BLE diagnostic for the currently active device, if any
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final activeDevice = ref.read(liveSessionProvider).activeDevice;
-      if (activeDevice != null &&
-          activeDevice.canonicalDeviceId.contains(':')) {
-        _logAction(
-          'TRIGGERING NATIVE BLE DIAGNOSTIC FOR ${activeDevice.canonicalDeviceId}',
-        );
-        TrackingPlatform.startBleDiagnostic(activeDevice.canonicalDeviceId);
-      }
-    });
-  }
-
   void _logAction(String actionName) {
     setState(() {
       _lastAction = actionName;
@@ -179,17 +163,48 @@ class _DeveloperDiagnosticsScreenState
         elevation: 0,
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final activeDevice = ref.read(liveSessionProvider).activeDevice;
               if (activeDevice != null &&
                   activeDevice.canonicalDeviceId.isNotEmpty) {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    scrollable: true,
+                    title: const Text('Read-only Bluetooth inspection?'),
+                    content: const Text(
+                      'Connect once and read the endpoint service catalog. No subscriptions or vendor writes. Battery and wearing capabilities remain unverified.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Inspect services'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true || !mounted) return;
                 setState(() {
-                  _gattState = 'REFRESHING...';
+                  _gattState = 'INSPECTION REQUESTED';
                   _gattMessage = null;
                 });
-                TrackingPlatform.startBleDiagnostic(
-                  activeDevice.canonicalDeviceId,
-                );
+                try {
+                  await TrackingPlatform.startBleDiagnostic(
+                    activeDevice.canonicalDeviceId,
+                    confirmed: true,
+                  );
+                } catch (_) {
+                  if (mounted) {
+                    setState(() {
+                      _gattState = 'UNAVAILABLE';
+                      _gattMessage = 'Read-only inspection unavailable.';
+                    });
+                  }
+                }
               }
             },
             child: const Text(

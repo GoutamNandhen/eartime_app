@@ -200,4 +200,14 @@ class EndpointIdentityTest {
         assertEquals("device_identity_changed", closed["closeReason"])
         assertEquals(true, intervals.single { it["deviceId"] == ids[1] }["open"])
     }
+
+    @Test fun diagnosticResolutionRequiresExactSourceAliasRevisionAndDoesNotMutateHistory() = run {
+        journal.append(sample()); val id = devices().single()["id"] as String
+        val row = alias(id); val source = journal.stats()["sourceId"] as String; val before = journal.readAfter(0)
+        assertEquals(address, journal.diagnosticEndpoint(source, row["id"] as String, row["revision"] as Long))
+        assertThrows(IllegalArgumentException::class.java) { journal.diagnosticEndpoint("other-source", row["id"] as String, row["revision"] as Long) }
+        assertThrows(IllegalArgumentException::class.java) { journal.diagnosticEndpoint(source, row["id"] as String, 999) }
+        assertThrows(IllegalArgumentException::class.java) { journal.diagnosticEndpoint(source, UUID.randomUUID().toString(), 1) }
+        assertEquals(before, journal.readAfter(0))
+    }
 }

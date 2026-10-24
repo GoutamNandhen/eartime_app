@@ -16,6 +16,23 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], manifest = Config.NONE, application = Application::class)
 class NativeObservationIngressTest {
+    @Test fun readOnlyDiagnosticRetainsItsOwnSourceCapturedClockAndUnknownConfidence() {
+        val context = RuntimeEnvironment.getApplication()
+        val name = "diag-${UUID.randomUUID().toString().take(6)}.db"
+        val ingress = NativeObservationIngress(context, {}, {}, name)
+        try {
+            val captured = android.os.SystemClock.elapsedRealtime()
+            ingress.submitDiagnostic(mapOf("type" to "BLE_DIAGNOSTIC_STATE", "state" to "STOPPED", "readOnly" to true,
+                "timestamp" to 1000L, "reason" to "synthetic_read_only_fixture"), captured)
+            val row = (page(ingress)["observations"] as List<*>).last() as Map<*, *>
+            assertEquals(BleDiscoveryManager.SOURCE, row["collector"])
+            assertEquals(captured, row["elapsedMs"])
+            assertEquals("UNKNOWN", row["confidence"])
+            assertEquals("optional_read_only_catalog_wall_and_elapsed", row["provenance"])
+            assertEquals(true, (row["payload"] as Map<*, *>)["readOnly"])
+        } finally { ingress.close(); context.deleteDatabase(name) }
+    }
+
     @Test fun queuedIdentityCommandRechecksRetiredOwnerBeforeMutatingJournal() {
         val context = RuntimeEnvironment.getApplication()
         val name = "i-${UUID.randomUUID().toString().take(8)}.db"

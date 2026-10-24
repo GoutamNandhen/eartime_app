@@ -73,6 +73,9 @@ class NativeObservationIngress(
     internal fun submitObserver(event: Map<String, Any?>, capturedElapsedMs: Long, completion: (Boolean) -> Unit) =
         enqueue(event, CollectorHealth.SOURCE, capturedElapsedMs, completion)
 
+    internal fun submitDiagnostic(event: Map<String, Any?>, capturedElapsedMs: Long) =
+        enqueue(event, BleDiscoveryManager.SOURCE, capturedElapsedMs, {})
+
     private fun complete(pending: Pending, accepted: Boolean) {
         try { pending.completion(accepted) }
         catch (_: Exception) { report("Observation completion callback failed; committed history retained") }
@@ -91,6 +94,11 @@ class NativeObservationIngress(
                 (immutable["timestamp"] is Long || immutable["timestamp"] is Int))
             if (collector == CollectorHealth.SOURCE) {
                 require(immutable["type"] in listOf("COLLECTOR_STATUS", "OUTPUT_EVIDENCE"))
+                require(capturedElapsedMs != null && capturedElapsedMs in 0..SystemClock.elapsedRealtime())
+            }
+            if (collector == BleDiscoveryManager.SOURCE) {
+                require(immutable["type"] in listOf("BLE_DIAGNOSTIC_STATE", "BLE_DISCOVERY_RESULT"))
+                require(immutable["readOnly"] == true || (immutable["device"] as? Map<*, *>)?.get("readOnly") == true)
                 require(capturedElapsedMs != null && capturedElapsedMs in 0..SystemClock.elapsedRealtime())
             }
             val input = Pending(immutable, UUID.randomUUID().toString(),
@@ -150,7 +158,11 @@ class NativeObservationIngress(
                                         processGeneration, pending.time.copy(bootId = bootId,
                                             collectionEpoch = if (restoreFenceElapsed?.let { (pending.time.elapsedMs ?: -1) <= it } == true)
                                                 "pre-restore-queued-$epoch" else epoch), JournalJson.encode(pending.event),
-                                        if (pending.collector == CollectorHealth.SOURCE) "supported_audio_api_sample_wall_and_elapsed" else "legacy_collector_wall_and_broker_receipt_elapsed",
+                                        when (pending.collector) {
+                                            CollectorHealth.SOURCE -> "supported_audio_api_sample_wall_and_elapsed"
+                                            BleDiscoveryManager.SOURCE -> "optional_read_only_catalog_wall_and_elapsed"
+                                            else -> "legacy_collector_wall_and_broker_receipt_elapsed"
+                                        },
                                     ))
                                     try { publish(pending.event + ("journal" to committed.metadata())) }
                                     catch (error: Exception) { report("Journal delivery failed; committed observation retained: ${error.javaClass.simpleName}") }
@@ -226,6 +238,11 @@ class NativeObservationIngress(
     fun deviceIdentity(deviceId: String, aliasOffset: Int, candidateOffset: Int,
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         command({ ensureStarted().deviceIdentity(deviceId, aliasOffset, candidateOffset) }, failure, success)
+    }
+
+    internal fun diagnosticEndpoint(source: String, aliasId: String, revision: Long,
+        success: (String) -> Unit, failure: (String) -> Unit) {
+        command({ ensureStarted().diagnosticEndpoint(source, aliasId, revision) }, failure, success)
     }
 
     fun changeDeviceIdentity(source: String, aliasId: String, expectedRevision: Long, target: String?,
@@ -330,6 +347,12 @@ object NativeJournalRuntime {
         if (target == null) completion(false) else target.submitObserver(event, capturedElapsedMs, completion)
     }
 
+    internal fun submitDiagnostic(event: Map<String, Any?>, capturedElapsedMs: Long) {
+        val target = ingress
+        if (target == null) TrackingEventBroker.reportPersistenceFailure("Native journal was not initialized; diagnostic observation rejected")
+        else target.submitDiagnostic(event, capturedElapsedMs)
+    }
+
     fun readPage(after: Long, limit: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized")
@@ -375,6 +398,12 @@ object NativeJournalRuntime {
     fun recoveryArchives(offset: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized") else target.recoveryArchives(offset, success, failure)
+    }
+
+    internal fun diagnosticEndpoint(source: String, aliasId: String, revision: Long,
+        success: (String) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.diagnosticEndpoint(source, aliasId, revision, success, failure)
     }
 
     fun restoreArchive(file: java.io.File, cancelled: () -> Boolean,

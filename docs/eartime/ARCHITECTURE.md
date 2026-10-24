@@ -6,6 +6,12 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Optional Bluetooth diagnostics are now consent-only bounded service catalogs,
+not automatic inventory-triggered connections or vendor CCCD subscriptions. Their
+dedicated source/clock provenance commits through the same journal and broker.
+See READ_ONLY_DIAGNOSTICS.md; no telemetry or listening confidence is promoted.
+PLATFORM_ATTRIBUTION_LIMITS.md records the generic cross-app route blocker.
+
 Passive public per-device A2DP queries now add nested transport observations to
 the same OUTPUT_EVIDENCE journal path. This is acquisition, not a route-duration
 producer: addresses are not promoted to verified physical IDs, false/empty API fallbacks
