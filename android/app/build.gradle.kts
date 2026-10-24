@@ -8,6 +8,25 @@ plugins {
 val signingValues = listOf("EARTIME_KEYSTORE_PATH", "EARTIME_KEYSTORE_PASSWORD", "EARTIME_KEY_ALIAS", "EARTIME_KEY_PASSWORD")
     .associateWith { providers.environmentVariable(it).orNull }
 val releaseSigningAvailable = signingValues.values.all { !it.isNullOrBlank() }
+val declaredVersion = providers.fileContents(layout.projectDirectory.file("../../pubspec.yaml")).asText.map { text ->
+    Regex("(?m)^version: ([^\\r\\n]+)\\r?$").findAll(text).map { it.groupValues[1].trim() }.toList().single()
+}
+val checkAppVersion by tasks.registering {
+    inputs.property("declaredVersion", declaredVersion)
+    inputs.property("androidVersionName", provider { flutter.versionName })
+    inputs.property("androidVersionCode", provider { flutter.versionCode })
+    doLast {
+        val parts = declaredVersion.get().split('+')
+        check(parts.size == 2 && Regex("(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-(dev|rc)\\.[1-9][0-9]*)?").matches(parts[0])) {
+            "Use a three-part version, optionally -dev.N or -rc.N, with an explicit +build number."
+        }
+        val code = parts[1].toLongOrNull()
+        check(code != null && code in 1..2_100_000_000L && code.toString() == parts[1]) { "Invalid Android build number." }
+        check(flutter.versionName == parts[0] && flutter.versionCode.toLong() == code) {
+            "Android version differs from pubspec.yaml. Run flutter build apk --debug --no-pub without version overrides to refresh local.properties."
+        }
+    }
+}
 val checkReleaseSigning by tasks.registering {
     doLast {
         check(releaseSigningAvailable) { "Release signing is not configured. Supply the four EARTIME signing environment variables; debug signing is never used for release." }
@@ -61,6 +80,7 @@ android {
 }
 
 tasks.configureEach {
+    if (name == "preBuild") dependsOn(checkAppVersion)
     if (name in setOf("packageRelease", "bundleRelease", "signReleaseBundle")) dependsOn(checkReleaseSigning)
 }
 

@@ -236,6 +236,10 @@ class NativeObservationIngress(
         command({ WellbeingSummaries.refresh(context) }, failure, success)
     }
 
+    internal fun buildInformation(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({ com.eartime.eartime_app.AppBuildInformation.read(context) }, failure, success)
+    }
+
     internal fun deliverWellbeing(plan: SummaryPlan, active: () -> Boolean, success: (String) -> Unit, failure: (String) -> Unit) {
         command({ WellbeingSummaries.deliver(context, ensureStarted(), plan, active) }, failure, success)
     }
@@ -422,6 +426,11 @@ object NativeJournalRuntime {
     internal fun refreshWellbeing(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized") else target.refreshWellbeing(success, failure)
+    }
+
+    internal fun buildInformation(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.buildInformation(success, failure)
     }
 
     internal fun deliverWellbeing(plan: SummaryPlan, active: () -> Boolean, success: (String) -> Unit, failure: (String) -> Unit) {

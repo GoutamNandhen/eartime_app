@@ -6,6 +6,11 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+About reads installed PackageManager metadata only on explicit navigation via
+the bounded worker and owner-fenced channel. Tracked version/Gradle preBuild
+consistency and Git comparison gates are documented in VERSIONING.md; no
+version/debug flag is treated as signing or readiness evidence.
+
 Recorded-summary opt-in/time/quiet preferences use existing native settings.
 Inexact alarms feed a private permission-protected JobService; ownership-fenced
 canonical reads/receipts/notifications run on the journal worker without Flutter.

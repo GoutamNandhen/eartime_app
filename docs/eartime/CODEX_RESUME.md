@@ -1,6 +1,22 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
+Latest checkpoint: H25 version policy and installed-package About. Full gates:
+167 Flutter / 354 native in 27 suites, zero failures/errors/skips; analyzer clean;
+debug/release Kotlin, debug APK, version checks and protected four-hook guard pass.
+17 version-tool cases plus 12 native/4 Flutter new cases. Actual APK inspected:
+1.1.0-dev.1, build 2, debuggable. See VERSIONING.md; no release or install.
+Counts: 29 IMPLEMENTED / 74 IN_PROGRESS / 15 NOT_STARTED / 1 BLOCKED_BY_PLATFORM.
+Prior f40a11325ada92fee3d986ae1ce26b4cf245dc84 was pushed/remote-verified; main
+remains 13ae6609d22cb2a0daf8890fca081fb97c93b36b. No service-file edits.
+Next: H28 precise offline privacy/permission disclosures linked from Settings and
+the permission gate; repair/test permission-page large text without changing
+startup ownership, then continue remaining data/product/reliability matrix.
+Latest ignored debug APK SHA-256:
+`5F396F254FB2582B12135A5BBB536A541B3C3028C7C3EA08AD4DD0A72866968C`.
+
+## Recorded Summary Checkpoint
+
 Latest continuation: F4/F5 opt-in native recorded daily/weekly summaries, quiet
 hours and notification controls. Private default-disabled receiver is enabled
 only after opt-in; inexact alarms enqueue nonblocking jobs, all accounting reads

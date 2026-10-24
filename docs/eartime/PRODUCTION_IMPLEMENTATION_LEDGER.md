@@ -4,9 +4,28 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: native recorded summaries/quiet hours, 163 Flutter / 342 native
+Latest checkpoint: version policy/installed metadata, 167 Flutter / 354 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## H25 Version Policy And Installed Metadata
+
+Continued after remote-verified f40a11325ada92fee3d986ae1ce26b4cf245dc84.
+Version 1.1.0-dev.1+2 is tracked once in pubspec; Gradle preBuild refuses stale
+Android metadata/overrides. A 17-case checked Git comparison tool rejects reused/
+decreased numbers, malformed names, integer overflow and ambiguous declarations.
+Initial capture-group and CRLF bugs were caught and fixed by real executions.
+About reads installed metadata on the existing bounded worker with owner-fenced
+replies, error/retry, selectable values and licenses, not a hardcoded source name.
+Twelve API 24/28/35 native cases plus four Flutter cases pass, including 64-bit
+codes and actual Settings navigation at normal/2x text. Ambiguous test scroll
+targets were explicitly scoped; two analyzer findings fixed without suppression.
+Full gates: 167 Flutter / 354 native in 27 suites, zero failures/errors/skips;
+analyzer clean, Kotlin debug/release and debug packaging pass. Aapt inspected the
+actual APK: 1.1.0-dev.1, code 2, debuggable. H25 becomes software complete; count
+29/74/15/1 = 119. No protected-service change, device interaction, signed release,
+readiness or physical G claim. Next H28 privacy/permission copy and layout, then
+remaining exact matrix; no feature-completion verdict.
 
 ## F4/F5 Native Recorded Summaries
 

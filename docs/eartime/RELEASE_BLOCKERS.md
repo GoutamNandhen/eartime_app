@@ -3,7 +3,7 @@
 Updated 2026-10-24. Verdict: NOT RELEASE_READY.
 Feature-level implementation and acceptance gaps are in `FEATURE_MATRIX.md`.
 
-Latest recorded-summary gates: 163 Flutter / 334 native, analyzer clean, both
+Latest version-policy gates: 167 Flutter / 354 native, analyzer clean, both
 Kotlin variants/debug APK pass. Native-only export/confirmed restore/recovery are
 integrated, but H17/H18 remain partial: whole-app legacy/preferences backup,
 confirmed deletion, stalled-provider cancellation and physical durability are
@@ -19,8 +19,8 @@ still required. See `JOURNAL_ARCHIVES.md`. No new hardware or release evidence.
 | Memory/history size | Bounded results, 1200-session/2400-row model, internal rebuild cancellation, live paging insertion tests | Realistic phone/storage/energy profiling, normal startup fairness, cross-layer cancellation and frozen multi-page consistency |
 | Telemetry/privacy | Automatic GATT/vendor CCCD writes removed; explicit one-shot bounded read-only catalog, own-source durability tested | Actual standard/vendor values/roles/freshness; protected collector log audit, offline/backup/privacy review |
 | Missing product scope | Most remaining analytics, wellbeing, widgets and data-control features are incomplete | Implement/test the remaining approved feature matrix |
-| Static/test integration | Analyzer clean, 163 Flutter / 334 native pass; 15 placeholders replaced | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix |
-| Release/signing | Debug APK/debug+release Kotlin compile pass; production signing env gate rejects missing keys, no debug fallback | Authorized keys, signed release packaging, hashes and final release/privacy gates |
+| Static/test integration | Analyzer clean, 167 Flutter / 354 native pass; 15 placeholders replaced | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix |
+| Release/signing | Version 1.1.0-dev.1+2 metadata inspected; monotonic/source consistency gates; debug APK/debug+release Kotlin pass; signing rejects missing keys, no debug fallback | Authorized keys, signed release packaging, hashes and final release/privacy gates |
 | Physical integration | No Android device/AVD available this session | Final background/process/restart/routing/widget/battery acceptance on supported devices |
 
 The debug artifact proves packaging only. It was not installed, published or

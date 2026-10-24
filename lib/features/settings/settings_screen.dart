@@ -8,6 +8,7 @@ import 'observation_journal_screen.dart';
 import 'legacy_history_screen.dart';
 import 'data_management_screen.dart';
 import 'wellbeing_notification_controls.dart';
+import 'about_screen.dart';
 
 final themeModeProvider = Provider<ThemeMode>((ref) {
   final mode = ref.watch(listeningPreferencesProvider).asData?.value.themeMode;
@@ -163,6 +164,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const DeveloperDiagnosticsScreen(),
           ),
           const SizedBox(height: 16),
+          _link('About EarTime', Icons.info_outline, const AboutScreen()),
           const Text(
             'EarTime stores observations on this device. Vendor earbud telemetry is unverified. Battery, case and wearing values remain unknown without validated observations.',
           ),

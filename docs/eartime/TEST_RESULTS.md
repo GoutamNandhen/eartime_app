@@ -2,6 +2,12 @@
 
 Last verified implementation baseline: 2026-10-24.
 
+H25 adds 12 API 24/28/35 native executions and 4 Flutter cases, plus 17 version
+tool self-tests. Actual APK metadata was inspected (1.1.0-dev.1, code 2, debug).
+CRLF/capture-group tool defects and ambiguous Flutter scroll targets were fixed;
+two new analyzer findings corrected without suppressions. VERSIONING.md records
+the gate, source formats, installed-metadata behavior and release limitations.
+
 F4/F5 adds 45 native executions and 8 Flutter cases: opt-in/inexact scheduling,
 API 24 legacy builder, permission/channel/quiet/calendar/DST/fixed-offset rules,
 canonical SQLite-to-notification totals, restart/high-water/cancel/query-failure,
@@ -39,9 +45,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 163 passed, 0 failures |
+| Flutter full suite | 167 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 342 passed in 26 suites, 0 failures/errors/skips |
+| Android native suite | 354 passed in 27 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

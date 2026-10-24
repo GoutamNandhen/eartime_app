@@ -156,6 +156,9 @@ class MainActivity : FlutterActivity() {
                 }
             }
             when (call.method) {
+                "readAppBuildInformation" -> NativeJournalRuntime.buildInformation(
+                    { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
+                    { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("BUILD_INFORMATION_UNAVAILABLE", "Installed package information unavailable", null) } } })
                 "readWellbeingNotificationStatus" -> NativeJournalRuntime.refreshWellbeing(
                     { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
                     { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("NOTIFICATION_STATUS_UNAVAILABLE", "Notification scheduling status unavailable", null) } } })

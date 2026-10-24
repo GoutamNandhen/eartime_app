@@ -5,11 +5,11 @@ Updated 2026-10-24. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **28 IMPLEMENTED, 75 IN_PROGRESS, 15 NOT_STARTED,
+Implementation count: **29 IMPLEMENTED, 74 IN_PROGRESS, 15 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -57,10 +57,14 @@ Executable evidence keys:
   resolution and dedicated-source ingress, plus four Flutter consent cases.
   `READ_ONLY_DIAGNOSTICS.md`: no automatic GATT or vendor subscriptions/writes;
   bounded explicitly authorized catalog inspection is not telemetry support.
-- M: `WellbeingSummaryTest` (32 API 28/35 executions), 2 API 24 legacy
+- M: `WellbeingSummaryTest` (34 API 28/35 executions), 2 API 24 legacy
   notification cases, native startup/replacement and 2 manifest cases; 8 Flutter
   `wellbeing_notifications_test.dart` cases. WELLBEING_SUMMARIES.md: opt-in
   recorded summaries, quiet hours and permission controls, not live reminders.
+  Six request-token ownership regressions additionally protect replaced jobs.
+- K: `AppBuildInformationTest` (12 API 24/28/35 executions), four Flutter
+  `app_build_information_test.dart` cases, 17 version-tool self-tests, Gradle
+  preBuild consistency gate and actual APK metadata inspection; VERSIONING.md.
 
 ## A: Core Listening
 
@@ -182,7 +186,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 163 Flutter/342 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 167 Flutter/354 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -213,7 +217,7 @@ Executable evidence keys:
 | H22 | Battery/performance | IN_PROGRESS; queue bounds; hardware profiling OPEN |
 | H23 | Release build configuration | IN_PROGRESS; debug/release Kotlin compile; release packaging fails closed without authorized keys |
 | H24 | Signing configuration/instructions | IN_PROGRESS; explicit EARTIME environment-key configuration; no debug fallback/no release key created |
-| H25 | Versioning | IN_PROGRESS; inherited 1.0.0+1; release policy OPEN |
+| H25 | Versioning | IMPLEMENTED / AUTOMATED_PASS K; single tracked 1.1.0-dev.1+2, monotonic comparison tool, Gradle metadata gate, installed-package About and actual APK inspection; no release claim |
 | H26 | Release validation | IN_PROGRESS; analyzer/debug gates green, signing refusal verified; signed RC/physical gates OPEN |
 | H27 | Crash testing | IN_PROGRESS; J pre-commit injection; process/OS matrix OPEN |
 | H28 | Honest privacy/permission descriptions | IN_PROGRESS; startup states; complete policy/copy OPEN |
@@ -224,7 +228,7 @@ Executable evidence keys:
 | --- | --- | --- |
 | I1 | Additional widgets | IMPLEMENTED / AUTOMATED_PASS N; native compact last-observed activity and daily summary variants; launcher resizing/timing PHYSICAL_PENDING |
 | I2 | App shortcuts | IMPLEMENTED / AUTOMATED_PASS N; four static shortcuts, whitelisted cold/warm links, disposal fencing; actual launcher PHYSICAL_PENDING |
-| I3 | Personalized reports | IMPLEMENTED / AUTOMATED_PASS N; automatically regenerated native reports integrated into Analytics/Wellbeing; selected-period lower bounds; scheduled notifications remain F4 OPEN |
+| I3 | Personalized reports | IMPLEMENTED / AUTOMATED_PASS N/M; automatically regenerated native reports integrated into Analytics/Wellbeing; selected-period lower bounds; opt-in scheduled summaries F4, physical delivery pending |
 
 Excluded: cloud sync/accounts, ANC/EQ controls, additional vendor adapters and
 uncalibrated acoustic-dose estimates. No excluded scope was implemented.

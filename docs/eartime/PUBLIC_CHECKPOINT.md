@@ -7,6 +7,11 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+H25 gates: 167 Flutter / 354 native (27 suites), analyzer clean, Kotlin variants/
+debug APK/version-policy/protected guard pass. About displays installed metadata,
+not source assumptions. Actual APK 1.1.0-dev.1 build 2, no install/release. Counts
+29/74/15/1; generic attribution and hardware gates unchanged. VERSIONING.md.
+
 Latest recorded summaries/quiet-hours gates: 163 Flutter / 342 native (26 suites),
 clean analyzer, debug/release Kotlin and debug APK. F4/F5 software complete,
 physical delivery pending. Counts: 28/75/15/1 = 119; A1 still platform-blocked.
