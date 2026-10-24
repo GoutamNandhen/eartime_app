@@ -9,13 +9,21 @@ class ListeningPreferences(context: Context) {
         "themeMode" to preferences.getString("themeMode", "system"),
         "dailyGoalMinutes" to preferences.getInt("dailyGoalMinutes", 0),
         "deviceNames" to preferences.all.filterKeys { it.startsWith("device_name_") }
-            .mapKeys { it.key.removePrefix("device_name_") })
+            .mapKeys { it.key.removePrefix("device_name_") },
+        "wellbeingNotifications" to wellbeing().wire())
+
+    internal fun wellbeing(): WellbeingPreferences = WellbeingPreferences.stored(preferences.getString("wellbeing_notifications_v1", null))
 
     fun deviceName(id: String): String? = preferences.getString("device_name_$id", null)
+    internal fun goalMinutes(): Int = preferences.getInt("dailyGoalMinutes", 0)
 
     fun update(values: Map<String, Any?>): Map<String, Any?> {
-        require(values.keys.all { it in setOf("themeMode", "dailyGoalMinutes", "deviceNames") })
+        require(values.keys.all { it in setOf("themeMode", "dailyGoalMinutes", "deviceNames", "wellbeingNotifications") })
         val editor = preferences.edit()
+        if (values.containsKey("wellbeingNotifications")) {
+            require(values["wellbeingNotifications"] != null)
+            editor.putString("wellbeing_notifications_v1", JournalJson.encode(WellbeingPreferences.decode(values["wellbeingNotifications"]).wire()))
+        }
         if (values.containsKey("themeMode")) {
             val mode = values["themeMode"] as? String
             require(mode in setOf("system", "light", "dark"))

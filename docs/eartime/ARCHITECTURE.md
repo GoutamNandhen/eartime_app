@@ -6,6 +6,12 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Recorded-summary opt-in/time/quiet preferences use existing native settings.
+Inexact alarms feed a private permission-protected JobService; ownership-fenced
+canonical reads/receipts/notifications run on the journal worker without Flutter.
+No live extrapolation is enabled. See WELLBEING_SUMMARIES.md for calendar and
+at-most-one-attempt semantics; physical delivery is not proven by model tests.
+
 Optional Bluetooth diagnostics are now consent-only bounded service catalogs,
 not automatic inventory-triggered connections or vendor CCCD subscriptions. Their
 dedicated source/clock provenance commits through the same journal and broker.

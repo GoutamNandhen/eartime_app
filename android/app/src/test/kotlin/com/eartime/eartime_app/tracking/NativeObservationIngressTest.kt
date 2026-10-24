@@ -1,6 +1,7 @@
 package com.eartime.eartime_app.tracking
 
 import android.app.Application
+import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import org.junit.Assert.*
 import org.junit.Test
@@ -16,6 +17,30 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], manifest = Config.NONE, application = Application::class)
 class NativeObservationIngressTest {
+    @Test fun configuredSummariesReconcileOnNativeStartupAndProcessReplacementWithoutFlutter() {
+        val context = RuntimeEnvironment.getApplication()
+        val name = "sum-${UUID.randomUUID().toString().take(6)}.db"
+        org.robolectric.Shadows.shadowOf(context).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        org.robolectric.Shadows.shadowOf(context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager).setNotificationsEnabled(true)
+        ListeningPreferences(context).update(mapOf("wellbeingNotifications" to WellbeingPreferences(daily = true).wire()))
+        var ingress = NativeObservationIngress(context, {}, {}, name)
+        fun status(): Map<String, Any?> {
+            val result = CompletableFuture<Map<String, Any?>>()
+            ingress.refreshWellbeing(result::complete, { result.completeExceptionally(IllegalStateException(it)) })
+            return result.get(20, TimeUnit.SECONDS)
+        }
+        try {
+            assertNotNull(status()["dailyUtcMs"])
+            val first = page(ingress)["sourceId"]
+            ingress.close(); ingress = NativeObservationIngress(context, {}, {}, name)
+            assertNotNull(status()["dailyUtcMs"])
+            val replay = page(ingress)
+            assertEquals(first, replay["sourceId"])
+            assertEquals("COLLECTION_GAP", ((replay["observations"] as List<*>).last() as Map<*, *>)["kind"])
+            assertEquals(1, org.robolectric.Shadows.shadowOf(context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager).scheduledAlarms.size)
+        } finally { ingress.close(); context.deleteDatabase(name) }
+    }
+
     @Test fun readOnlyDiagnosticRetainsItsOwnSourceCapturedClockAndUnknownConfidence() {
         val context = RuntimeEnvironment.getApplication()
         val name = "diag-${UUID.randomUUID().toString().take(6)}.db"

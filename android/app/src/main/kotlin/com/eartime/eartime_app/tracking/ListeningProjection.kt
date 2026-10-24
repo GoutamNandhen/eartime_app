@@ -8,6 +8,11 @@ import java.util.TimeZone
 import java.util.UUID
 import kotlin.math.abs
 
+internal object ListeningTimeZones {
+    private val known = TimeZone.getAvailableIDs().toHashSet()
+    fun valid(id: String) = id.length <= 64 && (id in known || TimeZone.getTimeZone(id).id == id)
+}
+
 /** A disposable, versioned read model. Observations are always the source of truth. */
 internal class ListeningProjection(private val db: SQLiteDatabase) {
     companion object {
@@ -220,7 +225,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
         deviceOffset: Int = 0, healthTime: ObservationTime? = now, deviceId: String? = null): Map<String, Any?> {
         require(until > from && until - from in 1L..(367L * 86400000) &&
             offset in 0..(Int.MAX_VALUE - 100) && deviceOffset in 0..(Int.MAX_VALUE - 100) && limit in 1..100)
-        require(zoneId in TimeZone.getAvailableIDs()) { "Unknown calendar time zone" }
+        require(ListeningTimeZones.valid(zoneId)) { "Unknown calendar time zone" }
         require(deviceId == null || EndpointIdentity.validId(deviceId)) { "Invalid device history identity" }
         val root = state()
         val routes = root.getJSONObject("routes")

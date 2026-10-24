@@ -156,6 +156,9 @@ class MainActivity : FlutterActivity() {
                 }
             }
             when (call.method) {
+                "readWellbeingNotificationStatus" -> NativeJournalRuntime.refreshWellbeing(
+                    { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
+                    { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("NOTIFICATION_STATUS_UNAVAILABLE", "Notification scheduling status unavailable", null) } } })
                 "inspectDeviceEndpoint" -> {
                     if (!owner.isActive || navigationOwner != owner.token || call.argument<Boolean>("confirmed") != true)
                         result.error("CONFIRMATION_REQUIRED", "Explicit endpoint inspection consent required", null)

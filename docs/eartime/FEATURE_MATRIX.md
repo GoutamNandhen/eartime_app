@@ -5,11 +5,11 @@ Updated 2026-10-24. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **26 IMPLEMENTED, 76 IN_PROGRESS, 16 NOT_STARTED,
+Implementation count: **28 IMPLEMENTED, 75 IN_PROGRESS, 15 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete ID: B3; earlier additions E10, F6, I1, I2, I3. Hardware-dependent acceptance
+Latest software-complete IDs: F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -57,6 +57,10 @@ Executable evidence keys:
   resolution and dedicated-source ingress, plus four Flutter consent cases.
   `READ_ONLY_DIAGNOSTICS.md`: no automatic GATT or vendor subscriptions/writes;
   bounded explicitly authorized catalog inspection is not telemetry support.
+- M: `WellbeingSummaryTest` (32 API 28/35 executions), 2 API 24 legacy
+  notification cases, native startup/replacement and 2 manifest cases; 8 Flutter
+  `wellbeing_notifications_test.dart` cases. WELLBEING_SUMMARIES.md: opt-in
+  recorded summaries, quiet hours and permission controls, not live reminders.
 
 ## A: Core Listening
 
@@ -150,8 +154,8 @@ Executable evidence keys:
 | F1 | Daily duration goals | IMPLEMENTED / AUTOMATED_PASS Q/U; native-backed personal goal, explicit disable, no fabricated exposure threshold |
 | F2 | Continuous-listening reminders | NOT_STARTED; duration/scheduler tests OPEN |
 | F3 | Break reminders | NOT_STARTED; scheduler tests OPEN |
-| F4 | Daily/weekly summaries | IN_PROGRESS; P native range/day totals in Wellbeing; scheduled summaries OPEN |
-| F5 | Notification controls/quiet hours | NOT_STARTED; schedule/permission tests OPEN |
+| F4 | Daily/weekly summaries | IMPLEMENTED / AUTOMATED_PASS P/M; opt-in native calendar summaries, inexact alarms/jobs, canonical union, dated lower bounds, durable at-most-one-attempt receipts; OS/OEM delivery PHYSICAL_PENDING |
+| F5 | Notification controls/quiet hours | IMPLEMENTED / AUTOMATED_PASS M; persisted categories/time/quiet ranges, disable/cancel, default-off receiver, permission/channel/unknown/error recovery and native restart reconciliation; PHYSICAL_PENDING |
 | F6 | Duration insights | IMPLEMENTED / AUTOMATED_PASS N; actual native recorded activity/goal insights in Analytics/Wellbeing; no medical or exposure claims |
 | F7 | Goal/streak/break recommendations | IN_PROGRESS; N personal-goal guidance integrated; observed-break derivation/guidance OPEN |
 | F8 | Guidance distinct from sound exposure | IN_PROGRESS; U explicit not-measured exposure and personal-goal copy; content/accessibility audit OPEN |
@@ -178,7 +182,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 155 Flutter/297 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 163 Flutter/342 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -193,11 +197,11 @@ Executable evidence keys:
 | H6 | Analytics | IN_PROGRESS; P/U native actual aggregates, no placeholder scores; full metrics OPEN |
 | H7 | Devices | IN_PROGRESS; U native known-device next/previous pages/details/name overrides; verified aliases/telemetry OPEN |
 | H8 | Wellbeing | IN_PROGRESS; Q/U persisted goals/native summaries; reminders OPEN |
-| H9 | Settings | IN_PROGRESS; Q/X themes/goals, native archive controls/recovery, legacy/journal diagnostics; full backup/delete OPEN |
+| H9 | Settings | IN_PROGRESS; Q/X/M themes/goals, recorded-summary/quiet/permission controls, native archive/recovery, legacy/journal diagnostics; full backup/delete OPEN |
 | H10 | Developer diagnostics | IN_PROGRESS; D/O journal and consent-only read-only catalog paths; vendor values/compatibility remain unknown, full diagnostics/privacy acceptance OPEN |
 | H11 | Android widgets | IN_PROGRESS; W multi-device dark two-column native provider; unknown battery honest; physical launcher/freshness pending |
 | H12 | Foreground notification/controls | IN_PROGRESS; inherited notification; control/status tests OPEN |
-| H13 | Goals/reminders/preferences | IN_PROGRESS; Q native goals/themes/names; reminders/quiet-hours OPEN |
+| H13 | Goals/reminders/preferences | IN_PROGRESS; Q/M native goals/themes/names, summary categories/time and quiet hours; live-dependent F2/F3 OPEN |
 | H14 | Data-management settings | IN_PROGRESS; X native export/confirmed restore and recovery UI; full-app backup/confirmed deletion OPEN |
 | H15 | Local-first privacy | IN_PROGRESS; OS cloud/transfer backup excluded; O automatic BLE and vendor writes removed, explicit ephemeral consent; protected collector logs/full privacy audit OPEN |
 | H16 | Offline functionality | IN_PROGRESS; native/local queries and system fonts; full offline acceptance OPEN |

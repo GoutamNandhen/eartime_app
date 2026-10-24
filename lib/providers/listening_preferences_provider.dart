@@ -1,10 +1,14 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/wellbeing_notifications.dart';
 
 class ListeningPreferences {
   ListeningPreferences.fromMap(Map<dynamic, dynamic> map)
     : themeMode = map['themeMode'] as String,
-      dailyGoalMinutes = map['dailyGoalMinutes'] as int {
+      dailyGoalMinutes = map['dailyGoalMinutes'] as int,
+      notifications = WellbeingNotificationPreferences.fromMap(
+        map['wellbeingNotifications'],
+      ) {
     if (map['version'] != 1 ||
         !['system', 'light', 'dark'].contains(themeMode) ||
         dailyGoalMinutes < 0 ||
@@ -14,6 +18,7 @@ class ListeningPreferences {
   }
   final String themeMode;
   final int dailyGoalMinutes;
+  final WellbeingNotificationPreferences notifications;
 }
 
 class ListeningPreferencesClient {

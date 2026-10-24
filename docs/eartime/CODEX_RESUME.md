@@ -1,6 +1,36 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
+Latest continuation: F4/F5 opt-in native recorded daily/weekly summaries, quiet
+hours and notification controls. Private default-disabled receiver is enabled
+only after opt-in; inexact alarms enqueue nonblocking jobs, all accounting reads
+stay on the canonical journal worker. Native startup/timezone/reboot reconciliation,
+permission/channel/unknown states, quiet deferral, DST/fixed-offset windows,
+dated private notifications and durable calendar high-water receipts are tested.
+At most one attempt per period, not guaranteed exactly-once physical delivery.
+F2/F3 live-dependent reminders remain unavailable. See WELLBEING_SUMMARIES.md.
+Full executed gates: 163 Flutter / 342 native in 26 suites, zero failures/errors/
+skips; analyzer clean; debug/release Kotlin and debug APK pass. API 24 notification
+branch plus API 28/35 policy/delivery/restart models included. Original 2x stock
+time-picker overflow was fixed with a scrollable numeric editor, not font clamp.
+Counts: 28 IMPLEMENTED / 75 IN_PROGRESS / 15 NOT_STARTED / 1 BLOCKED_BY_PLATFORM
+= 119. A1 remains generic-route platform-blocked; no confidence promotion,
+service-file change, real notification/device test, physical G or release claim.
+Prior checkpoint `ddd02766435abbfd4f558cb0d0c7cecf551fe536` was pushed and remote-
+verified; main remains `13ae6609d22cb2a0daf8890fca081fb97c93b36b`.
+Source schema 3/projection 5 preserved; optional preference corruption cannot
+block canonical reports. Full-app backup/legacy/preferences deletion still open.
+Next safe independent work: H25 build/version policy and actual Settings build
+metadata, then the remaining exact product/data/reliability matrix. Do not
+present this checkpoint as all-feature completion or request routine hardware tests.
+Local ignored debug APK SHA-256:
+`7B4F0165400DDF2C26E4765AFBD260C95BD47B23D165690DA695C97C6152D99E`.
+Delayed job-stop ownership reproduced three failures before correction. Durable
+request UUID extras now fence replacements (not JobParameters object identity);
+six ownership cases pass. Stored summary preferences use a bounded flat parser.
+
+## Diagnostic Checkpoint
+
 Latest hardening: inherited automatic GATT/vendor CCCD writes replaced with
 consent-only bounded read-only service catalogs. Diagnostic opening/cancel do not
 connect. Endpoint UI uses source/alias/revision and current-owner rechecks; private

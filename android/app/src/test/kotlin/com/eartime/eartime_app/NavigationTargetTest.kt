@@ -13,6 +13,19 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28, 35], application = Application::class)
 class NavigationTargetTest {
+    @Test fun summaryComponentsArePrivateOptInAndJobPermissionProtected() {
+        val context = RuntimeEnvironment.getApplication()
+        val manager = context.packageManager
+        val receiver = manager.getReceiverInfo(android.content.ComponentName(context,
+            com.eartime.eartime_app.tracking.WellbeingSummaryReceiver::class.java), android.content.pm.PackageManager.MATCH_DISABLED_COMPONENTS)
+        assertFalse(receiver.exported); assertFalse(receiver.enabled)
+        val job = manager.getServiceInfo(android.content.ComponentName(context,
+            com.eartime.eartime_app.tracking.WellbeingSummaryJob::class.java), 0)
+        assertFalse(job.exported); assertEquals("android.permission.BIND_JOB_SERVICE", job.permission)
+        val permissions = manager.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_PERMISSIONS).requestedPermissions.orEmpty().toList()
+        assertTrue(permissions.contains("android.permission.RECEIVE_BOOT_COMPLETED"))
+        assertFalse(permissions.contains("android.permission.SCHEDULE_EXACT_ALARM"))
+    }
     @Test fun manifestDisablesCompetingFlutterUriHandlerAndDeclaresFourValidShortcuts() {
         val context = RuntimeEnvironment.getApplication()
         val info = context.packageManager.getActivityInfo(android.content.ComponentName(context, MainActivity::class.java),

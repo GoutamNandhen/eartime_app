@@ -7,6 +7,12 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+Latest recorded summaries/quiet-hours gates: 163 Flutter / 342 native (26 suites),
+clean analyzer, debug/release Kotlin and debug APK. F4/F5 software complete,
+physical delivery pending. Counts: 28/75/15/1 = 119; A1 still platform-blocked.
+Daily/weekly summary defaults are off; no exact-alarm permission/network added.
+No new protected-service change. See WELLBEING_SUMMARIES.md for precise limits.
+
 Latest consent-only diagnostic hardening: 155 Flutter / 297 native, analyzer clean,
 debug/release Kotlin and debug APK pass. One real catalog-error labeling defect
 was caught and fixed; no assertions removed. Explicit one-shot read-only service

@@ -2,6 +2,17 @@
 
 Last verified implementation baseline: 2026-10-24.
 
+F4/F5 adds 45 native executions and 8 Flutter cases: opt-in/inexact scheduling,
+API 24 legacy builder, permission/channel/quiet/calendar/DST/fixed-offset rules,
+canonical SQLite-to-notification totals, restart/high-water/cancel/query-failure,
+native process replacement without Flutter and private/disabled/permission-bound
+components. Stock-picker 2x overflow was repaired with a scrollable numeric
+editor; assertions remain. No real notifications or devices were exercised.
+Three of four initial job-ownership assertions reproduced stale-stop failures;
+request UUID extras and compare-remove ownership fix them. Six final ownership
+cases include 500 replacements and reparceled equal-token strings. Two additional
+API 28/35 executions reject deep/duplicate/oversized stored preferences.
+
 Read-only diagnostic hardening adds 25 native executions (22 safety, 2 private
 endpoint resolution, 1 own-source captured-clock ingress) and four Flutter cases.
 Full run initially failed 2/296 on wrong oversized-catalog error labeling; the
@@ -28,9 +39,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 155 passed, 0 failures |
+| Flutter full suite | 163 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 297 passed in 23 suites, 0 failures/errors/skips |
+| Android native suite | 342 passed in 26 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

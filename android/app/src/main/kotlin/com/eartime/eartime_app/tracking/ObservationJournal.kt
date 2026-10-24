@@ -360,7 +360,7 @@ class ObservationJournal(
             }
             result + mapOf("sourceId" to sourceId(db), "devices" to devices,
                 "report" to ListeningReport.build(result,
-                    if (deviceId == null) preferences.snapshot()["dailyGoalMinutes"] as Int else 0,
+                    if (deviceId == null) preferences.goalMinutes() else 0,
                     healthTime?.wallUtcMs ?: commitClock()))
         }
     }

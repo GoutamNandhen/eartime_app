@@ -4,9 +4,50 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: consent-only diagnostics, 155 Flutter / 297 native
+Latest checkpoint: native recorded summaries/quiet hours, 163 Flutter / 342 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## F4/F5 Native Recorded Summaries
+
+Continued from remote-verified `ddd02766435abbfd4f558cb0d0c7cecf551fe536`.
+Implemented opt-in daily/weekly summary categories, preferred time, daytime/
+overnight/all-day quiet hours, permission/channel recovery and honest unavailable
+states in Settings. Native inexact alarms/private default-disabled boot/timezone/
+update receiver/nonblocking jobs use the same canonical journal query. Receiver
+enable changes use DONT_KILL_APP. No Dart accounting timer, new listening store,
+network dependency, exact-alarm permission or protected-service edit.
+
+Calendar windows and quiet deferral preserve original report periods across
+refresh/restart/DST. Fixed-offset timezone IDs are accepted without unknown-zone
+fallback. Delivery rechecks config/permissions/quiet/job ownership, dates private
+notifications, excludes unknown time and refuses query-error zero substitution.
+Durable high-water receipts prevent repeated/older calendar alerts after clock
+changes. Semantics are at most one attempt: receipt-before-post cancellation/
+crash can miss delivery. Late jobs entering quiet hours are suppressed, not a
+backlog. Physical timing/permission/OEM/lock-screen acceptance remains pending.
+
+Added 45 native cases (34 API 28/35 policy/delivery cases, 2 API 24 notification
+branches, 1 native startup/process replacement, 2 manifest cases, 6 job ownership
+cases) and 8 Flutter cases. Full gates: 163 Flutter / 342 native, 26 suites, zero failures/errors/skips;
+analyzer clean; debug/release Kotlin and debug packaging pass. Test return-type,
+nullable metadata/import and style issues fixed. Stock time picker actually
+overflowed at 2x text: replaced with scrollable full-width numeric editor and
+retained validation/cancel/large-font tests. Retry test also awaits/scans the
+changed error-state layout. No skipped cases, font clamping or weakened assertions.
+Delayed stop callbacks originally removed a replacement job by numeric ID: three
+of four RED ownership cases proved it. Every enqueued job now has request UUID
+extras; stop matches serialized token values, finish compare-removes its owner.
+Six final cases include reparceled token equality and 500 replacements. No
+JobParameters object-identity assumption. Stored preferences reject deep/duplicate/
+oversized JSON before recursive parsing; optional corruption cannot block history.
+
+F4/F5 become software-complete/PHYSICAL_PENDING. Count: 28 implemented, 75 partial,
+15 not started, 1 platform-blocked = 119. F2/F3 are not implemented and remain
+gated by actual output/continuity. Preference-corruption isolation is tested;
+preferences/receipts are still excluded from native-only archives, so H17/H18/
+H19 remain incomplete. Next: H25 build/version metadata/policy, then remaining
+approved data/product/reliability work. No physical or release validation.
 
 ## Read-Only Diagnostic Privacy Hardening
 

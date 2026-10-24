@@ -64,6 +64,7 @@ class NativeObservationIngress(
                 )), "journal_runtime_receipt", AttributionConfidence.UNKNOWN,
             ))
             started = true
+            WellbeingSummaries.refresh(context)
         }
         return store
     }
@@ -225,10 +226,22 @@ class NativeObservationIngress(
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         command({ ListeningPreferences(context).let {
-            if (values == null) it.snapshot() else it.update(values).also {
+            (if (values == null) it.snapshot() else it.update(values).also {
                 com.eartime.eartime_app.widgets.ListeningWidgets.observationCommitted(context)
-            }
+            }).also { WellbeingSummaries.refresh(context) }
         } }, failure, success)
+    }
+
+    internal fun refreshWellbeing(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({ WellbeingSummaries.refresh(context) }, failure, success)
+    }
+
+    internal fun deliverWellbeing(plan: SummaryPlan, active: () -> Boolean, success: (String) -> Unit, failure: (String) -> Unit) {
+        command({ WellbeingSummaries.deliver(context, ensureStarted(), plan, active) }, failure, success)
+    }
+
+    internal fun wellbeingFailure(reason: String) {
+        command({ WellbeingSummaries.failure(context, reason) }, {})
     }
 
     internal fun archivePage(after: Long, success: (List<JournalObservation>) -> Unit, failure: (String) -> Unit) {
@@ -405,6 +418,18 @@ object NativeJournalRuntime {
         val target = ingress
         if (target == null) failure("Native journal was not initialized") else target.diagnosticEndpoint(source, aliasId, revision, success, failure)
     }
+
+    internal fun refreshWellbeing(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.refreshWellbeing(success, failure)
+    }
+
+    internal fun deliverWellbeing(plan: SummaryPlan, active: () -> Boolean, success: (String) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.deliverWellbeing(plan, active, success, failure)
+    }
+
+    internal fun wellbeingFailure(reason: String) { ingress?.wellbeingFailure(reason) }
 
     fun restoreArchive(file: java.io.File, cancelled: () -> Boolean,
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {

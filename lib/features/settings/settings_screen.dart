@@ -7,6 +7,7 @@ import 'developer_diagnostics_screen.dart';
 import 'observation_journal_screen.dart';
 import 'legacy_history_screen.dart';
 import 'data_management_screen.dart';
+import 'wellbeing_notification_controls.dart';
 
 final themeModeProvider = Provider<ThemeMode>((ref) {
   final mode = ref.watch(listeningPreferencesProvider).asData?.value.themeMode;
@@ -121,6 +122,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 const Text(
                   'A personal duration goal, not a safe sound-exposure limit. Automatic listening reminders are unavailable until output attribution is verified.',
+                ),
+                WellbeingNotificationControls(
+                  value: value.notifications,
+                  saving: _saving,
+                  onSave: (preferences) =>
+                      save({'wellbeingNotifications': preferences.toMap()}),
                 ),
               ],
             ),
