@@ -93,20 +93,27 @@ not declared implemented. User-requested stop journals a gap.
 Home/Timeline/Analytics/Devices/Wellbeing read the same versioned native snapshot.
 The native widget calls the same query, not Flutter/Drift. Date ranges and
 interval pages are real queries. Native names are display overrides only, not
-physical aliases. Known-device presentation is limited to 100 most-recent rows;
-all rows remain stored. A 100,000 interval scan ceiling fails explicitly rather
+physical aliases. Known devices use independent `deviceOffset` pages of at most
+100 rows, returning `nextDeviceOffset` and `hasMoreDevices`. The Devices view
+offers next/previous controls; Home/widgets keep page zero. Connected rows sort
+first, then descending last evidence and identity. Pages are live offset queries,
+not a frozen multi-page snapshot: source changes can reorder rows between reads.
+Device paging never changes interval totals or the independent interval cursor.
+A 100,000 interval scan ceiling fails explicitly rather
 than truncating totals. Realistic storage/performance profiling remains open.
 
 ## Evidence
 
-`ListeningProjectionTest`: 44 modeled API 28/35 cases. `ListeningWidgetTest`: 6.
+`ListeningProjectionTest`: 48 modeled API 28/35 cases. `ListeningWidgetTest`: 6.
 `ListeningPreferencesTest`: 12. Existing SQLite cases: 20. Ingress integration:
 3. Durable delivery/loss tests: 2 plus original queue cases. The JSON fixture
 `test/fixtures/listening_continuity.json` is consumed by the real native reducer
 and Dart decoding/RPC/widget tests. This is cross-layer contract evidence,
 not a real FlutterEngine/device end-to-end test.
 
-Full final gates: 123 Flutter, 112 native, zero failures/skips, analyzer clean,
+Flutter projection/RPC/layout/paging suite: 17 cases. Device tests traverse 205
+synthetic identities, preserve totals/reopen results and reject invalid cursors.
+Full final gates: 126 Flutter, 116 native, zero failures/skips, analyzer clean,
 debug/release Kotlin compilation and debug APK packaging successful. Signing
 check correctly refuses missing keys. Protected service equality verified.
 Physical process killing, OnePlus G, route attribution, BLE hardware and launcher

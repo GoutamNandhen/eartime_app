@@ -19,6 +19,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
   ListeningRange _range = ListeningRange.today;
   DateTimeRange? _custom;
   int _offset = 0;
+  int _deviceOffset = 0;
 
   ListeningWindow window() {
     final now = DateTime.now();
@@ -38,7 +39,12 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
     final end = _range == ListeningRange.custom && _custom != null
         ? DateTime(_custom!.end.year, _custom!.end.month, _custom!.end.day + 1)
         : until;
-    return ListeningWindow(from, end, offset: _offset);
+    return ListeningWindow(
+      from,
+      end,
+      offset: _offset,
+      deviceOffset: _deviceOffset,
+    );
   }
 
   Future<void> selectDates() async {
@@ -100,53 +106,54 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
         children: [
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButton<ListeningRange>(
-                  value: _range,
-                  isExpanded: true,
-                  items: ListeningRange.values
-                      .map(
-                        (range) => DropdownMenuItem(
-                          value: range,
-                          child: Text(switch (range) {
-                            ListeningRange.today => 'Today',
-                            ListeningRange.week => 'This week',
-                            ListeningRange.month => 'This month',
-                            ListeningRange.year => 'This year',
-                            ListeningRange.custom => 'Custom dates',
-                          }),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == ListeningRange.custom) {
-                      selectDates();
-                      return;
-                    }
-                    if (value != null) {
-                      setState(() {
-                        _range = value;
-                        _offset = 0;
-                      });
-                    }
-                  },
+          if (widget.view != ListeningView.devices)
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButton<ListeningRange>(
+                    value: _range,
+                    isExpanded: true,
+                    items: ListeningRange.values
+                        .map(
+                          (range) => DropdownMenuItem(
+                            value: range,
+                            child: Text(switch (range) {
+                              ListeningRange.today => 'Today',
+                              ListeningRange.week => 'This week',
+                              ListeningRange.month => 'This month',
+                              ListeningRange.year => 'This year',
+                              ListeningRange.custom => 'Custom dates',
+                            }),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == ListeningRange.custom) {
+                        selectDates();
+                        return;
+                      }
+                      if (value != null) {
+                        setState(() {
+                          _range = value;
+                          _offset = 0;
+                        });
+                      }
+                    },
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: selectDates,
-                tooltip: 'Select dates',
-                icon: const Icon(Icons.date_range_outlined),
-              ),
-              IconButton(
-                onPressed: () =>
-                    ref.invalidate(listeningProjectionProvider(query)),
-                tooltip: 'Refresh',
-                icon: const Icon(Icons.refresh),
-              ),
-            ],
-          ),
+                IconButton(
+                  onPressed: selectDates,
+                  tooltip: 'Select dates',
+                  icon: const Icon(Icons.date_range_outlined),
+                ),
+                IconButton(
+                  onPressed: () =>
+                      ref.invalidate(listeningProjectionProvider(query)),
+                  tooltip: 'Refresh',
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
           data.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(32),
@@ -338,11 +345,43 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                   ],
                 ],
                 if (widget.view == ListeningView.devices) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        tooltip: 'Previous devices',
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: _deviceOffset == 0
+                            ? null
+                            : () => setState(
+                                () => _deviceOffset = (_deviceOffset - 100)
+                                    .clamp(0, snapshot.deviceCount),
+                              ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '${snapshot.devices.isEmpty ? 0 : snapshot.deviceOffset + 1}-${snapshot.nextDeviceOffset} of ${snapshot.deviceCount}',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Next devices',
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: snapshot.hasMoreDevices
+                            ? () => setState(
+                                () => _deviceOffset = snapshot.nextDeviceOffset,
+                              )
+                            : null,
+                      ),
+                      IconButton(
+                        tooltip: 'Refresh devices',
+                        icon: const Icon(Icons.refresh),
+                        onPressed: () =>
+                            ref.invalidate(listeningProjectionProvider(query)),
+                      ),
+                    ],
+                  ),
                   ...deviceRows(snapshot, details: true),
-                  if (snapshot.deviceCount > snapshot.devices.length)
-                    Text(
-                      'Showing the ${snapshot.devices.length} most recently seen of ${snapshot.deviceCount} devices.',
-                    ),
                 ],
               ],
             ),
@@ -369,14 +408,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
     if (snapshot.devices.isEmpty) {
       return [const Text('No devices observed yet.')];
     }
-    final devices = snapshot.devices.toList()
-      ..sort(
-        (a, b) => a.connected == b.connected
-            ? a.name.compareTo(b.name)
-            : a.connected
-            ? -1
-            : 1,
-      );
+    final devices = snapshot.devices;
     return devices
         .map(
           (device) => ListTile(

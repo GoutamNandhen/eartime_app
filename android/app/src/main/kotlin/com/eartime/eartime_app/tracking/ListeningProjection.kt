@@ -185,9 +185,10 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
     }
 
     /** Intervals are clipped once here for all consumers. Overlapping routes are unioned, not added. */
-    fun snapshot(from: Long, until: Long, zoneId: String, now: ObservationTime?, offset: Int = 0, limit: Int = 100): Map<String, Any?> {
+    fun snapshot(from: Long, until: Long, zoneId: String, now: ObservationTime?, offset: Int = 0, limit: Int = 100,
+        deviceOffset: Int = 0): Map<String, Any?> {
         require(until > from && until - from in 1L..(367L * 86400000) &&
-            offset in 0..(Int.MAX_VALUE - 100) && limit in 1..100)
+            offset in 0..(Int.MAX_VALUE - 100) && deviceOffset in 0..(Int.MAX_VALUE - 100) && limit in 1..100)
         require(zoneId in TimeZone.getAvailableIDs()) { "Unknown calendar time zone" }
         val root = state()
         val routes = root.getJSONObject("routes")
@@ -252,7 +253,8 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             days.add(mapOf("startUtcMs" to start, "endUtcMs" to end,
                 "confirmedMs" to duration(confirmed, start, end), "unverifiedMs" to duration(unverified, start, end)))
         }
-        val devices = db.rawQuery("SELECT device_json FROM listening_devices ORDER BY connected DESC, last_seen_utc_ms DESC, device_id LIMIT 100", null).use {
+        val devices = db.rawQuery("SELECT device_json FROM listening_devices ORDER BY connected DESC, last_seen_utc_ms DESC, device_id LIMIT 100 OFFSET ?",
+            arrayOf(deviceOffset.toString())).use {
             buildList { while (it.moveToNext()) add(JournalJson.toValue(JSONObject(it.getString(0)))) }
         }
         val deviceCount = db.rawQuery("SELECT COUNT(*) FROM listening_devices", null).use { it.moveToFirst(); it.getLong(0) }
@@ -264,6 +266,8 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             "hourly" to hourly.mapIndexed { hour, value -> mapOf("hour" to hour, "durationMs" to value) },
             "gapCount" to root.optLong("gapCount"), "days" to days,
             "devices" to devices, "deviceCount" to deviceCount,
+            "deviceOffset" to deviceOffset, "nextDeviceOffset" to minOf(deviceOffset.toLong() + devices.size, deviceCount),
+            "hasMoreDevices" to (deviceOffset.toLong() + devices.size < deviceCount),
             "intervals" to segments.drop(offset).take(limit), "intervalCount" to segments.size,
             "nextOffset" to minOf(offset + limit, segments.size), "hasMore" to (offset + limit < segments.size))
     }

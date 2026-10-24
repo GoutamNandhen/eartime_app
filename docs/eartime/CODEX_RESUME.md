@@ -2,6 +2,8 @@
 
 Updated 2026-10-24. Paths in this document are repository-relative.
 Review branch `codex/production-checkpoint-20261024`; protected baseline `0a8be43`.
+Initial publication verified at `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`;
+the follow-up adds known-device pagination without changing listening accounting.
 Read `PRODUCTION_IMPLEMENTATION_LEDGER.md`, `LISTENING_PROJECTION.md` and
 `FEATURE_MATRIX.md`. Autonomous implementation remains authorized; do not ask
 for routine phase approval. This is NOT RELEASE_READY.
@@ -77,8 +79,10 @@ production live ticking and automatic listening reminders remain gated. A new
 SYNC can extend an observed interval without replacing its original opening.
 
 Legacy physical identity remains provisional and epoch-scoped; no name/MAC
-fallback is promoted or merged across restarts. Device lists return the 100 most
-recent rows; older known devices remain stored. Window aggregation has a
+fallback is promoted or merged across restarts. Device lists return 100 rows per
+page with independent device cursors and next/previous controls. Connected rows
+sort first, then last evidence and identity. Pages are live offset queries, not
+a frozen multi-page snapshot; new observations may reorder them. Window aggregation has a
 100,000-row work ceiling and returns an error rather than truncated totals.
 Large-history profiling and cooperative startup replay remain open.
 
@@ -98,13 +102,13 @@ flutter analyze --no-pub
 .\gradlew.bat :app:checkReleaseSigning --offline
 ```
 
-- Flutter: **123 passed**, exit 0. Original 103 slots retained, including 15
-  formerly empty/trivial tests rewritten as actual assertions; 20 additional
+- Flutter: **126 passed**, exit 0. Original 103 slots retained, including 15
+  formerly empty/trivial tests rewritten as actual assertions; 23 additional
   projection/settings/telemetry/layout cases. No skips/excluded test files.
 - Analyzer: **No issues found**, exit 0. All 21 inherited findings and final
   formatter-exposed block lints corrected without suppression.
-- Native: **112 passed**, 0 failures/errors/skips. Original 46 plus 66 new:
-  projection 44; preferences 12; widget 6; durable hint buffer 2; ingress 2 new
+- Native: **116 passed**, 0 failures/errors/skips. Original 46 plus 70 new:
+  projection 48; preferences 12; widget 6; durable hint buffer 2; ingress 2 new
   (3 total). API 28/35 modeled for SQLite/projection/preferences/widget tests.
 - Kotlin debug/release compile and debug packaging: exit 0, BUILD SUCCESSFUL.
   Inherited Kotlin/Gradle/old BLE API deprecation warnings remain; service code
@@ -123,8 +127,8 @@ close raced queued work; final formatting exposed missing block braces.
 Debug artifact (not installed/released):
 
 - `build/app/outputs/flutter-apk/app-debug.apk`, 158947452 bytes.
-- SHA-256 `183D9D53A04367E6E2DEE90BD572B79B9D9A938C5E8450A5E5A4ACAA8ED255AB`.
-- Both debug APK paths have the same hash. AAPT confirms debuggable, label
+- SHA-256 `1FB489CA9C3B2AB4C1C6B58002BA5EF2962ADB2B27DC89BA925A76BFD393F943`.
+- Both debug APK paths have the same hash. Initial checkpoint AAPT confirmed debuggable, label
   EarTime, ID `com.eartime.eartime_app`, min SDK 24/target SDK 36.
 
 ## Preservation And Next Work
@@ -141,8 +145,8 @@ main update, force push or device mutation. See `PUBLIC_CHECKPOINT.md`.
    real lifetime/route evidence exists; retain all unknown/gap behavior.
 2. Finish evidence-backed identity/alias normalization and a permitted route
    collector. Generic global playback or a discovered UUID is not that proof.
-3. Add long-history load/cancellation/replay fairness tests and known-device
-   paging beyond 100. Do not return partial aggregates as complete totals.
+3. Add long-history load/cancellation/replay fairness tests, including device
+   paging under concurrent observations. Do not return partial aggregates as complete totals.
 4. Implement versioned local export/backup/restore/deletion with explicit user
    confirmation for destructive actions, conflict-safe transactions and tests.
 5. Continue the remaining matrix: connected/idle partitions, richer analytics,

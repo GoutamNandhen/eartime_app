@@ -11,19 +11,26 @@ class ProjectionCancellation {
 }
 
 class ListeningWindow {
-  const ListeningWindow(this.from, this.until, {this.offset = 0});
+  const ListeningWindow(
+    this.from,
+    this.until, {
+    this.offset = 0,
+    this.deviceOffset = 0,
+  });
   final DateTime from;
   final DateTime until;
   final int offset;
+  final int deviceOffset;
 
   @override
   bool operator ==(Object other) =>
       other is ListeningWindow &&
       from == other.from &&
       until == other.until &&
-      offset == other.offset;
+      offset == other.offset &&
+      deviceOffset == other.deviceOffset;
   @override
-  int get hashCode => Object.hash(from, until, offset);
+  int get hashCode => Object.hash(from, until, offset, deviceOffset);
 }
 
 class ProjectedInterval {
@@ -124,17 +131,32 @@ class ListeningSnapshot {
         ),
       ),
       deviceCount =
-          map['deviceCount'] as int? ?? (map['devices'] as List).length {
+          map['deviceCount'] as int? ?? (map['devices'] as List).length,
+      deviceOffset = map['deviceOffset'] as int? ?? 0,
+      nextDeviceOffset =
+          map['nextDeviceOffset'] as int? ?? (map['devices'] as List).length,
+      hasMoreDevices = map['hasMoreDevices'] as bool? ?? false {
     if (![1, 2].contains(map['projectionVersion']) ||
         sequence < 0 ||
         confirmed.isNegative ||
         unverified.isNegative ||
         intervalCount < intervals.length ||
         nextOffset < 0 ||
-        nextOffset > intervalCount) {
+        nextOffset > intervalCount ||
+        deviceOffset < 0 ||
+        deviceCount < devices.length ||
+        nextDeviceOffset < 0 ||
+        nextDeviceOffset > deviceCount ||
+        devices.map((device) => device.id).toSet().length != devices.length) {
       throw const FormatException(
         'Unsupported or inconsistent listening projection',
       );
+    }
+    if (map.containsKey('deviceOffset') &&
+        (nextDeviceOffset !=
+                (deviceOffset + devices.length).clamp(0, deviceCount) ||
+            hasMoreDevices != (nextDeviceOffset < deviceCount))) {
+      throw const FormatException('Inconsistent device page cursor');
     }
   }
   final String sourceId;
@@ -157,6 +179,9 @@ class ListeningSnapshot {
   final List<ProjectedHour> hourly;
   final List<ProjectedDeviceTotal> perDevice;
   final int deviceCount;
+  final int deviceOffset;
+  final int nextDeviceOffset;
+  final bool hasMoreDevices;
 }
 
 class ListeningProjectionClient {
@@ -171,6 +196,9 @@ class ListeningProjectionClient {
   }) async {
     if (!window.until.isAfter(window.from) ||
         window.offset < 0 ||
+        window.deviceOffset < 0 ||
+        window.offset > 2147483547 ||
+        window.deviceOffset > 2147483547 ||
         window.until.difference(window.from) > const Duration(days: 367)) {
       throw ArgumentError('Invalid listening window');
     }
@@ -196,6 +224,7 @@ class ListeningProjectionClient {
             'untilUtcMs': window.until.millisecondsSinceEpoch,
             'offset': window.offset,
             'limit': 100,
+            'deviceOffset': window.deviceOffset,
           })
           .then(
             (value) {
@@ -219,7 +248,9 @@ class ListeningProjectionClient {
     final snapshot = ListeningSnapshot.fromMap(raw);
     if (raw['fromUtcMs'] != window.from.millisecondsSinceEpoch ||
         raw['untilUtcMs'] != window.until.millisecondsSinceEpoch ||
-        snapshot.intervals.length > 100) {
+        snapshot.intervals.length > 100 ||
+        snapshot.devices.length > 100 ||
+        snapshot.deviceOffset != window.deviceOffset) {
       throw const FormatException('Listening window does not match request');
     }
     return snapshot;

@@ -24,7 +24,13 @@ hardware telemetry implementation.
 
 ## Evidence And Review Entry Points
 
-The checkpoint baseline gates are 123 Flutter / 112 native tests, analyzer clean,
+Initial publication `1b3ee7ea4d56afef30ffc018749e1ed25a841af5` was normally
+pushed and verified against the remote branch; required docs and the protected
+service blob were verified through fetch/ls-tree. The exact tree audit covered
+260 files / 229 text candidates with no prohibited matches after manual review.
+
+The initial gates were 123 Flutter / 112 native tests. The subsequent independent
+known-device pagination gates are 126 Flutter / 116 native tests, analyzer clean,
 Kotlin debug/release compile and debug packaging successful. Hardware acceptance
 and release signing remain separate gates. Results are local, not GitHub CI.
 

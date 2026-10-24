@@ -33,6 +33,33 @@ class FixtureProjectionClient extends ListeningProjectionClient {
   }
 }
 
+Map<String, dynamic> pagedFixture(int offset) => fixture()
+  ..['deviceOffset'] = offset
+  ..['deviceCount'] = 101
+  ..['nextDeviceOffset'] = offset == 0 ? 100 : 101
+  ..['hasMoreDevices'] = offset == 0
+  ..['devices'] = List.generate(
+    offset == 0 ? 100 : 1,
+    (index) => {
+      'id': 'fixture-device-${offset + index}',
+      'name': 'Fixture device ${offset + index + 1}',
+      'connected': index == 0,
+      'identityVerified': false,
+    },
+  );
+
+class PagedFixtureProjectionClient extends ListeningProjectionClient {
+  final offsets = <int>[];
+  @override
+  Future<ListeningSnapshot> read(
+    ListeningWindow window, {
+    ProjectionCancellation? cancellation,
+  }) async {
+    offsets.add(window.deviceOffset);
+    return ListeningSnapshot.fromMap(pagedFixture(window.deviceOffset));
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('projection-test');
@@ -76,6 +103,7 @@ void main() {
           'untilUtcMs': 100000,
           'offset': 0,
           'limit': 100,
+          'deviceOffset': 0,
         });
         return fixture();
       });
@@ -108,6 +136,95 @@ void main() {
         ).read(ListeningWindow(window.until, window.from)),
         throwsArgumentError,
       );
+    },
+  );
+
+  test(
+    'device paging uses an independent request and provider cache identity',
+    () async {
+      final next = ListeningWindow(
+        window.from,
+        window.until,
+        deviceOffset: 100,
+      );
+      expect(next, isNot(window));
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        expect((call.arguments as Map)['deviceOffset'], 100);
+        expect((call.arguments as Map)['offset'], 0);
+        return pagedFixture(100);
+      });
+      final page = await const ListeningProjectionClient(
+        channel: channel,
+      ).read(next);
+      expect(page.devices.single.name, 'Fixture device 101');
+      expect(page.nextDeviceOffset, 101);
+      expect(page.hasMoreDevices, isFalse);
+      expect(page.confirmed, Duration.zero);
+    },
+  );
+
+  test('wrong device page and nonadvancing cursors fail visibly', () async {
+    final next = ListeningWindow(window.from, window.until, deviceOffset: 100);
+    messenger.setMockMethodCallHandler(channel, (_) async => pagedFixture(0));
+    await expectLater(
+      const ListeningProjectionClient(channel: channel).read(next),
+      throwsFormatException,
+    );
+    expect(
+      () =>
+          ListeningSnapshot.fromMap(pagedFixture(0)..['nextDeviceOffset'] = 0),
+      throwsFormatException,
+    );
+    await expectLater(
+      const ListeningProjectionClient(
+        channel: channel,
+      ).read(ListeningWindow(window.from, window.until, deviceOffset: -1)),
+      throwsArgumentError,
+    );
+    await expectLater(
+      const ListeningProjectionClient(
+        channel: channel,
+      ).read(ListeningWindow(window.from, window.until, deviceOffset: 1 << 40)),
+      throwsArgumentError,
+    );
+  });
+
+  testWidgets(
+    'Devices navigates beyond 100 rows and back without a misleading date filter',
+    (tester) async {
+      final client = PagedFixtureProjectionClient();
+      final container = ProviderContainer(
+        overrides: [
+          listeningProjectionClientProvider.overrideWithValue(client),
+        ],
+      );
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ListeningWorkspace(view: ListeningView.devices),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('1-100 of 101'), findsOneWidget);
+      expect(find.byTooltip('Select dates'), findsNothing);
+      await tester.tap(find.byTooltip('Next devices'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('101-101 of 101'), findsOneWidget);
+      expect(find.text('Fixture device 101'), findsOneWidget);
+      expect(client.offsets, [0, 100]);
+      await tester.tap(find.byTooltip('Previous devices'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('1-100 of 101'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
     },
   );
 

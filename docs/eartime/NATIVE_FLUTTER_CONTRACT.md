@@ -27,12 +27,15 @@ replayable native data, not the volatile stream or a Flutter live reducer.
 | --- | --- |
 | `readObservationJournal` | `after` source sequence and `limit` 1..128; ordered records/source/schema/next cursor/health |
 | `acknowledgeObservations` | Source-aware consumer/sequence; monotonic acknowledgment cannot exceed committed data |
-| `readListeningProjection` | UTC `fromUtcMs` / `untilUtcMs`, optional IANA zone, interval offset/limit; native clipping/union/aggregate/device snapshot |
+| `readListeningProjection` | UTC `fromUtcMs` / `untilUtcMs`, optional IANA zone, interval offset/limit and independent optional `deviceOffset`; native clipping/union/aggregate/device snapshot |
 | `readListeningPreferences` | Versioned theme, personal goal and display-name overrides |
 | `updateListeningPreferences` | Validated, durable native settings update; names cannot alter source identity |
 
-Journal schema 3 / projection version 2 are current. Reads catch up derived state
-before returning. Results are bounded; oversized aggregate windows fail rather
+Journal schema 3 / projection version 2 are current. Additive device paging fields are `deviceOffset`,
+`nextDeviceOffset`, `hasMoreDevices`; at most 100 devices per page. Old page-zero
+responses remain decodable. Pages reflect current ordered state, not a frozen
+multi-page snapshot. Device cursors do not affect listening totals. Reads catch up
+derived state before returning. Results are bounded; oversized aggregate windows fail rather
 than return incomplete totals as complete. Flutter cancellation ignores late RPC
 results and cancels its deadline. Engine leases reject obsolete callbacks/sinks.
 

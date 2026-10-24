@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: unified projection integration, 123 Flutter / 112 native
+Latest checkpoint: unified projection and device pagination, 126 Flutter / 116 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -62,8 +62,8 @@ Resume instructions and exact next work live in `CODEX_RESUME.md`.
 
 ## Current checkpoint evidence
 
-Final suite: 123 Flutter tests passed (original 103 slots including 15 rewritten
-placeholder cases, plus 20 new). Native: 112 passing tests (original 46 plus 66),
+Final suite: 126 Flutter tests passed (original 103 slots including 15 rewritten
+placeholder cases, plus 23 new). Native: 116 passing tests (original 46 plus 70),
 0 failures/errors/skips. SQLite/projection/preferences/widget models use API
 28/35. Kotlin debug/release compile and debug APK packaging pass offline.
 Analyzer exits 0, no issues. Signing check intentionally exits 1 without
@@ -74,7 +74,7 @@ All 119 approved feature IDs are tracked individually in `FEATURE_MATRIX.md`.
 limits of the previous foundation. `LISTENING_PROJECTION.md` supersedes its old
 accounting/buffer state. No release readiness is claimed.
 
-## Projection Phase Evidence And Preservation
+## Initial Projection Phase Evidence And Preservation
 
 - Pre-phase gates: 103 Flutter pass; original 46 native cases/compile pass;
   service equal to `0a8be43` before and after. No speculative G fix applied.
@@ -108,3 +108,33 @@ accounting/buffer state. No release readiness is claimed.
   `183D9D53A04367E6E2DEE90BD572B79B9D9A938C5E8450A5E5A4ACAA8ED255AB`.
   No signed release APK/AAB produced/published; ADB inventory empty. Continue
   exact next work in `CODEX_RESUME.md`.
+
+## Public Publication And Device Pagination Follow-Up
+
+- Initial tested checkpoint: `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`,
+  normally pushed to `codex/production-checkpoint-20261024`. Remote SHA and
+  required documentation/protected-service blobs verified via fetch/ls-tree.
+- Initial gates: 123 Flutter / 112 native, analyzer clean, debug/release Kotlin
+  compile and debug packaging pass. Native tests also forced fresh with
+  `:app:testDebugUnitTest --offline --rerun-tasks`.
+- Reviewed 111 changed paths explicitly, including inherited staged tests.
+  Exact public tree audit: 260 files / 229 text candidates, no prohibited
+  matches. Hardware-derived fixture addresses replaced by synthetic ones.
+  Local screenshots, reports, research and original index remain preserved.
+- Local main remained `d5de30c75f5547c9973a4a445b5f4b435a849745`;
+  remote main remained `13ae6609d22cb2a0daf8890fca081fb97c93b36b`.
+  Original branch/baseline untouched. Future published rollback uses `git revert`.
+- Follow-up: native known-device queries now accept independent `deviceOffset`
+  and return bounded 100-row pages, total count, next offset and continuation.
+  Flutter validates response cursors and exposes next/previous device pages.
+  The Devices date selector is removed because known devices are not date-filtered.
+- Three new Flutter tests and four API 28/35 native cases verify 205 devices,
+  no duplicates across unchanged pages, reopen parity, invalid/out-of-range
+  cursors and independent listening totals. Full gates: 126 Flutter / 116 native,
+  zero failures/errors/skips, analyzer clean, both Kotlin variants and debug
+  packaging pass. Protected service still equals `0a8be43`.
+- Paging is a live ordered view; source changes may reorder rows between pages.
+  Frozen paging, large-load profiling and cooperative replay remain open.
+- Follow-up local debug APK: 158947452 bytes, SHA-256
+  `1FB489CA9C3B2AB4C1C6B58002BA5EF2962ADB2B27DC89BA925A76BFD393F943`.
+  APK remains ignored/unpublished; no new hardware/signing acceptance claimed.

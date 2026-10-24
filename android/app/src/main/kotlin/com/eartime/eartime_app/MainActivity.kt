@@ -123,9 +123,10 @@ class MainActivity : FlutterActivity() {
                     val zone = call.argument<String>("zoneId") ?: java.util.TimeZone.getDefault().id
                     val offset = call.argument<Number>("offset")?.toInt() ?: 0
                     val limit = call.argument<Number>("limit")?.toInt() ?: 100
+                    val deviceOffset = call.argument<Number>("deviceOffset")?.toInt() ?: 0
                     NativeJournalRuntime.readListening(from, until, zone, offset, limit,
                         { page -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(page) } } },
-                        { message -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("PROJECTION_READ_FAILED", message, null) } } })
+                        { message -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("PROJECTION_READ_FAILED", message, null) } } }, deviceOffset)
                 }
                 "readObservationJournal" -> {
                     val after = call.argument<Number>("after")?.toLong() ?: 0L

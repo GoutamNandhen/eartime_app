@@ -39,7 +39,7 @@ listening. Compatibility reducers remain for regression tests, not product total
   Unmarked same-process service recreation still requires a collector-generation hook.
 - Identity from legacy names/MAC fallbacks is provisional and epoch-scoped;
   user display-name overrides cannot alter observations or physical identity.
-- Ingress and live hints are bounded; known-device results are capped at 100;
+- Ingress and live hints are bounded; known-device results are paged at 100;
   interval pages at 100 and aggregate scans at 100,000 with explicit refusal.
   Long-history replay fairness/performance remains unfinished.
 

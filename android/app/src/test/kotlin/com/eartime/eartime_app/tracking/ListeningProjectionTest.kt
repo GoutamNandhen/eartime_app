@@ -249,4 +249,39 @@ class ListeningProjectionTest {
         assertThrows(IllegalArgumentException::class.java) { journal.listeningSnapshot(0, 100, "invalid") }
         Unit
     }
+
+    @Test fun knownDevicePagesAreBoundedDisjointAndPreserveListeningTotals() = run {
+        repeat(205) { index ->
+            journal.append(raw("DEVICE_CONNECTED", 1000L + index * 2, payload = mapOf("device" to
+                mapOf("id" to "endpoint-$index", "friendlyName" to "Fixture $index", "nativeType" to 8))))
+            if (index < 204) journal.append(raw("DEVICE_DISCONNECTED", 1001L + index * 2,
+                payload = mapOf("deviceId" to "endpoint-$index")))
+        }
+        fun page(offset: Int) = journal.listeningSnapshot(0, 100000, "UTC", deviceOffset = offset)
+        val first = page(0); val second = page(100); val third = page(200)
+        val firstDevices = first["devices"] as List<*>
+        val secondDevices = second["devices"] as List<*>
+        val thirdDevices = third["devices"] as List<*>
+        assertEquals(100, firstDevices.size); assertEquals(100, secondDevices.size); assertEquals(5, thirdDevices.size)
+        assertEquals(205, (firstDevices + secondDevices + thirdDevices).map { (it as Map<*, *>)["id"] }.toSet().size)
+        assertEquals("Fixture 204", (firstDevices.first() as Map<*, *>)["name"])
+        assertEquals("Fixture 0", (thirdDevices.last() as Map<*, *>)["name"])
+        assertEquals(205L, third["deviceCount"]); assertEquals(205L, third["nextDeviceOffset"])
+        assertEquals(true, first["hasMoreDevices"]); assertEquals(false, third["hasMoreDevices"])
+        for (result in listOf(first, second, third)) {
+            assertEquals(0L, result["confirmedMs"]); assertEquals(0L, result["unverifiedMs"])
+            assertEquals(0, result["intervalCount"])
+        }
+        journal.close(); journal = ObservationJournal(context, name)
+        assertEquals(third, page(200))
+    }
+
+    @Test fun invalidDeviceOffsetsFailAndEmptyPagesCannotAdvancePastCount() = run {
+        assertThrows(IllegalArgumentException::class.java) { journal.listeningSnapshot(0, 100000, "UTC", deviceOffset = -1) }
+        assertThrows(IllegalArgumentException::class.java) { journal.listeningSnapshot(0, 100000, "UTC", deviceOffset = Int.MAX_VALUE) }
+        val page = journal.listeningSnapshot(0, 100000, "UTC", deviceOffset = 100)
+        assertEquals(100, page["deviceOffset"]); assertEquals(0L, page["nextDeviceOffset"])
+        assertEquals(false, page["hasMoreDevices"]); assertTrue((page["devices"] as List<*>).isEmpty())
+        assertEquals(0L, journal.stats()["observationCount"])
+    }
 }

@@ -12,9 +12,9 @@ Executable evidence keys:
 - D: `flutter test --no-pub test/observation_journal_test.dart`.
 - J: `android/gradlew.bat :app:testDebugUnitTest --tests '*ObservationJournalTest' --tests '*NativeObservationIngressTest'` (run from `android` as `.\gradlew.bat`).
 - R: same Gradle task with `--tests '*TrackingContractTest' --tests '*BoundedIngressQueueTest'`.
-- P: `ListeningProjectionTest` (44 API 28/35 cases), including shared JSON fixture,
+- P: `ListeningProjectionTest` (48 API 28/35 cases), including shared JSON fixture,
   B02, atomic rollback, replay/rebuild, v1/v2 migrations, DST and aggregate parity.
-- U: `flutter test --no-pub test/listening_projection_test.dart` (14 cases).
+- U: `flutter test --no-pub test/listening_projection_test.dart` (17 cases).
 - Q: `ListeningPreferencesTest` (12 native cases) and `test/listening_settings_test.dart` (4 Flutter cases).
 - W: `ListeningWidgetTest` (6 native resource/render cases); physical launcher acceptance pending.
 - T: `test/telemetry_capability_test.dart` (2 conservative capability cases).
@@ -45,7 +45,7 @@ Executable evidence keys:
 | B1 | Evidence-backed physical identity | IN_PROGRESS; R typed IDs; persistent association OPEN |
 | B2 | Device/route/endpoint/alias/name distinction | IN_PROGRESS; R contracts; collector integration OPEN |
 | B3 | Editable device names | IN_PROGRESS; Q/P durable display-only overrides and UI; physical identity/rename acceptance pending |
-| B4 | Device history/totals | IN_PROGRESS; P native per-device union; provisional identities not merged; device history drilldown OPEN |
+| B4 | Device history/totals | IN_PROGRESS; P native per-device union/known-device pages; provisional identities not merged; history drilldown OPEN |
 | B5 | Left/right battery | NOT_STARTED; standard/vendor observation tests OPEN |
 | B6 | Case battery | NOT_STARTED; compatibility/physical evidence OPEN |
 | B7 | Charging indicators | NOT_STARTED; capability/freshness tests OPEN |
@@ -140,8 +140,8 @@ Executable evidence keys:
 | G15 | Foreground notification/permissions | IN_PROGRESS; S permissions; physical recovery OPEN |
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
-| G18 | Memory/performance safeguards | IN_PROGRESS; bounded ingress/hints/results, indexed devices, window work ceiling; profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 123 Flutter/112 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G18 | Memory/performance safeguards | IN_PROGRESS; bounded ingress/hints/results, indexed device pages, window work ceiling; profiling OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 126 Flutter/116 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -154,7 +154,7 @@ Executable evidence keys:
 | H4 | Home | IN_PROGRESS; U canonical confirmed/unverified totals, goals and errors; live collector lease OPEN |
 | H5 | Timeline | IN_PROGRESS; P/U native interval pages/date windows/gaps; grouped sessions OPEN |
 | H6 | Analytics | IN_PROGRESS; P/U native actual aggregates, no placeholder scores; full metrics OPEN |
-| H7 | Devices | IN_PROGRESS; reachable U native known devices/details/name overrides; verified aliases/telemetry OPEN |
+| H7 | Devices | IN_PROGRESS; U native known-device next/previous pages/details/name overrides; verified aliases/telemetry OPEN |
 | H8 | Wellbeing | IN_PROGRESS; Q/U persisted goals/native summaries; reminders OPEN |
 | H9 | Settings | IN_PROGRESS; Q themes/goals, legacy/journal diagnostics; export/restore/delete OPEN |
 | H10 | Developer diagnostics | IN_PROGRESS; D journal screen delivered; safe vendor controls OPEN |

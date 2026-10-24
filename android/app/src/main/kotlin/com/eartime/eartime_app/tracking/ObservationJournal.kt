@@ -210,11 +210,11 @@ class ObservationJournal(
     }
 
     fun listeningSnapshot(from: Long, until: Long, zoneId: String, now: ObservationTime? = null,
-        offset: Int = 0, limit: Int = 100): Map<String, Any?> {
+        offset: Int = 0, limit: Int = 100, deviceOffset: Int = 0): Map<String, Any?> {
         val db = database()
         catchUpProjection(db)
         return transaction(db) {
-            val result = ListeningProjection(db).snapshot(from, until, zoneId, now, offset, limit)
+            val result = ListeningProjection(db).snapshot(from, until, zoneId, now, offset, limit, deviceOffset)
             val devices = (result["devices"] as List<*>).map { item ->
                 val device = item as Map<*, *>
                 device + mapOf("observedName" to device["name"],

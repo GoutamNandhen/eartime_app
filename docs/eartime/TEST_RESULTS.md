@@ -4,9 +4,9 @@ Last verified implementation baseline: 2026-10-24.
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 123 passed, 0 failures |
+| Flutter full suite | 126 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 112 passed, 0 failures/errors/skips |
+| Android native suite | 116 passed, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected service | Empty diff against `0a8be43` |
