@@ -2,9 +2,16 @@
 
 Last verified implementation baseline: 2026-10-24.
 
+Warm-navigation follow-up: actual AppShell/permission/native-hint regression
+reproduced Settings covering Devices before the fix. Navigator stack dismissal
+makes it pass. Full Flutter 140 pass, analyzer clean; native/build gates succeed
+with 222 native cases. Initial absent native fixture responses were replaced
+with explicit synthetic empty history/preferences so the actual UI path could
+execute. The pre-fix assertion then failed for Settings covering the destination.
+
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 139 passed, 0 failures |
+| Flutter full suite | 140 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
 | Android native suite | 222 passed in 20 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |

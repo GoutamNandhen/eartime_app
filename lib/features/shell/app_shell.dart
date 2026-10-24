@@ -30,7 +30,10 @@ class _AppShellState extends ConsumerState<AppShell> {
   void initState() {
     super.initState();
     _navigation = AppNavigation((index) {
-      if (mounted) setState(() => _currentIndex = index);
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        setState(() => _currentIndex = index);
+      }
     })..start();
   }
 

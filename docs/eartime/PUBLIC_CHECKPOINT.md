@@ -11,6 +11,9 @@ Latest native archive gates: 139 Flutter / 222 native, clean analyzer, both Kotl
 variants/debug APK. H17/H18 remain partial; legacy/preferences are separate.
 Recovery archives and staging files are private user data, never publication
 candidates. See `JOURNAL_ARCHIVES.md` for the exact scope and remaining gates.
+The subsequent warm-navigation correction passes 140 Flutter / 222 native and
+the same analyzer/build gates. The guard still permits exactly four previous
+observer hooks; there is no new service change or physical validation.
 
 - Original branch `g-regression-experiment` / `0a8be43` and local/remote main
   refs are preserved. Source/index checkpoints and excluded files remain local.

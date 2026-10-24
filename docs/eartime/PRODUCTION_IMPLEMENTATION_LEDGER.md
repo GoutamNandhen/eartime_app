@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: reports/widgets/navigation and native journal archives, 139 Flutter / 222 native
+Latest checkpoint: reports/widgets/archives and navigation correction, 140 Flutter / 222 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -46,6 +46,21 @@ PHYSICAL_PENDING. No signed release or installation. Next: data management and
 the remaining exact approved matrix, not additional scope.
 
 ## Implementation phases
+
+### Warm Navigation Correction
+
+Archive commit `0aba4f67b3599c60dc501e5e19b17342f0e18c1b` is remote-verified.
+A warm native hint changed the shell tab underneath Settings. An actual-shell
+test reproduced the failure, then passed with Navigator route dismissal. Full
+Flutter 140 pass; analyzer/native/Kotlin debug+release/debug APK gates pass,
+222 native cases. No service edits/physical validation; count stays 25/78/16.
+
+Next supported-route investigation: public BluetoothA2dp.isA2dpPlaying reports
+per-device transport streaming rather than global activity/inventory. AOSP also
+returns false on API/service failure; false is not proof of health or silence.
+Do not enable confirmed intervals or live leases from research alone. Integrate
+bounded samples/ownership/failure semantics first. Primary references are linked
+in `REPORTS_AND_NAVIGATION.md`. No reflection, vendor writes or pairing changes.
 
 ### Native Journal Archives
 

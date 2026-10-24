@@ -5,14 +5,17 @@ Latest continuation: reports/recorded goal streaks, widget variants/navigation
 and integrated native journal export/confirmed transactional restore/recovery.
 Reports checkpoint `a3d60dcfdff542eb074c38bda05d8ab670d3ab76` is remote-verified;
 remote main remains `13ae6609d22cb2a0daf8890fca081fb97c93b36b`.
-Full gates: 139 Flutter / 222 native, analyzer clean, both Kotlin variants and
+Full gates: 140 Flutter / 222 native, analyzer clean, both Kotlin variants and
 debug APK pass, including the final command-owner recheck. Count: 25 IMPLEMENTED /
 78 IN_PROGRESS / 16 NOT_STARTED (119). H17/H18 remain partial: native-only archives
 exclude legacy history/preferences. This is NOT feature-complete or RELEASE_READY.
 See `JOURNAL_ARCHIVES.md` and `REPORTS_AND_NAVIGATION.md`. No service edits.
-Next active data task: full legacy/preferences backup/restore policy, confirmed
-deletion including recovery copies and provider/process-death hardening. Then
-remaining identity, partitions, telemetry, reminders, UI and release scope.
+Warm-navigation correction is proven: Settings covered the selected main view.
+An actual-shell native-hint test failed before Navigator stack dismissal and
+passes after it. Next priority: public per-device A2DP streaming observations,
+with owner/failure/clock evidence. False can mean service/API failure; no route
+lease is enabled by research alone. Then full legacy/preferences backup/restore/
+deletion and the rest of the matrix. Production playback remains UNVERIFIED.
 Review branch `codex/production-checkpoint-20261024`; protected baseline `0a8be43`.
 Initial publication verified at `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`;
 the follow-up adds known-device pagination without changing listening accounting.

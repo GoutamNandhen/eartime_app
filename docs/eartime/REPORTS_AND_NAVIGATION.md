@@ -52,6 +52,9 @@ it once through a separate method channel, and notifies on new warm intents.
 Saved pending state avoids replaying the original launch intent on recreation.
 Engine cleanup is owner-fenced; Dart disposal ignores late navigation results.
 The permission gate remains in front of the selected screen.
+Warm hints dismiss covering Settings/detail routes before selecting the view.
+`app_navigation_shell_test.dart` proves the actual requested screen is visible;
+it failed with the earlier tab-only implementation.
 Flutter's default URI route handler is explicitly disabled to avoid competing
 with this channel and sending unvalidated URI strings to Navigator.
 
@@ -59,6 +62,9 @@ Official API references:
 - [Android shortcuts](https://developer.android.com/develop/ui/compose/system/shortcuts/creating-shortcuts)
 - [Widget layouts](https://developer.android.com/develop/ui/views/appwidgets/layouts)
 - [Flutter default deep-link handling](https://docs.flutter.dev/release/breaking-changes/deep-links-flag-change)
+- [Candidate A2DP stream API](https://developer.android.com/reference/android/bluetooth/BluetoothA2dp#isA2dpPlaying(android.bluetooth.BluetoothDevice))
+- [AOSP API failure fallback](https://android.googlesource.com/platform/packages/modules/Bluetooth/+/refs/heads/main/framework/java/android/bluetooth/BluetoothA2dp.java)
+- [AOSP per-device service state](https://android.googlesource.com/platform/packages/modules/Bluetooth/+/refs/heads/main/android/app/src/com/android/bluetooth/a2dp/A2dpService.java)
 
 Tests: ListeningReportTest (5), native projection persisted-goal/reopen/replay
 (2 API 28/35), NavigationTargetTest (6 API 28/35), summary-widget render (2 API

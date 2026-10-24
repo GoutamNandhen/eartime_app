@@ -32,6 +32,8 @@ Executable evidence keys:
   `NavigationTargetTest`, summary widget render cases and Flutter
   `app_navigation_test.dart` / `listening_report_test.dart`.
   See `REPORTS_AND_NAVIGATION.md` for scope and limits.
+  `test/app_navigation_shell_test.dart` proves warm hints dismiss Settings and
+  show the requested actual product screen; pre-fix failure reproduced.
 - X: `JournalArchiveTest`, `JournalFileTransferTest`, restore-boundary ingress
   case and `test/journal_transfer_test.dart`. Native-only transfers; full-app
   backup is unfinished. See `JOURNAL_ARCHIVES.md`.
@@ -158,7 +160,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 139 Flutter/222 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 140 Flutter/222 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
