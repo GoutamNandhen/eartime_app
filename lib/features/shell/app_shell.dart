@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/listening_projection_provider.dart';
+import '../../data/app_navigation.dart';
 import '../home/home_screen.dart';
 import '../timeline/timeline_screen.dart';
 import '../analytics/analytics_screen.dart';
@@ -23,6 +24,21 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
   String? _lastStartupMilestoneKey;
+  late final AppNavigation _navigation;
+
+  @override
+  void initState() {
+    super.initState();
+    _navigation = AppNavigation((index) {
+      if (mounted) setState(() => _currentIndex = index);
+    })..start();
+  }
+
+  @override
+  void dispose() {
+    _navigation.close();
+    super.dispose();
+  }
 
   final List<Widget> _screens = [
     const HomeScreen(),

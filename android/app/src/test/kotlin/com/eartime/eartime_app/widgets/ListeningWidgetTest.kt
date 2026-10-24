@@ -13,6 +13,19 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28, 35], application = Application::class)
 class ListeningWidgetTest {
+    @Test fun summaryVariantsUseSameCanonicalTotalsAndUnknownOutputDoesNotTick() {
+        val context = RuntimeEnvironment.getApplication()
+        val snapshot = mapOf("confirmedMs" to 3720000L, "unverifiedMs" to 600000L,
+            "intervals" to listOf(mapOf("open" to true, "live" to false, "attribution" to "UNVERIFIED")))
+        val daily = ListeningWidgets.renderSummary(context, snapshot, false).apply(context, null)
+        val current = ListeningWidgets.renderSummary(context, snapshot, true).apply(context, null)
+        assertEquals("1h 2m", daily.findViewById<TextView>(R.id.summary_total).text.toString())
+        assertEquals("Playback last observed", current.findViewById<TextView>(R.id.summary_total).text.toString())
+        assertTrue(current.findViewById<TextView>(R.id.summary_status).text.toString().contains("unverified"))
+        assertEquals("--", ListeningWidgets.renderSummary(context, emptyMap(), false).apply(context, null)
+            .findViewById<TextView>(R.id.summary_total).text.toString())
+    }
+
     @Test fun nativeWidgetUsesProjectionTotalsAndNeverInventsBatteryPercentages() {
         val context = RuntimeEnvironment.getApplication()
         val snapshot = mapOf("confirmedMs" to 3720000L, "unverifiedMs" to 9999999L,

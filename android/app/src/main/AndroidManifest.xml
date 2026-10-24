@@ -34,6 +34,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="eartime" android:host="open" />
+            </intent-filter>
         </activity>
         
         <!-- Audio Tracking Service -->
@@ -46,6 +54,14 @@
             android:label="@string/listening_widget_name">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/listening_widget_info" />
+        </receiver>
+        <receiver android:name=".widgets.CurrentListeningWidgetProvider" android:exported="false" android:label="@string/current_widget_name">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/current_widget_info" />
+        </receiver>
+        <receiver android:name=".widgets.DailyListeningWidgetProvider" android:exported="false" android:label="@string/daily_widget_name">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/daily_widget_info" />
         </receiver>
 
         <!-- Don't delete the meta-data below.

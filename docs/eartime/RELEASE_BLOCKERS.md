@@ -13,7 +13,7 @@ Feature-level implementation and acceptance gaps are in `FEATURE_MATRIX.md`.
 | Memory/history size | Bounded results, 1200-session/2400-row model, internal rebuild cancellation, live paging insertion tests | Realistic phone/storage/energy profiling, normal startup fairness, cross-layer cancellation and frozen multi-page consistency |
 | Telemetry/privacy | Experimental automatic BLE discovery is inherited; proprietary capabilities unverified | Explicit optional gating, real capability/freshness evidence, privacy/offline/backup review |
 | Missing product scope | Most remaining analytics, wellbeing, widgets and data-control features are incomplete | Implement/test the remaining approved feature matrix |
-| Static/test integration | Analyzer clean, 129 Flutter / 173 native pass; 15 placeholders replaced | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix |
+| Static/test integration | Analyzer clean, 132 Flutter / 188 native pass; 15 placeholders replaced | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix |
 | Release/signing | Debug APK/debug+release Kotlin compile pass; production signing env gate rejects missing keys, no debug fallback | Authorized keys, signed release packaging, hashes and final release/privacy gates |
 | Physical integration | No Android device/AVD available this session | Final background/process/restart/routing/widget/battery acceptance on supported devices |
 
@@ -28,3 +28,8 @@ states, but actual launcher timing/resize/refresh and battery telemetry are not
 validated. Production interval reads stop at durable evidence; a living process
 alone never enables a ticking listening timer. `LISTENING_PROJECTION.md` records
 these deliberate correctness limits and the exact automated evidence.
+
+Reports, recorded goal streaks, two additional widget variants and shortcut/deep
+link navigation now have production paths and software acceptance. Break guidance,
+scheduled summaries/notifications and data controls remain unfinished. These five
+newly implemented IDs do not close tracking, hardware, privacy or release blockers.

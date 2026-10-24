@@ -22,6 +22,12 @@ run in native code. Flutter formats values and sends bounded queries; events
 invalidate data rather than reconstructing product history. Native-backed
 preferences hold display names, themes and personal duration goals.
 
+Native ListeningReport derives selected-window recorded goal streaks and duration
+insights from those same daily buckets. It is not a second reducer or persisted
+history system. Three widget variants consume the canonical query without Flutter.
+Whitelisted navigation uses an independent consume-once channel, with Flutter's
+default URI handler disabled. See `REPORTS_AND_NAVIGATION.md` for contracts/tests.
+
 The old Drift schema/data are retained. The shell does not activate its writer.
 Settings exposes paged read-only legacy observations, separate from confirmed
 listening. Compatibility reducers remain for regression tests, not product totals.

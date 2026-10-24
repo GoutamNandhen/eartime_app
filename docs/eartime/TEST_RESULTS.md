@@ -4,9 +4,9 @@ Last verified implementation baseline: 2026-10-24.
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 129 passed, 0 failures |
+| Flutter full suite | 132 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 173 passed, 0 failures/errors/skips |
+| Android native suite | 188 passed in 18 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |
@@ -36,3 +36,13 @@ at last evidence and stale/duplicate fencing. Three history/load cases verify
 version-2 cache correction/future refusal. No partial aggregates accepted.
 Four API 28/35 worker lifecycle tests additionally cover blocked initialization
 with nonblocking close and exactly-once resource cleanup. Physical G remains pending.
+
+Reports/widgets/navigation: five pure native report cases cover recorded goals,
+unfinished/future/partial days, disabled goals, unverified-only activity and DST.
+Two API 28/35 projection cases verify persisted-goal/reopen/rebuild report parity.
+Six navigation cases cover explicit intents, rejecting commands/arguments and
+the actual manifest/shortcut XML, including disabling Flutter's competing URI
+handler. Two widget cases verify canonical daily totals, unknown current output
+and unavailable history. Three Flutter cases cover consume/disposal, malformed
+report contracts and actual Wellbeing report rendering at 2x text. No assertions
+were weakened. The initial analyzer style finding was corrected and rerun clean.

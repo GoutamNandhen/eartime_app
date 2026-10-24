@@ -44,6 +44,11 @@ packaging. Its scoped inventory health does not enable confirmed live listening.
 The subsequent stop/replay/startup hardening gates are 129 Flutter / 173 native; see
 `HISTORY_REPLAY.md` for the reproduced failure, cache upgrade and synthetic load.
 
+The reports/widgets/navigation continuation passes 132 Flutter / 188 native,
+clean analyzer, both Kotlin variants and debug packaging. It adds five implemented
+feature IDs (25/119 total), not full feature completion. No collector edits or
+hardware validation. Details: `REPORTS_AND_NAVIGATION.md`.
+
 Review [Architecture](ARCHITECTURE.md), [Feature Matrix](FEATURE_MATRIX.md),
 [Implementation Ledger](PRODUCTION_IMPLEMENTATION_LEDGER.md),
 [Resume](CODEX_RESUME.md), [Projection](LISTENING_PROJECTION.md) and

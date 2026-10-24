@@ -52,6 +52,19 @@ class ListeningProjectionTest {
         assertEquals(0L, total()) // A global flag is not evidence of external listening.
     }
 
+    @Test fun generatedReportUsesPersistedGoalAndCanonicalTotalsAfterReopenAndReplay() = run {
+        ListeningPreferences(context).update(mapOf("dailyGoalMinutes" to 1))
+        try {
+            journal.append(route(1000)); journal.append(route(61000, false))
+            val first = journal.listeningSnapshot(0, 86400000, "UTC")["report"] as Map<*, *>
+            assertEquals(1, first["goalDays"])
+            assertEquals(60000L, first["averageActiveDayMs"])
+            journal.close(); journal = ObservationJournal(context, name)
+            journal.rebuildListeningProjection()
+            assertEquals(first, journal.listeningSnapshot(0, 86400000, "UTC")["report"])
+        } finally { ListeningPreferences(context).update(mapOf("dailyGoalMinutes" to 0)) }
+    }
+
     @Test fun crossLayerFixtureUsesTheActualNativeReducerAndFlutterWireContract() = run {
         val fixture = JSONObject(javaClass.classLoader!!.getResourceAsStream("listening_continuity.json")!!.bufferedReader().use { it.readText() })
         val events = fixture.getJSONArray("events")

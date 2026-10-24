@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'listening_report.dart';
 
 class ProjectionCancellation {
   bool _cancelled = false;
@@ -151,6 +152,9 @@ class ListeningSnapshot {
       collectorHealth = ProjectedCollectorHealth(
         map['collectorHealth'] as Map?,
       ),
+      report = map['report'] == null
+          ? null
+          : ListeningReport.fromMap(map['report'] as Map),
       longest = Duration(milliseconds: map['longestMs'] as int? ?? 0),
       average = Duration(milliseconds: map['averageMs'] as int? ?? 0),
       listeningRuns = map['listeningRuns'] as int? ?? 0,
@@ -212,6 +216,7 @@ class ListeningSnapshot {
   final int pendingCount;
   final int failedCount;
   final ProjectedCollectorHealth collectorHealth;
+  final ListeningReport? report;
   final Duration longest;
   final Duration average;
   final int listeningRuns;

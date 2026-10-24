@@ -1,0 +1,10 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/summary_root"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:background="@drawable/widget_background">
+    <TextView android:id="@+id/summary_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="EarTime" android:textColor="#9BD8C4" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/summary_total" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="--" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="2" android:ellipsize="end" />
+    <TextView android:id="@+id/summary_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Waiting for history" android:textColor="#BEC5CD" android:textSize="12sp" android:maxLines="3" android:ellipsize="end" />
+</LinearLayout>

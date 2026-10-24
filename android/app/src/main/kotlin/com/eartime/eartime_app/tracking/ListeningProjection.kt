@@ -282,6 +282,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             "deviceOffset" to deviceOffset, "nextDeviceOffset" to minOf(deviceOffset.toLong() + devices.size, deviceCount),
             "hasMoreDevices" to (deviceOffset.toLong() + devices.size < deviceCount),
             "intervals" to segments.drop(offset).take(limit), "intervalCount" to segments.size,
+            "openIntervalCount" to segments.count { it["open"] == true },
             "nextOffset" to minOf(offset + limit, segments.size), "hasMore" to (offset + limit < segments.size))
     }
 

@@ -5,6 +5,10 @@ Updated 2026-10-24. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
+Implementation count: **25 IMPLEMENTED, 76 IN_PROGRESS, 18 NOT_STARTED = 119**.
+New software-complete IDs: E10, F6, I1, I2, I3. Hardware-dependent acceptance
+remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
+
 Executable evidence keys:
 
 - S: `flutter test --no-pub test/phase2cb1_rapid_reopen_test.dart test/phase2cb_startup_test.dart`.
@@ -24,6 +28,10 @@ Executable evidence keys:
 - Q: `ListeningPreferencesTest` (12 native cases) and `test/listening_settings_test.dart` (4 Flutter cases).
 - W: `ListeningWidgetTest` (6 native resource/render cases); physical launcher acceptance pending.
 - T: `test/telemetry_capability_test.dart` (2 conservative capability cases).
+- N: `ListeningReportTest`, projection persisted-goal/reopen/replay case,
+  `NavigationTargetTest`, summary widget render cases and Flutter
+  `app_navigation_test.dart` / `listening_report_test.dart`.
+  See `REPORTS_AND_NAVIGATION.md` for scope and limits.
 - OPEN: executable production acceptance test is missing. Add it with the
   implementation; never count this row as passing based on a source review.
 
@@ -106,7 +114,7 @@ Executable evidence keys:
 | E7 | Listening frequency | IN_PROGRESS; P confirmed run count; richer frequency metrics OPEN |
 | E8 | Breaks/break lengths | NOT_STARTED; gap-vs-break tests OPEN |
 | E9 | Wearing trends | NOT_STARTED; validated role data OPEN |
-| E10 | Goals/streaks | NOT_STARTED; local goal/calendar tests OPEN |
+| E10 | Goals/streaks | IMPLEMENTED / AUTOMATED_PASS N; native recorded goal days/window streaks, partial-day and DST tests; lower bounds, not all-time/completeness claims |
 | E11 | Calendar/date boundaries | IMPLEMENTED / AUTOMATED_PASS P; midnight and spring/autumn DST reconciliation |
 | E12 | Empty/zero/partial/uncertain data | IN_PROGRESS; U truthful empty/error/zero states, no divide-by-zero; full acceptance pending |
 | E13 | Accessible charts | IN_PROGRESS; hourly progress semantics and large-text U; full assistive-technology audit OPEN |
@@ -121,8 +129,8 @@ Executable evidence keys:
 | F3 | Break reminders | NOT_STARTED; scheduler tests OPEN |
 | F4 | Daily/weekly summaries | IN_PROGRESS; P native range/day totals in Wellbeing; scheduled summaries OPEN |
 | F5 | Notification controls/quiet hours | NOT_STARTED; schedule/permission tests OPEN |
-| F6 | Duration insights | NOT_STARTED; actual-data derivation OPEN |
-| F7 | Goal/streak/break recommendations | NOT_STARTED; deterministic rules tests OPEN |
+| F6 | Duration insights | IMPLEMENTED / AUTOMATED_PASS N; actual native recorded activity/goal insights in Analytics/Wellbeing; no medical or exposure claims |
+| F7 | Goal/streak/break recommendations | IN_PROGRESS; N personal-goal guidance integrated; observed-break derivation/guidance OPEN |
 | F8 | Guidance distinct from sound exposure | IN_PROGRESS; U explicit not-measured exposure and personal-goal copy; content/accessibility audit OPEN |
 
 ## G: Reliability
@@ -187,9 +195,9 @@ Executable evidence keys:
 
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
-| I1 | Additional widgets | NOT_STARTED; variants/native-provider tests OPEN |
-| I2 | App shortcuts | NOT_STARTED; safe-intent/deep-link tests OPEN |
-| I3 | Personalized reports | NOT_STARTED; actual-data deterministic report tests OPEN |
+| I1 | Additional widgets | IMPLEMENTED / AUTOMATED_PASS N; native compact last-observed activity and daily summary variants; launcher resizing/timing PHYSICAL_PENDING |
+| I2 | App shortcuts | IMPLEMENTED / AUTOMATED_PASS N; four static shortcuts, whitelisted cold/warm links, disposal fencing; actual launcher PHYSICAL_PENDING |
+| I3 | Personalized reports | IMPLEMENTED / AUTOMATED_PASS N; automatically regenerated native reports integrated into Analytics/Wellbeing; selected-period lower bounds; scheduled notifications remain F4 OPEN |
 
 Excluded: cloud sync/accounts, ANC/EQ controls, additional vendor adapters and
 uncalibrated acoustic-dose estimates. No excluded scope was implemented.

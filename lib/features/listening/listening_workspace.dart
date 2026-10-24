@@ -258,6 +258,30 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                 ],
                 if (widget.view == ListeningView.analytics ||
                     widget.view == ListeningView.wellbeing) ...[
+                  if (snapshot.report case final report?) ...[
+                    const _Section('Your recorded listening report'),
+                    Text(report.insight),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${report.activeDays} active day(s) in the selected period',
+                    ),
+                    _Metric(
+                      label: 'Average per active day',
+                      value: formatListeningDuration(report.averageActiveDay),
+                    ),
+                    if (report.goalMinutes > 0) ...[
+                      Text('${report.goalDays} recorded goal day(s)'),
+                      Text(
+                        'Ending recorded streak: ${report.currentStreak} day(s)',
+                      ),
+                      Text('Best recorded streak: ${report.bestStreak} day(s)'),
+                    ],
+                    const SizedBox(height: 8),
+                    Text(report.guidance),
+                    const Text(
+                      'Recorded totals are lower bounds. Streaks cover this period only; a missing record is not proof of a break.',
+                    ),
+                  ],
                   _Metric(
                     label: 'Longest continuous listening',
                     value: formatListeningDuration(snapshot.longest),

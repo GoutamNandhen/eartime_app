@@ -9,12 +9,12 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.widget.RemoteViews
-import com.eartime.eartime_app.MainActivity
+import com.eartime.eartime_app.NavigationTarget
 import com.eartime.eartime_app.R
 import com.eartime.eartime_app.tracking.NativeJournalRuntime
 import java.util.Calendar
 
-class ListeningWidgetProvider : AppWidgetProvider() {
+open class ListeningWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val pending = goAsync()
         ListeningWidgets.refresh(context) { pending?.finish() }
@@ -25,48 +25,59 @@ class ListeningWidgetProvider : AppWidgetProvider() {
     }
 }
 
+class CurrentListeningWidgetProvider : ListeningWidgetProvider()
+class DailyListeningWidgetProvider : ListeningWidgetProvider()
+
 object ListeningWidgets {
     private val main = Handler(Looper.getMainLooper())
     private var scheduled = false
 
     fun observationCommitted(context: Context) {
         main.post {
-            if (scheduled || ids(context).isEmpty()) return@post
+            if (scheduled || providers.all { ids(context, it).isEmpty() }) return@post
             scheduled = true
             main.postDelayed({ scheduled = false; refresh(context) {} }, 1000)
         }
     }
 
-    private fun ids(context: Context) = AppWidgetManager.getInstance(context)
-        .getAppWidgetIds(ComponentName(context, ListeningWidgetProvider::class.java))
+    private val providers = listOf(ListeningWidgetProvider::class.java,
+        CurrentListeningWidgetProvider::class.java, DailyListeningWidgetProvider::class.java)
+
+    private fun ids(context: Context, provider: Class<out AppWidgetProvider>) = AppWidgetManager.getInstance(context)
+        .getAppWidgetIds(ComponentName(context, provider))
+
+    private fun update(context: Context, snapshot: Map<String, Any?>) {
+        providers.forEach { provider ->
+            val targets = ids(context, provider)
+            if (targets.isNotEmpty()) AppWidgetManager.getInstance(context).updateAppWidget(targets,
+                if (provider == ListeningWidgetProvider::class.java) render(context, snapshot)
+                else renderSummary(context, snapshot, provider == CurrentListeningWidgetProvider::class.java))
+        }
+    }
 
     fun refresh(context: Context, completed: () -> Unit) {
-        val ids = ids(context)
-        if (ids.isEmpty()) { completed(); return }
+        if (providers.all { ids(context, it).isEmpty() }) { completed(); return }
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
         }
         val from = calendar.timeInMillis
         calendar.add(Calendar.DAY_OF_MONTH, 1)
         NativeJournalRuntime.readListening(from, calendar.timeInMillis, calendar.timeZone.id, 0, 1, { snapshot ->
-            try { AppWidgetManager.getInstance(context).updateAppWidget(ids, render(context, snapshot)) }
+            try { update(context, snapshot) }
             finally { completed() }
         }, {
             try {
-                val view = render(context, emptyMap())
-                view.setTextViewText(R.id.widget_status, "History unavailable")
-                AppWidgetManager.getInstance(context).updateAppWidget(ids, view)
+                update(context, emptyMap())
             } finally { completed() }
         })
     }
 
     fun render(context: Context, snapshot: Map<String, Any?>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.listening_widget)
-        val duration = (snapshot["confirmedMs"] as? Long ?: 0) / 1000
-        views.setTextViewText(R.id.widget_total, "${duration / 3600}h ${duration / 60 % 60}m")
+        views.setTextViewText(R.id.widget_total, if (snapshot.isEmpty()) "--" else duration(snapshot["confirmedMs"]))
         views.setTextViewText(R.id.widget_status, if (snapshot["lastError"] != null) "Collection incomplete"
             else if (snapshot.isEmpty()) "History unavailable" else "Confirmed listening today")
-        val intent = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java),
+        val intent = PendingIntent.getActivity(context, 0, NavigationTarget.intent(context, "devices"),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.widget_root, intent)
         val devices = (snapshot["devices"] as? List<*>)?.mapNotNull { it as? Map<*, *> }
@@ -85,6 +96,37 @@ object ListeningWidgets {
         }
         val deviceCount = snapshot["deviceCount"] as? Long ?: devices.size.toLong()
         views.setTextViewText(R.id.widget_more, if (deviceCount > visibleCount) "+${deviceCount - visibleCount} devices" else "EarTime")
+        return views
+    }
+
+    private fun duration(value: Any?): String {
+        val minutes = ((value as? Number)?.toLong() ?: 0).coerceAtLeast(0) / 60000
+        return "${minutes / 60}h ${minutes % 60}m"
+    }
+
+    fun renderSummary(context: Context, snapshot: Map<String, Any?>, current: Boolean): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.listening_summary_widget)
+        val unavailable = snapshot.isEmpty()
+        val intervals = (snapshot["intervals"] as? List<*>)?.mapNotNull { it as? Map<*, *> } ?: emptyList()
+        val active = ((snapshot["openIntervalCount"] as? Number)?.toLong()
+            ?: intervals.count { it["open"] == true }.toLong()) > 0
+        val incomplete = snapshot["lastError"] != null || ((snapshot["failedCount"] as? Number)?.toLong() ?: 0) > 0
+        views.setTextViewText(R.id.summary_title, if (current) "EarTime activity" else "EarTime today")
+        views.setTextViewText(R.id.summary_total, when {
+            unavailable -> "--"
+            !current -> duration(snapshot["confirmedMs"])
+            active -> "Playback last observed"
+            else -> "No active playback observed"
+        })
+        views.setTextViewText(R.id.summary_status, when {
+            unavailable -> "History unavailable"
+            incomplete -> "Collection incomplete; unknown time excluded"
+            current -> "Current output and continuity unverified"
+            else -> "Confirmed listening\nUnverified activity: ${duration(snapshot["unverifiedMs"])}"
+        })
+        views.setOnClickPendingIntent(R.id.summary_root, PendingIntent.getActivity(context, if (current) 1 else 2,
+            NavigationTarget.intent(context, if (current) "home" else "analytics"),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         return views
     }
 }

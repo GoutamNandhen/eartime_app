@@ -24,6 +24,9 @@ class MainActivity : FlutterActivity() {
     private val EVENT_CHANNEL = "com.eartime.app/tracking_events"
     private val actId: String by lazy { Integer.toHexString(System.identityHashCode(this)) }
     private val engineOwners = IdentityHashMap<FlutterEngine, EngineAttachmentOwner>()
+    private var navigationTarget: String? = null
+    private var navigationChannel: MethodChannel? = null
+    private var navigationOwner: String? = null
 
     private fun milestone(stage: String, fields: String = "") {
         StartupTrace.mark(stage, "act=$actId $fields")
@@ -32,6 +35,8 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         milestone("ACTIVITY_CREATED", "savedState=${savedInstanceState != null} boundary=onCreateBegin")
         Log.i("EarTimeDiag", "[GFLOW] MainActivity.onCreate START")
+        navigationTarget = if (savedInstanceState == null) NavigationTarget.parse(intent)
+            else savedInstanceState.getString("navigationTarget")
         super.onCreate(savedInstanceState)
         milestone("ACTIVITY_CREATE_END")
         Log.i("EarTimeDiag", "[GFLOW] MainActivity.onCreate END")
@@ -41,6 +46,11 @@ class MainActivity : FlutterActivity() {
         milestone("ACTIVITY_DESTROY_BEGIN", "isFinishing=$isFinishing")
         super.onDestroy()
         milestone("ACTIVITY_DESTROYED")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("navigationTarget", navigationTarget)
+        super.onSaveInstanceState(outState)
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
@@ -69,6 +79,8 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         milestone("ACTIVITY_NEW_INTENT", "action=${intent.action}")
         super.onNewIntent(intent)
+        navigationTarget = NavigationTarget.parse(intent)
+        if (navigationTarget != null) navigationChannel?.invokeMethod("navigationAvailable", null)
     }
 
     override fun onResume() {
@@ -84,6 +96,15 @@ class MainActivity : FlutterActivity() {
         milestone("FLUTTER_ENGINE_CONFIGURE_BEGIN", "eng=$engId owner=${owner.token} ownerEpoch=${owner.generation} dartExecuting=${flutterEngine.dartExecutor.isExecutingDart}")
         Log.i("EarTimeDiag", "[GFLOW] configureFlutterEngine START")
         super.configureFlutterEngine(flutterEngine)
+        navigationChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.eartime.app/navigation").also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                if (call.method == "consumeNavigationTarget") owner.runIfActive {
+                    result.success(navigationTarget)
+                    navigationTarget = null
+                } else result.notImplemented()
+            }
+        }
+        navigationOwner = owner.token
         milestone("FLUTTER_PLUGINS_CONFIGURED", "eng=$engId owner=${owner.token}")
         Log.i("EarTimeDiag", "[GFLOW] configureFlutterEngine AFTER SUPER")
 
@@ -219,6 +240,11 @@ class MainActivity : FlutterActivity() {
         milestone("ENGINE_CLEANUP_BEGIN", "eng=$engId owner=${owner?.token}")
         // Revoke before posting detach, so already-queued callbacks cannot resurrect A.
         owner?.retire()
+        if (navigationOwner == owner?.token) {
+            navigationChannel?.setMethodCallHandler(null)
+            navigationChannel = null
+            navigationOwner = null
+        }
         if (owner != null) TrackingEventBroker.detach(owner.token)
         super.cleanUpFlutterEngine(flutterEngine)
         milestone("ENGINE_CLEANUP_END", "eng=$engId owner=${owner?.token} boundary=hostHook")

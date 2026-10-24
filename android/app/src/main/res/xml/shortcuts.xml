@@ -1,0 +1,14 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="today" android:icon="@android:drawable/ic_menu_today" android:shortcutShortLabel="@string/shortcut_today">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.eartime.eartime_app" android:targetClass="com.eartime.eartime_app.MainActivity" android:data="eartime://open/home" />
+    </shortcut>
+    <shortcut android:shortcutId="timeline" android:icon="@android:drawable/ic_menu_recent_history" android:shortcutShortLabel="@string/shortcut_timeline">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.eartime.eartime_app" android:targetClass="com.eartime.eartime_app.MainActivity" android:data="eartime://open/timeline" />
+    </shortcut>
+    <shortcut android:shortcutId="analytics" android:icon="@android:drawable/ic_menu_sort_by_size" android:shortcutShortLabel="@string/shortcut_analytics">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.eartime.eartime_app" android:targetClass="com.eartime.eartime_app.MainActivity" android:data="eartime://open/analytics" />
+    </shortcut>
+    <shortcut android:shortcutId="devices" android:icon="@android:drawable/ic_menu_manage" android:shortcutShortLabel="@string/shortcut_devices">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.eartime.eartime_app" android:targetClass="com.eartime.eartime_app.MainActivity" android:data="eartime://open/devices" />
+    </shortcut>
+</shortcuts>

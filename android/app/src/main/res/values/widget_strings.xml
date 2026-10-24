@@ -1,4 +1,12 @@
 <resources>
     <string name="listening_widget_name">EarTime devices</string>
     <string name="listening_widget_description">Connected devices and confirmed listening today</string>
+    <string name="current_widget_name">EarTime current activity</string>
+    <string name="current_widget_description">Last observed activity and output certainty</string>
+    <string name="daily_widget_name">EarTime daily listening</string>
+    <string name="daily_widget_description">Confirmed and unverified recorded totals today</string>
+    <string name="shortcut_today">Today</string>
+    <string name="shortcut_timeline">Timeline</string>
+    <string name="shortcut_analytics">Analytics</string>
+    <string name="shortcut_devices">Devices</string>
 </resources>

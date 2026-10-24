@@ -1,6 +1,13 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
+Latest continuation: reports/recorded goal streaks, two additional native widget
+variants and safe launcher navigation. Full gates: 132 Flutter / 188 native,
+analyzer clean, Kotlin debug/release and debug APK pass. Implementation count:
+25 IMPLEMENTED / 76 IN_PROGRESS / 18 NOT_STARTED (119). This is a milestone,
+not completion. Next active phase: production data export/backup/restore/delete;
+then remaining identity, partitions, telemetry, reminders, UI and release scope.
+See `REPORTS_AND_NAVIGATION.md`. No service edits in this continuation.
 Review branch `codex/production-checkpoint-20261024`; protected baseline `0a8be43`.
 Initial publication verified at `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`;
 the follow-up adds known-device pagination without changing listening accounting.
@@ -160,7 +167,7 @@ Interim failures were fixed, not hidden: RPC deadline leaked after disposal;
 Windows native SQLite fixture paths exceeded practical path length; ingress
 close raced queued work; final formatting exposed missing block braces.
 
-Latest local debug artifact (not installed/released/published):
+Previous local debug artifact (historical, not installed/released/published):
 
 - `build/app/outputs/apk/debug/app-debug.apk` and
   `build/app/outputs/flutter-apk/app-debug.apk`, each 158947452 bytes.
@@ -174,6 +181,16 @@ Prior pagination debug artifact (historical hash, not the current build):
   EarTime, ID `com.eartime.eartime_app`, min SDK 24/target SDK 36.
 
 ## Preservation And Next Work
+
+Latest reports/widgets/navigation validation: 132 Flutter tests passed, 188
+native tests in 18 suites, zero failures/errors/skips. Native additions: five
+report algorithm cases, two persisted-goal/reopen/rebuild cases, six shortcut/
+safe-intent/manifest cases and two summary-widget cases. Flutter additions:
+navigation consume/disposal case plus report contract and large-text UI cases.
+One analyzer block-style finding was fixed, not suppressed. Both Kotlin variants
+and debug APK packaged successfully; inherited Gradle/SDK warnings remain.
+APK SHA-256: `4DBA01C4BEB7B1278ADCD8B14876551655615EBFE179BB149F35F5F8B1A33A59`.
+No signed release, install, device interaction or physical validation.
 
 Pre-phase and pre-publication checkpoints remain local and unpublished.
 The pre-publication index/source copy is under ignored `.local-checkpoints/`.

@@ -223,7 +223,9 @@ class ObservationJournal(
                 device + mapOf("observedName" to device["name"],
                     "name" to (preferences.deviceName(device["id"] as String) ?: device["name"]))
             }
-            result + mapOf("sourceId" to sourceId(db), "devices" to devices)
+            result + mapOf("sourceId" to sourceId(db), "devices" to devices,
+                "report" to ListeningReport.build(result,
+                    preferences.snapshot()["dailyGoalMinutes"] as Int, healthTime?.wallUtcMs ?: commitClock()))
         }
     }
 

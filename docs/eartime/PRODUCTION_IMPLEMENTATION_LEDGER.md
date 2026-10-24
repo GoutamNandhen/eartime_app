@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: service-stop/replay/worker startup hardening, 129 Flutter / 173 native
+Latest checkpoint: recorded reports/streaks, native widget variants and navigation, 132 Flutter / 188 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -21,6 +21,29 @@ passing tests, analyzer clean. The recovery baseline below is historical.
 - Analyzer: exit 1; 21 inherited issues (16 warnings, 5 infos), zero errors;
   final new-code lints repaired; no additional analyzer issue remains.
 - Read-only ADB inventory: no connected devices; no configured AVD returned.
+
+## Reports, Widgets And Navigation Continuation
+
+Resumed clean from remote-verified `2d7195524a4de4bda28d2ea8d3ca083b1d137a5f`.
+Implemented E10, F6, I1, I2 and I3. F7 now partial, not complete: personal-goal
+guidance exists; observed-break guidance remains open. Count is 25/119 implemented,
+76 in progress and 18 not started. No excluded feature or confidence promotion.
+
+Production components: native read-only ListeningReport attached to canonical
+snapshot, persisted-goal/window streak metrics and actual-data insights in
+Analytics/Wellbeing; current-activity/daily-summary native widgets; four static
+shortcuts, strict navigation URI parser, pending cold/warm destination channel
+with disposal/engine-owner fences. No competing timer or new history store.
+
+All gates executed: 132 Flutter pass; 188 native pass (18 suites, zero failures/
+errors/skips); analyzer exit 0; debug/release Kotlin and debug APK exit 0.
+Hook-only baseline guard and diff whitespace check pass. The service itself was
+not edited. Manifest explicitly disables Flutter's default deep-link handler to
+avoid a competing initial route path; actual XML is regression-tested. An analyzer
+block-style finding was repaired without suppression. Native report tests use
+synthetic confirmed history, not physical output proof. Launcher/OEM/G remains
+PHYSICAL_PENDING. No signed release or installation. Next: data management and
+the remaining exact approved matrix, not additional scope.
 
 ## Implementation phases
 
