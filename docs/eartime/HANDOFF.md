@@ -4,7 +4,11 @@ Read [CODEX_RESUME.md](CODEX_RESUME.md), [FEATURE_MATRIX.md](FEATURE_MATRIX.md),
 [PRODUCTION_IMPLEMENTATION_LEDGER.md](PRODUCTION_IMPLEMENTATION_LEDGER.md) and
 [LISTENING_PROJECTION.md](LISTENING_PROJECTION.md) before making changes.
 
-Preserve `AudioTrackingService.kt` at `0a8be43`. No current physical G/telemetry
+Preserve existing `AudioTrackingService.kt` behavior against `0a8be43` and run
+`tools/check_collector_baseline.ps1 -AllowObserverLifecycleHooks`. Exactly four
+documented observer lifecycle additions are allowed; source equality is FALSE.
+Further changes require necessity, a recoverable checkpoint and tests.
+No current physical G/telemetry
 or production-readiness claim is supported. Keep confirmed route fixtures
 distinct from real unknown-attribution observations. Do not re-enable the legacy
 writer, promote fallback names/MACs to physical identity, infer a collector lease

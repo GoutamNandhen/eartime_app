@@ -73,15 +73,16 @@ tests. Flutter performs formatting/progress normalization, not interval math.
 
 ## Truthful Production Semantics
 
-The unchanged collector emits a global playback boolean and legacy fallback
+The existing legacy playback logic emits a global playback boolean and fallback
 device IDs. It does NOT prove the playing output or physical identity. All its
 real observations remain UNKNOWN; their playback projection is UNVERIFIED and
 device identity is provisional/epoch-scoped. Only explicitly CONFIRMED typed
 native route inputs can create confirmed listening. There is currently no real
 collector that emits those inputs. Tests are not hardware support evidence.
 
-There is also no durable collector-liveness lease: service destruction or failed
-initialization can occur while its process lives. Consequently production RPCs
+There is no route-specific listening lease: the separate service-owned observer
+has durable inventory/activity health, not actual-output proof or a guarantee
+that legacy initialization succeeded. Consequently production RPCs
 never extend open intervals to the query clock. Last evidence, not a Flutter
 timer or mere process lifetime, is authoritative. The explicit live-lease reducer
 path is model-tested for future verified collectors. A fresh legacy SYNC cannot
@@ -111,11 +112,12 @@ than truncating totals. Realistic storage/performance profiling remains open.
 and Dart decoding/RPC/widget tests. This is cross-layer contract evidence,
 not a real FlutterEngine/device end-to-end test.
 
-Flutter projection/RPC/layout/paging/health suite: 19 cases. Device tests traverse 205
+Flutter projection/RPC/layout/paging/health suite: 20 cases. Device tests traverse 205
 synthetic identities, preserve totals/reopen results and reject invalid cursors.
-Full final gates: 128 Flutter, 148 native, zero failures/skips, analyzer clean,
+Full final gates: 129 Flutter, 162 native, zero failures/skips, analyzer clean,
 debug/release Kotlin compilation and debug APK packaging successful. Signing
-check correctly refuses missing keys. Protected service equality verified.
+check correctly refuses missing keys. Strict four-hook collector guard verified;
+plain service equality is now FALSE. See `COLLECTOR_HEALTH.md` for necessity/checkpoint.
 Physical process killing, OnePlus G, route attribution, BLE hardware and launcher
 refresh/battery/resize acceptance are still pending. See `CODEX_RESUME.md`.
 

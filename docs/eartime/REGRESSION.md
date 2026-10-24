@@ -31,7 +31,7 @@ based only on a local model test. Repository commands were reviewed: local
 build/test writes only; initial Robolectric download was separately authorized
 through the tool boundary. No device install/data mutation.
 
-Current evidence: Flutter 128 pass; JVM 148 pass; analyzer exit 0/no issues;
+Current evidence: Flutter 129 pass; JVM 162 pass; analyzer exit 0/no issues;
 debug/release Kotlin compile and debug packaging exit 0. Fifteen former
 placeholders now have real assertions. Signing refusal without keys is an
 expected exit 1, not a signed release success. Exact artifact: `CODEX_RESUME.md`.
@@ -84,8 +84,9 @@ remain explicit gates; no test may mark global playback CONFIRMED for green.
 Health contract evidence: `CollectorHealthTest` covers registration acknowledgment,
 generation/epoch retirement, lease expiry, gaps, clock/boot, duplicate/crash/replay.
 `OutputAttributionTest` contains 16 synthetic policy scenarios, not actual Android
-route-transition integration. No runtime adapter or live-credit eligibility is
-implied; see `COLLECTOR_HEALTH.md`.
+route-transition integration. The runtime inventory/activity adapter has owner,
+API 24/28/35 and source/ack tests; it grants no live-credit eligibility.
+See `COLLECTOR_HEALTH.md`.
 
 Unverified runtime edges: real FlutterActivity/renderer/OxygenOS startup,
 foreground-service restart and rapid Recents removal/reopen, hardware routing.
@@ -98,7 +99,11 @@ Protected source check:
 
 ```powershell
 git diff --exit-code 0a8be43 -- android/app/src/main/kotlin/com/eartime/eartime_app/tracking/AudioTrackingService.kt
+tools/check_collector_baseline.ps1 -AllowObserverLifecycleHooks
 ```
 
-An empty diff proves source equality of that file only. The full application has
-changed. The historical A/B regression mechanism remains unproven.
+The plain equality diff now intentionally exits 1: exactly four observer lifecycle
+lines were added after recoverable checkpoint `9fd94b5`. The hook-only guard
+passes only when removing those exact lines leaves all prior source unchanged.
+Neither guard establishes behavior on hardware. The historical A/B regression
+mechanism remains unproven; no speculative G fix was applied.

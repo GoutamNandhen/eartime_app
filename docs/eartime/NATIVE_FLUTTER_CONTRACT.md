@@ -47,6 +47,13 @@ permissions separately from optional notification capability and does not await
 DB/service work before constructing the first screen. Tests model the permission
 adapter; real OS/OEM permission and background behavior remain acceptance gates.
 
-The collector lacks durable health/destruction/generation evidence. Production
-queries do not extrapolate from process lifetime; live leases remain gated.
+The passive observer adds `COLLECTOR_STATUS` and `OUTPUT_EVIDENCE` hints with
+distinct journal source/provenance and captured elapsed time. They are not legacy
+`isPlaying` or verified physical-route claims. Its generation/epoch/state health
+acknowledgment follows a visible commit. The snapshot includes versioned scoped
+`collectorHealth`, always `liveListeningEligible=false`. Unknown versions/scopes
+are rejected; old snapshots default UNKNOWN. See `COLLECTOR_HEALTH.md`.
+
+Legacy playback still lacks route-specific lifetime/attribution proof. Production
+queries do not extrapolate from process lifetime or scoped observer health.
 See [Projection](LISTENING_PROJECTION.md) and [Regression](REGRESSION.md).

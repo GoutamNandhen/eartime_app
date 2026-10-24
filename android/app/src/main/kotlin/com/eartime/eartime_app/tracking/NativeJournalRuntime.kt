@@ -20,7 +20,8 @@ class NativeObservationIngress(
     private val databaseName: String = "eartime_observations.sqlite",
     queueCapacity: Int = 256,
 ) : AutoCloseable {
-    private data class Pending(val event: Map<String, Any?>, val id: String, val time: ObservationTime)
+    private data class Pending(val event: Map<String, Any?>, val id: String, val time: ObservationTime,
+        val collector: String, val completion: (Boolean) -> Unit)
     private val queue = BoundedIngressQueue<Pending>(queueCapacity)
     private val scheduled = AtomicBoolean(false)
     private val rejectedCount = AtomicLong(0)
@@ -66,17 +67,38 @@ class NativeObservationIngress(
         return store
     }
 
-    fun submit(event: Map<String, Any?>) {
+    fun submit(event: Map<String, Any?>) = enqueue(event, "legacy_audio_service", null, {})
+
+    internal fun submitObserver(event: Map<String, Any?>, capturedElapsedMs: Long, completion: (Boolean) -> Unit) =
+        enqueue(event, CollectorHealth.SOURCE, capturedElapsedMs, completion)
+
+    private fun complete(pending: Pending, accepted: Boolean) {
+        try { pending.completion(accepted) }
+        catch (_: Exception) { report("Observation completion callback failed; committed history retained") }
+    }
+
+    private fun enqueue(event: Map<String, Any?>, collector: String, capturedElapsedMs: Long?, completion: (Boolean) -> Unit) {
         synchronized(lifecycleLock) {
-        if (closing) { report("Observation rejected: journal is closing"); return }
+        if (closing) {
+            report("Observation rejected: journal is closing")
+            try { completion(false) } catch (_: Exception) { report("Observation rejection callback failed") }
+            return
+        }
         try {
             val immutable = JournalJson.snapshot(event)
             require(immutable["type"] is String &&
                 (immutable["timestamp"] is Long || immutable["timestamp"] is Int))
+            if (collector == CollectorHealth.SOURCE) {
+                require(immutable["type"] in listOf("COLLECTOR_STATUS", "OUTPUT_EVIDENCE"))
+                require(capturedElapsedMs != null && capturedElapsedMs in 0..SystemClock.elapsedRealtime())
+            }
             val input = Pending(immutable, UUID.randomUUID().toString(),
-                now((immutable["timestamp"] as Number).toLong()))
+                now((immutable["timestamp"] as Number).toLong()).let {
+                    if (capturedElapsedMs == null) it else it.copy(elapsedMs = capturedElapsedMs)
+                }, collector, completion)
             if (!queue.offer(input, input.time.elapsedMs ?: 0)) {
                 rejectedCount.incrementAndGet()
+                complete(input, false)
                 report("Native observation queue overflow; collection gap will be journaled")
             }
             scheduleDrain()
@@ -85,6 +107,7 @@ class NativeObservationIngress(
             queue.reject(SystemClock.elapsedRealtime())
             scheduleDrain()
             report("Observation rejected: ${error.javaClass.simpleName}")
+            try { completion(false) } catch (_: Exception) { report("Observation rejection callback failed") }
         }
         }
     }
@@ -122,15 +145,23 @@ class NativeObservationIngress(
                                         commitLossCount = 0
                                     }
                                     val committed = store.append(ObservationInput(
-                                        pending.id, pending.event["type"] as String, "legacy_audio_service",
+                                        pending.id, pending.event["type"] as String, pending.collector,
                                         processGeneration, pending.time.copy(bootId = bootId), JournalJson.encode(pending.event),
+                                        if (pending.collector == CollectorHealth.SOURCE) "supported_audio_api_sample_wall_and_elapsed" else "legacy_collector_wall_and_broker_receipt_elapsed",
                                     ))
                                     try { publish(pending.event + ("journal" to committed.metadata())) }
                                     catch (error: Exception) { report("Journal delivery failed; committed observation retained: ${error.javaClass.simpleName}") }
+                                    val accepted = if (pending.collector == CollectorHealth.SOURCE &&
+                                        pending.event["type"] == "COLLECTOR_STATUS")
+                                        runCatching { store.observerStatusAcknowledged(pending.event["generation"] as? Number,
+                                            pending.event["continuityEpoch"] as? String, pending.event["state"] as? String,
+                                            now()) }.getOrDefault(false) else true
+                                    complete(pending, accepted)
                                 } catch (error: Exception) {
                                     failedCount.incrementAndGet()
                                     commitLossCount++
                                     report("Journal commit failed: ${error.javaClass.simpleName}")
+                                    complete(pending, false)
                                 }
                             }
                         }
@@ -245,6 +276,11 @@ object NativeJournalRuntime {
         val target = ingress
         if (target == null) TrackingEventBroker.reportPersistenceFailure("Native journal was not initialized")
         else target.submit(event)
+    }
+
+    internal fun submitObserver(event: Map<String, Any?>, capturedElapsedMs: Long, completion: (Boolean) -> Unit) {
+        val target = ingress
+        if (target == null) completion(false) else target.submitObserver(event, capturedElapsedMs, completion)
     }
 
     fun readPage(after: Long, limit: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {

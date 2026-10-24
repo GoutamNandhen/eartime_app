@@ -17,7 +17,10 @@ hardware telemetry implementation.
 - The previously tracked screenshot and generated Gradle report are removed
   from the review tip's index only; original working files remain. Already
   public ancestor history is not rewritten or claimed to have been erased.
-- The protected service is unchanged against `0a8be43`.
+- The protected service was unchanged through recovered contract commit `9fd94b5`.
+  The subsequent passive-observer integration adds exactly four lifecycle lines;
+  the strict hook-only guard compares every other line against `0a8be43`.
+  Source equality is now FALSE, with no physical G PASS claim.
 - Publication is a normal feature-branch push. No main merge, release/tag,
   force-push or published-history rewrite is authorized by this checkpoint.
 - Future rollback uses `git revert` and a normal push, not history deletion.
@@ -33,6 +36,11 @@ The initial gates were 123 Flutter / 112 native tests. The subsequent independen
 known-device pagination gates are 126 Flutter / 116 native tests, analyzer clean,
 Kotlin debug/release compile and debug packaging successful. Hardware acceptance
 and release signing remain separate gates. Results are local, not GitHub CI.
+
+Recovered contract checkpoint `9fd94b55a7e0c9eb31c0dcd6edae786c02accddd` was
+normally pushed and remote-verified (128 Flutter / 148 native). Runtime observer
+gates: 129 Flutter / 162 native, analyzer clean, both Kotlin variants/debug
+packaging. Its scoped inventory health does not enable confirmed live listening.
 
 Review [Architecture](ARCHITECTURE.md), [Feature Matrix](FEATURE_MATRIX.md),
 [Implementation Ledger](PRODUCTION_IMPLEMENTATION_LEDGER.md),

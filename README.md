@@ -8,7 +8,9 @@ Read the [feature matrix](docs/eartime/FEATURE_MATRIX.md),
 [architecture](docs/eartime/ARCHITECTURE.md) and
 [public review boundaries](docs/eartime/PUBLIC_CHECKPOINT.md).
 
-The protected collector matches `0a8be43`. Real playback attribution is still
+The collector preserves all original `0a8be43` lines plus four reviewed passive
+observer lifecycle hooks, checked by `tools/check_collector_baseline.ps1
+-AllowObserverLifecycleHooks`. Source equality is FALSE. Real playback attribution is still
 unknown; unverified activity is not confirmed listening. Production live ticking,
 hardware telemetry, physical G and release readiness are not claimed.
 

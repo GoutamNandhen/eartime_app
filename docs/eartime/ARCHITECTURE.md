@@ -28,15 +28,19 @@ listening. Compatibility reducers remain for regression tests, not product total
 
 ## Correctness Boundaries
 
-- `AudioTrackingService.kt` remains byte-identical to `0a8be43`.
+- `AudioTrackingService.kt` differs from `0a8be43` by exactly four reviewed passive
+  observer lifecycle additions. All prior collector lines match; the hook-only
+  guard checks this. Source equality is FALSE; physical G remains pending.
 - Real legacy playback is UNKNOWN attribution, projected as UNVERIFIED activity.
   Connected devices and a global playback boolean do not prove the playing output.
 - Only explicitly confirmed, identified native route inputs contribute confirmed
   listening. Current nonzero confirmed fixtures are synthetic, not hardware proof.
 - Production queries do not extrapolate from process lifetime. A validated
-  collector health/continuity lease is still required for live ticking/reminders.
+  route-specific health/continuity lease is still required for live ticking/reminders.
+  The native observer's durable inventory/global-activity lease cannot grant that.
 - Restart/loss gaps close at last durable evidence, not at the later restart time.
-  Unmarked same-process service recreation still requires a collector-generation hook.
+  The separate observer journals owner generations/epochs and stops; it does not
+  retrospectively validate the legacy collector's same-process gaps.
 - Identity from legacy names/MAC fallbacks is provisional and epoch-scoped;
   user display-name overrides cannot alter observations or physical identity.
 - Ingress and live hints are bounded; known-device results are paged at 100;

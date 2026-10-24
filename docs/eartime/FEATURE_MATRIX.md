@@ -14,9 +14,10 @@ Executable evidence keys:
 - R: same Gradle task with `--tests '*TrackingContractTest' --tests '*BoundedIngressQueueTest'`.
 - P: `ListeningProjectionTest` (48 API 28/35 cases), including shared JSON fixture,
   B02, atomic rollback, replay/rebuild, v1/v2 migrations, DST and aggregate parity.
-- U: `flutter test --no-pub test/listening_projection_test.dart` (19 cases).
+- U: `flutter test --no-pub test/listening_projection_test.dart` (20 cases).
 - C: `CollectorHealthTest` (16 API 28/35 cases) and `OutputAttributionTest`
-  (16 synthetic policy cases); runtime observer integration remains OPEN.
+  (16 synthetic policy cases); `AudioObserverOwnerTest` (10), Android adapter
+  (3 API 24/28/35 cases), scoped source/ack ingress and Flutter hint decoding.
 - Q: `ListeningPreferencesTest` (12 native cases) and `test/listening_settings_test.dart` (4 Flutter cases).
 - W: `ListeningWidgetTest` (6 native resource/render cases); physical launcher acceptance pending.
 - T: `test/telemetry_capability_test.dart` (2 conservative capability cases).
@@ -69,7 +70,7 @@ Executable evidence keys:
 | C5 | Connected/listening/idle breakdown | NOT_STARTED; interval partition tests OPEN |
 | C6 | Battery/wearing indicators | NOT_STARTED; capability widgets OPEN |
 | C7 | Goal progress | IMPLEMENTED / AUTOMATED_PASS Q/U; personal duration goal uses confirmed native total; not an exposure limit |
-| C8 | Permission/stale/error status | IN_PROGRESS; S/D/U/C visible journal errors/gaps and scoped health states; runtime health emitter OPEN |
+| C8 | Permission/stale/error status | IN_PROGRESS; S/D/U/C durable scoped runtime health/expiry/denial/recovery; physical recovery acceptance OPEN |
 | C9 | Cross-screen/widget consistency | IN_PROGRESS; P/U/W share native query; physical launcher/engine parity pending |
 | C10 | Efficient live updates | IN_PROGRESS; U coalesced foreground-only reads/cancellation; liveness ticking and long-run profiling OPEN |
 
@@ -138,12 +139,12 @@ Executable evidence keys:
 | G11 | Bounded startup | IMPLEMENTED inherited S; native/OEM timing PHYSICAL_PENDING |
 | G12 | Engine/sink ownership | IMPLEMENTED / AUTOMATED_PASS S + JVM owner tests |
 | G13 | Rapid reopen/splash | IN_PROGRESS; S model passes; physical root cause UNPROVEN |
-| G14 | Permitted background collection | IN_PROGRESS; existing FGS; API/device matrix OPEN |
+| G14 | Permitted background collection | IN_PROGRESS; FGS-owned passive public-API observer/cleanup; physical/OEM matrix OPEN |
 | G15 | Foreground notification/permissions | IN_PROGRESS; S permissions; physical recovery OPEN |
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; bounded ingress/hints/results, indexed device pages, window work ceiling; profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 128 Flutter/148 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 129 Flutter/162 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

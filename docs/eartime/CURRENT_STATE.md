@@ -9,8 +9,10 @@ Updated 2026-10-24. The authoritative current documents are:
 - [Release Blockers](RELEASE_BLOCKERS.md)
 
 The product reads a native journal-backed projection. Legacy Drift data remain
-preserved/read-only. Collector bytes match `0a8be43`; the full application has
-changed, so physical G must not be inferred from source equality.
+preserved/read-only. Collector source equality is now FALSE: exactly four
+passive-observer lifecycle additions follow recoverable source-equal checkpoint
+`9fd94b5`. A strict guard verifies every prior line against `0a8be43`. No physical
+G conclusion follows from this comparison.
 
 Current real output attribution is UNKNOWN. Production live extrapolation and
 automatic listening reminders are disabled without a validated continuity lease.

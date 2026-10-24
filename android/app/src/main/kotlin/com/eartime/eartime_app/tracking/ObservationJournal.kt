@@ -230,6 +230,12 @@ class ObservationJournal(
         catchUpProjection(db)
     }
 
+    internal fun observerStatusAcknowledged(generation: Number?, epoch: String?, phase: String?, now: ObservationTime): Boolean {
+        val health = ListeningProjection(database()).collectorHealth(now)
+        return health["state"] == phase && (health["generation"] as? Number)?.toLong() == generation?.toLong() &&
+            health["continuityEpoch"] == epoch
+    }
+
     private fun lastSequence(db: SQLiteDatabase) = scalar(db, "SELECT COALESCE(MAX(sequence), 0) FROM observations")
     private fun scalar(db: SQLiteDatabase, sql: String) = db.rawQuery(sql, null).use { it.moveToFirst(); it.getLong(0) }
 

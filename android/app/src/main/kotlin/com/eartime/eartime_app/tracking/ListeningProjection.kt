@@ -42,6 +42,8 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
     fun cursor(): Long = db.rawQuery("SELECT sequence FROM listening_projection WHERE singleton = 1", null)
         .use { if (it.moveToFirst()) it.getLong(0) else 0 }
 
+    fun collectorHealth(now: ObservationTime) = CollectorHealth.snapshot(state(), now)
+
     fun reset() {
         db.delete("listening_intervals", null, null)
         db.delete("listening_projection", null, null)

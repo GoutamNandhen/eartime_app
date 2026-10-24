@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:eartime_app/data/listening_projection.dart';
 import 'package:eartime_app/data/tracking_platform.dart';
+import 'package:eartime_app/domain/models/tracking_event.dart';
 import 'package:eartime_app/features/listening/listening_workspace.dart';
 import 'package:eartime_app/providers/listening_projection_provider.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +64,36 @@ class PagedFixtureProjectionClient extends ListeningProjectionClient {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('projection-test');
+  test(
+    'observer hints are decodable without becoming legacy playing or physical identity claims',
+    () {
+      final sample = TrackingEvent.fromJson({
+        'type': 'OUTPUT_EVIDENCE',
+        'timestamp': 1000,
+        'globalMusicActive': true,
+        'actualOutputKnown': false,
+        'confidence': 'UNKNOWN',
+        'connectedInventory': [
+          {'systemRouteId': 'fixture-a2dp', 'nativeType': 8},
+        ],
+        'predictedMediaDevices': [
+          {'systemRouteId': 'fixture-speaker', 'nativeType': 2},
+        ],
+      });
+      expect(sample.type, 'OUTPUT_EVIDENCE');
+      expect(sample.isPlaying, isNull);
+      expect(sample.device, isNull);
+      expect(sample.deviceId, isNull);
+      final status = TrackingEvent.fromJson({
+        'type': 'COLLECTOR_STATUS',
+        'timestamp': 1001,
+        'state': 'HEALTHY',
+        'scope': 'inventory_and_global_activity',
+      });
+      expect(status.state, 'HEALTHY');
+      expect(status.isPlaying, isNull);
+    },
+  );
   test(
     'collector health is scoped, optional for old snapshots and fails closed',
     () {

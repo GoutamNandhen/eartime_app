@@ -16,6 +16,39 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], manifest = Config.NONE, application = Application::class)
 class NativeObservationIngressTest {
+    @Test fun observerCaptureSourceAndHealthAcknowledgmentAreDurableWithoutConfirmedListening() {
+        val context = RuntimeEnvironment.getApplication()
+        val name = "o-${UUID.randomUUID().toString().take(8)}.db"
+        android.provider.Settings.Global.putInt(context.contentResolver, android.provider.Settings.Global.BOOT_COUNT, 7)
+        val published = CopyOnWriteArrayList<Map<String, Any?>>()
+        val ingress = NativeObservationIngress(context, published::add, {}, name)
+        fun submit(phase: String): Boolean {
+            val future = CompletableFuture<Boolean>()
+            ingress.submitObserver(mapOf("type" to "COLLECTOR_STATUS", "timestamp" to System.currentTimeMillis(),
+                "contractVersion" to 1, "generation" to 1L, "continuityEpoch" to "fixture-epoch",
+                "state" to phase, "leaseMs" to 15000L, "deviceListenerRegistered" to true,
+                "activityObservationReady" to true, "sampleSucceeded" to true),
+                android.os.SystemClock.elapsedRealtime(), future::complete)
+            return future.get(20, TimeUnit.SECONDS)
+        }
+        try {
+            assertTrue("Startup acknowledgment needs a synthetic known boot", submit("STARTING"))
+            assertTrue("Healthy acknowledgment must follow durable initialization", submit("HEALTHY"))
+            val result = page(ingress)
+            val rows = (result["observations"] as List<*>).drop(1).map { it as Map<*, *> }
+            assertEquals(2, rows.size)
+            assertTrue(rows.all { it["collector"] == CollectorHealth.SOURCE && it["confidence"] == "UNKNOWN" })
+            assertTrue(rows.all { it["provenance"] == "supported_audio_api_sample_wall_and_elapsed" })
+            assertEquals(2, published.size)
+            assertTrue(submit("STOPPED")); assertFalse(submit("HEALTHY"))
+            val snapshot = CompletableFuture<Map<String, Any?>>()
+            ingress.readListening(System.currentTimeMillis() - 86400000, System.currentTimeMillis() + 1000, "UTC", 0, 100, snapshot::complete,
+                { snapshot.completeExceptionally(IllegalStateException(it)) })
+            val projected = snapshot.get(20, TimeUnit.SECONDS)
+            assertEquals(0L, projected["confirmedMs"])
+            assertEquals("CONTINUITY_LOST", (projected["collectorHealth"] as Map<*, *>)["state"])
+        } finally { ingress.close(); context.deleteDatabase(name) }
+    }
     private fun page(ingress: NativeObservationIngress): Map<String, Any?> {
         val future = CompletableFuture<Map<String, Any?>>()
         ingress.readPage(0, 128, future::complete, { future.completeExceptionally(IllegalStateException(it)) })

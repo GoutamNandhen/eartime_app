@@ -35,6 +35,7 @@ class AudioTrackingService : Service() {
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var a2dpProxy: BluetoothA2dp? = null
     private var bleDiscoveryManager: BleDiscoveryManager? = null
+    private var inventoryObserver: SupportedAudioObserver? = null
 
     private val notificationId = 1001
     private val channelId = "EarTimeTrackingChannel"
@@ -56,6 +57,7 @@ class AudioTrackingService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "[START] Service onStartCommand")
         if (intent?.action == ACTION_STOP) {
+            inventoryObserver?.close()
             stopForeground(true)
             stopSelf()
             return START_NOT_STICKY
@@ -124,6 +126,7 @@ class AudioTrackingService : Service() {
             return START_NOT_STICKY
         }
 
+        if (inventoryObserver?.isClosed != false) inventoryObserver = SupportedAudioObserver.start(applicationContext)
         if (!isInitialized) {
             Log.i(TAG, "SERVICE_RUNNING")
 
@@ -143,6 +146,7 @@ class AudioTrackingService : Service() {
     }
 
     override fun onDestroy() {
+        inventoryObserver?.close()
         super.onDestroy()
         Log.i(TAG, "SERVICE_DESTROYED")
         if (isInitialized) {

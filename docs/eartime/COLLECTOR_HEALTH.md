@@ -29,8 +29,40 @@ from the projection's gated live-extrapolation clock.
 The scope is explicitly `inventory_and_global_activity`, never actual output or
 continuous listening. `liveListeningEligible` is always false. No lease in this
 contract enables confirmed playback accounting, reminders or Dart ticking.
-The protected legacy collector does not emit health acknowledgments. A runtime
-observer requires separately tested ownership/cleanup integration.
+The legacy playback callbacks do not emit health acknowledgments. The separately
+owned runtime observer now supplies them; its health never asserts that legacy
+callback initialization succeeded or that another player uses an external output.
+
+## Runtime Ownership
+
+`SupportedAudioObserver` is owned by the foreground service, independent of
+Flutter/Activity lifetimes. Registration, sampling and cleanup run on its own
+HandlerThread. Four added service lines hold/start/close it; existing collector
+logic is unchanged. Recoverable source-equal checkpoint: `9fd94b5`. The strict
+`tools/check_collector_baseline.ps1 -AllowObserverLifecycleHooks` guard verifies
+that no other collector lines changed. Source equality is explicitly FALSE.
+
+The public API adapter records at most 128 connected routes and 128 predicted
+routes per sample, global activity, and separately labeled communication/policy
+information. Platform route IDs are epoch-scoped, not physical identities. No
+names/MACs are merged or promoted. API 24/25 activity uses polling; API 26+ adds
+a playback callback. Callback payloads are not retrospective route evidence:
+the worker reads current state again. Actual output remains UNKNOWN.
+
+Polls are 10s, leases at most 15s. Callback storms coalesce and cannot cause more
+than one sample/second or more than one outstanding health acknowledgment.
+Acknowledgment follows commit and checks the projected generation/epoch/state
+using the current clock. Queue loss, rejection, expiry or clock discontinuity
+requires fresh initialization. Commit rejection backs off 10s; API failure or
+permission denial backs off 30s. Partial registration cleans up; failed cleanup
+stops retries rather than silently accumulating listener owners. Stop is
+idempotent/asynchronous; immediate restart can create a fresh owner.
+
+All samples use the same ingress/process/boot epoch and store captured elapsed
+time plus API-sample provenance, not later publication time. Health and evidence
+rows never create listening intervals. Long-run storage/energy profiling remains
+open: even unchanged successful lease renewals add durable rows. No hardware
+timing, foreground-service/OEM behavior or physical G PASS is claimed.
 
 ## Supported API Boundaries
 
@@ -67,3 +99,10 @@ pause, unknown, restart, Flutter reopen and delayed route callbacks. These are
 policy checks, not complete real-platform route-transition integration tests.
 Flutter decoding/status tests keep old snapshots compatible and reject unsafe
 health-version/scope/eligibility claims. Full gates are in `TEST_RESULTS.md`.
+
+`AudioObserverOwnerTest`: 10 cases, including 500 replacements, 1000 same-clock
+callbacks, failed initialization/sampling, denial, commit rejection, delayed ack,
+clock/lease loss, cleanup uncertainty and capture deadlines. Adapter models pass
+on API 24/28/35. Ingress integration verifies durable scoped acknowledgments,
+UNKNOWN confidence and source/provenance. Flutter decodes the new hint types
+without turning global activity into legacy playback or physical-device claims.

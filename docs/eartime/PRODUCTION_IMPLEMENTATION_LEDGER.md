@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: durable health/attribution contracts, 128 Flutter / 148 native
+Latest checkpoint: scoped runtime observer integration, 129 Flutter / 162 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -14,7 +14,7 @@ passing tests, analyzer clean. The recovery baseline below is historical.
 - Before publication, inherited dirty/staged content was preserved without commits.
 - Recoverable source/test/docs/config/index snapshots remain local and unpublished.
 - Protected `AudioTrackingService.kt` Git blob: `78353ae1cd1d97897137360be8df24354f6c0bff`;
-  current source equals known-good `0a8be43`.
+  source equaled known-good `0a8be43` before the later observer hooks.
 - Baseline: `flutter test --no-pub --reporter compact`: exit 0, 90 tests.
 - Baseline: `android/gradlew.bat :app:testDebugUnitTest :app:compileDebugKotlin --offline`:
   exit 0, existing 15 JVM tests (Gradle up-to-date results).
@@ -62,8 +62,8 @@ Resume instructions and exact next work live in `CODEX_RESUME.md`.
 
 ## Current checkpoint evidence
 
-Final suite: 128 Flutter tests passed (original 103 slots including 15 rewritten
-placeholder cases, plus 25 new). Native: 148 passing tests (original 46 plus 102),
+Final suite: 129 Flutter tests passed (original 103 slots including 15 rewritten
+placeholder cases, plus 26 new). Native: 162 passing tests (original 46 plus 116),
 0 failures/errors/skips. SQLite/projection/preferences/widget models use API
 28/35. Kotlin debug/release compile and debug APK packaging pass offline.
 Analyzer exits 0, no issues. Signing check intentionally exits 1 without
@@ -165,3 +165,53 @@ accounting/buffer state. No release readiness is claimed.
 - Next: separately tested native observer ownership/cleanup and captured-source
   ingress. Any necessary service lifecycle hooks require an isolated reversible
   change after this recoverable, source-equal checkpoint. Physical G stays pending.
+
+## Observer Integration Necessity (Before Service Edit)
+
+- Recoverable contract checkpoint published and remote-verified:
+  `9fd94b55a7e0c9eb31c0dcd6edae786c02accddd`. At that point the protected
+  service still exactly matched `0a8be43` and all 128 Flutter / 148 native gates passed.
+- A process singleton or EventChannel cannot acknowledge actual service owner
+  start/stop. The new passive observer therefore needs explicit service ownership.
+  Proposed narrow service diff: one nullable owner field, asynchronous start
+  after successful foreground entry, idempotent close on ACTION_STOP and onDestroy.
+  No existing callback, Bluetooth, routing, initialization or playback logic is
+  to be changed. Independent observer tests precede these four added lines.
+- This only establishes the sidecar's inventory/global-activity scope. A failed
+  legacy callback initialization must not become a claim of healthy legacy
+  tracking or confirmed output. The sidecar never emits confirmed intervals.
+- Source equality will no longer hold if those hooks are integrated. Record the
+  exact baseline diff and use a strict hook-only guard; never report equality or
+  physical G PASS for a changed service. Published rollback remains `git revert`.
+
+## Scoped Runtime Observer Implementation
+
+- Independent tests passed before the service edit. Integrated exactly four
+  lifecycle additions; all existing collector lines remain unchanged against
+  `0a8be43`. Guard: `tools/check_collector_baseline.ps1 -AllowObserverLifecycleHooks`.
+  Plain equality is now FALSE, not a passing baseline-equality result.
+- Observer registers on an owned HandlerThread after foreground entry and
+  closes asynchronously/idempotently on stop/destruction. Immediate restart
+  accepts a new owner. No service callback, A2DP/BLE or legacy playback logic changed.
+- Public API samples retain captured wall/elapsed time and their distinct source
+  through bounded ingress. Commit acknowledgments verify durable projected
+  generation/epoch/state, not receipt or process uptime. No route confidence is
+  upgraded; samples never create listening duration. No native route/GATT writes.
+- Sampling/ack bounds, 10s polls, 15s scoped leases and retry backoffs (10s commit,
+  30s API/permission) prevent callback storms/retry spins. Cleanup uncertainty
+  inhibits new registrations. Long-run storage/battery measurements remain open.
+- Added 10 owner tests (including 500 replacements and 1000 callback calls),
+  three adapter API models (24/28/35), one durable-ingress case and one Flutter
+  observer-hint decoder test. Full gates: 129 Flutter / 162 native, analyzer clean,
+  Kotlin debug/release and debug packaging pass. Existing B02, migrations,
+  rebuild and rapid-reopen models remain green. No physical testing performed.
+- Initial ingress test correctly failed with no modeled boot identity. Added an
+  explicit synthetic BOOT_COUNT fixture; production boot/clock refusal was kept,
+  and status acknowledgments now validate every requested phase, not only HEALTHY.
+- Remaining core blockers: cross-app actual output evidence, stable physical
+  identity, route-specific live continuity; inventory health is not that proof.
+  Feature counts stay 20 IMPLEMENTED / 75 IN_PROGRESS / 24 NOT_STARTED (119).
+  Continue independent load/replay, identity and data-management work; do not
+  enable confirmed ticking/reminders based on this scoped observer.
+- Observer debug APK (local/unpublished): 158947452 bytes, SHA-256
+  `DB3530312DB28152E82B1D2B95C16E6EBD8030C588475497F01D42FD9F523809`.

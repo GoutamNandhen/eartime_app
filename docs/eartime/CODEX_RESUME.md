@@ -5,22 +5,30 @@ Review branch `codex/production-checkpoint-20261024`; protected baseline `0a8be4
 Initial publication verified at `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`;
 the follow-up adds known-device pagination without changing listening accounting.
 The interrupted health/attribution contract work is now completed and tested.
-See `COLLECTOR_HEALTH.md`; no runtime observer or confirmed route producer is
-implied by that contract checkpoint.
+Contract checkpoint `9fd94b55a7e0c9eb31c0dcd6edae786c02accddd` was pushed and
+remote-verified before runtime integration. A service-owned passive observer is
+now integrated; it is NOT a confirmed route producer. See `COLLECTOR_HEALTH.md`.
 Read `PRODUCTION_IMPLEMENTATION_LEDGER.md`, `LISTENING_PROJECTION.md` and
 `FEATURE_MATRIX.md`. Autonomous implementation remains authorized; do not ask
 for routine phase approval. This is NOT RELEASE_READY.
 
 ## Protected Baseline
 
-`AudioTrackingService.kt` is byte-identical to `0a8be43`:
+`0a8be43` remains the known-good G reference. Its original collector was:
 
 - SHA-256 `EF1DA5B8FF5AB092ACA80F2CCC78C7CEFE727C5F20FDFC045BF58E8E3752AC1D`.
 - Git blob `78353ae1cd1d97897137360be8df24354f6c0bff`.
-- `git diff --exit-code 0a8be43 -- android/app/src/main/kotlin/com/eartime/eartime_app/tracking/AudioTrackingService.kt`: exit 0.
+- Source equality held through `9fd94b5`. It is now **FALSE**: exactly four added
+  lifecycle-hook lines own the passive observer (field, start, stop, destroy).
+- Current Git blob `0d0c8df1b57824c895ad11dabce2b0dbf99de4dd`;
+  raw SHA-256 `CDB9585BC875F2BBFF36D0C6EB0C6714D0FD978A6BAA636D51A4F9E2F8A3A1CC`.
+- `tools/check_collector_baseline.ps1 -AllowObserverLifecycleHooks` passes by
+  removing only those four exact lines in memory and comparing every remaining
+  line against the baseline. Plain equality intentionally fails. No existing
+  collector callback/Bluetooth/playback/initialization logic was edited.
 
 Physical G and the historical A/B splash regression mechanism are still
-UNPROVEN. Source equality does not establish G for the changed application.
+UNPROVEN. The hook-only guard does not establish G for the changed application.
 No phone was attached, installed, cleared, commanded or physically tested.
 
 ## Current Implementation
@@ -65,6 +73,15 @@ Native journal schema **3**, listening projection version **2**:
   protocol providers are disposed. No vendor packet decoder/support invented.
 - Android backup/transfer exclusions added. Release builds cannot fall back to
   the debug key; explicit signing configuration is required.
+- Service-owned `SupportedAudioObserver` registers/samples/cleans up on its own
+  HandlerThread. Captured API samples enter the same bounded journal ingress,
+  retain source/provenance and get durable health-state acknowledgments. It uses
+  public inventory/global activity/communication/prediction APIs only, never GATT
+  or route writes. Delayed callbacks trigger fresh reads, not stale route claims.
+- Scoped 15s leases, 10s polls, one pending acknowledgment and one sample/second
+  bound callback storms. Failure/denial retries back off 30s; rejected commits
+  back off 10s and reinitialize with a new generation/epoch. Cleanup uncertainty
+  prevents duplicate listener owners. Physical timing/energy behavior is pending.
 
 ## Important Runtime Limits
 
@@ -74,10 +91,12 @@ real protected-collector activity is **UNVERIFIED**, not confirmed listening.
 Nonzero confirmed route tests use explicitly identified synthetic native input,
 not validated hardware. Do not interpret confirmed zero as measured silence.
 
-**No validated collector-liveness lease exists.** The protected service has no
-durable destruction/health marker, and may fail initialization while the process
-survives. Production queries do not extrapolate open intervals beyond durable
-evidence. The native reducer's explicit live-lease path is unit-tested, but
+**No validated route-specific listening lease exists.** The new observer's
+durable health concerns inventory/global activity only, not legacy callback
+success or another application's actual media output. Service stop/destruction
+closes the observer; initialization failure, expired leases, unknown boot and
+process gaps cannot grant health. Production queries do not extrapolate open
+intervals beyond durable evidence. The reducer's explicit live path is model-tested, but
 production live ticking and automatic listening reminders remain gated. A new
 SYNC can extend an observed interval without replacing its original opening.
 
@@ -105,14 +124,15 @@ flutter analyze --no-pub
 .\gradlew.bat :app:checkReleaseSigning --offline
 ```
 
-- Flutter: **128 passed**, exit 0. Original 103 slots retained, including 15
-  formerly empty/trivial tests rewritten as actual assertions; 25 additional
+- Flutter: **129 passed**, exit 0. Original 103 slots retained, including 15
+  formerly empty/trivial tests rewritten as actual assertions; 26 additional
   projection/settings/telemetry/layout cases. No skips/excluded test files.
 - Analyzer: **No issues found**, exit 0. All 21 inherited findings and final
   formatter-exposed block lints corrected without suppression.
-- Native: **148 passed**, 0 failures/errors/skips. Original 46 plus 102 new:
-  projection 48; preferences 12; widget 6; durable hint buffer 2; ingress 2 new
-  (3 total); health 16 and synthetic output-policy 16. API 28/35 modeled for SQLite/projection/preferences/widget/health tests.
+- Native: **162 passed**, 0 failures/errors/skips. Original 46 plus 116 new:
+  projection 48; preferences 12; widget 6; durable hint buffer 2; ingress 4 total;
+  health 16, synthetic output-policy 16, observer owner 10, Android adapter 3.
+  Adapter API 24/28/35; SQLite/projection/preferences/widget/health API 28/35 models.
 - Kotlin debug/release compile and debug packaging: exit 0, BUILD SUCCESSFUL.
   Inherited Kotlin/Gradle/old BLE API deprecation warnings remain; service code
   was not edited to remove them.
@@ -143,11 +163,10 @@ Before public staging, the saved index SHA-256 was:
 Publication uses reviewed feature-branch commits only; no destructive migration,
 main update, force push or device mutation. See `PUBLIC_CHECKPOINT.md`.
 
-1. Establish a validated collector health/continuity contract without silently
-   altering the protected service. Durable generation/epoch/lease contract and
-   status UI now pass; actual observer ownership/cleanup integration is next.
-   Keep production extrapolation disabled until
-   real lifetime/route evidence exists; retain all unknown/gap behavior.
+1. Establish route-specific listening evidence, not merely observer health.
+   Scoped runtime ownership/health/cleanup now pass automation. Keep production
+   extrapolation/reminders disabled until real lifetime/route evidence exists.
+   Preserve all unknown/gap behavior and the explicit hook-only baseline guard.
 2. Finish evidence-backed identity/alias normalization and a permitted route
    collector. Generic global playback or a discovered UUID is not that proof.
 3. Add long-history load/cancellation/replay fairness tests, including device
