@@ -12,15 +12,16 @@ part 'database.g.dart';
 @DriftDatabase(tables: [EarTimeEvents])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
-  
-  AppDatabase.forTesting(QueryExecutor e) : super(e);
+
+  AppDatabase.forTesting(super.e);
 
   @override
   int get schemaVersion => 1;
 
   Stream<List<EarTimeEventEntity>> watchAllEvents() {
-    return (select(earTimeEvents)
-          ..orderBy([(t) => OrderingTerm(expression: t.timestamp, mode: OrderingMode.desc)]))
+    return (select(earTimeEvents)..orderBy([
+          (t) => OrderingTerm(expression: t.timestamp, mode: OrderingMode.desc),
+        ]))
         .watch();
   }
 

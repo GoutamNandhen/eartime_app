@@ -7,12 +7,14 @@ import '../../domain/models/tracking_event.dart';
 import '../../domain/logic/capability_detector.dart';
 import '../../domain/models/earbud_capabilities.dart';
 import '../../data/tracking_platform.dart';
+import 'tracking_diagnostics.dart';
 
 class DeveloperDiagnosticsScreen extends ConsumerStatefulWidget {
   const DeveloperDiagnosticsScreen({super.key});
 
   @override
-  ConsumerState<DeveloperDiagnosticsScreen> createState() => _DeveloperDiagnosticsScreenState();
+  ConsumerState<DeveloperDiagnosticsScreen> createState() =>
+      _DeveloperDiagnosticsScreenState();
 }
 
 class _LogEntry {
@@ -29,10 +31,11 @@ class _LogEntry {
   });
 }
 
-class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnosticsScreen> {
+class _DeveloperDiagnosticsScreenState
+    extends ConsumerState<DeveloperDiagnosticsScreen> {
   final List<_LogEntry> _logs = [];
   final ScrollController _scrollController = ScrollController();
-  
+
   String? _lastPayload;
   String? _lastAction;
   String? _diffResult;
@@ -46,8 +49,11 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
     // Trigger BLE diagnostic for the currently active device, if any
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final activeDevice = ref.read(liveSessionProvider).activeDevice;
-      if (activeDevice != null && activeDevice.canonicalDeviceId.contains(':')) {
-        _logAction('TRIGGERING NATIVE BLE DIAGNOSTIC FOR ${activeDevice.canonicalDeviceId}');
+      if (activeDevice != null &&
+          activeDevice.canonicalDeviceId.contains(':')) {
+        _logAction(
+          'TRIGGERING NATIVE BLE DIAGNOSTIC FOR ${activeDevice.canonicalDeviceId}',
+        );
         TrackingPlatform.startBleDiagnostic(activeDevice.canonicalDeviceId);
       }
     });
@@ -56,11 +62,13 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
   void _logAction(String actionName) {
     setState(() {
       _lastAction = actionName;
-      _logs.add(_LogEntry(
-        timestamp: DateTime.now(),
-        label: '[ACTION] $actionName',
-        isAction: true,
-      ));
+      _logs.add(
+        _LogEntry(
+          timestamp: DateTime.now(),
+          label: '[ACTION] $actionName',
+          isAction: true,
+        ),
+      );
     });
     _scrollToBottom();
   }
@@ -72,32 +80,37 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
     if (_lastAction != null && _lastPayload != null) {
       final before = _lastPayload!;
       final after = payload;
-      
+
       if (before != after) {
-        String diffText = 'POSSIBLE STATE CHANGE\nObserved during: $_lastAction\nConfidence: UNCONFIRMED\n';
+        String diffText =
+            'POSSIBLE STATE CHANGE\nObserved during: $_lastAction\nConfidence: UNCONFIRMED\n';
         for (int i = 0; i < before.length && i < after.length; i += 2) {
           final bByte = before.substring(i, i + 2);
           final aByte = after.substring(i, i + 2);
           if (bByte != aByte) {
-            diffText += 'Candidate field changed after $_lastAction:\nByte offset ${i ~/ 2}\nBefore: $bByte\nAfter:  $aByte\n\n';
+            diffText +=
+                'Candidate field changed after $_lastAction:\nByte offset ${i ~/ 2}\nBefore: $bByte\nAfter:  $aByte\n\n';
           }
         }
         setState(() {
           _diffResult = diffText;
         });
       }
-      
+
       _lastAction = null;
     }
 
     _lastPayload = payload;
 
     setState(() {
-      _logs.add(_LogEntry(
-        timestamp: DateTime.fromMillisecondsSinceEpoch(event.timestamp),
-        label: '[BLE-NOTIFY] Uninterpreted OPOv1 notification. Char: ${event.characteristicUuid?.substring(0, 8)}... Payload: $payload',
-        event: event,
-      ));
+      _logs.add(
+        _LogEntry(
+          timestamp: DateTime.fromMillisecondsSinceEpoch(event.timestamp),
+          label:
+              '[BLE-NOTIFY] Uninterpreted OPOv1 notification. Char: ${event.characteristicUuid?.substring(0, 8)}... Payload: $payload',
+          event: event,
+        ),
+      );
     });
     _scrollToBottom();
   }
@@ -117,12 +130,15 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Listen to capability detection service instantiation
     ref.watch(capabilityDetectorServiceProvider);
-    
+
     // Listen to BLE notifications
-    ref.listen<AsyncValue<TrackingEvent>>(bleNotificationProvider, (previous, next) {
+    ref.listen<AsyncValue<TrackingEvent>>(bleNotificationProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasValue && next.value != null) {
         _handleBleEvent(next.value!);
       }
@@ -130,9 +146,11 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
 
     final capabilities = ref.watch(earbudCapabilitiesProvider);
     final discoveryResult = ref.watch(bleDiscoveryResultProvider);
-    final diagnosticState = ref.watch(bleDiagnosticStateProvider);
 
-    ref.listen<AsyncValue<TrackingEvent>>(bleDiagnosticStateProvider, (previous, next) {
+    ref.listen<AsyncValue<TrackingEvent>>(bleDiagnosticStateProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasValue && next.value != null) {
         final event = next.value!;
         setState(() {
@@ -141,12 +159,15 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
             _gattMessage = event.message;
           }
         });
-        
-        _logs.add(_LogEntry(
-          timestamp: DateTime.fromMillisecondsSinceEpoch(event.timestamp),
-          label: '[GATT STATE] ${_gattState}${event.message != null ? ' - ${event.message}' : ''}',
-          isAction: true, // Make it pop visually
-        ));
+
+        _logs.add(
+          _LogEntry(
+            timestamp: DateTime.fromMillisecondsSinceEpoch(event.timestamp),
+            label:
+                '[GATT STATE] $_gattState${event.message != null ? ' - ${event.message}' : ''}',
+            isAction: true, // Make it pop visually
+          ),
+        );
         _scrollToBottom();
       }
     });
@@ -160,15 +181,21 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
           TextButton(
             onPressed: () {
               final activeDevice = ref.read(liveSessionProvider).activeDevice;
-              if (activeDevice != null && activeDevice.canonicalDeviceId.isNotEmpty) {
+              if (activeDevice != null &&
+                  activeDevice.canonicalDeviceId.isNotEmpty) {
                 setState(() {
                   _gattState = 'REFRESHING...';
                   _gattMessage = null;
                 });
-                TrackingPlatform.startBleDiagnostic(activeDevice.canonicalDeviceId);
+                TrackingPlatform.startBleDiagnostic(
+                  activeDevice.canonicalDeviceId,
+                );
               }
             },
-            child: const Text('Refresh Diagnostic', style: TextStyle(color: AppColors.editorialWhite)),
+            child: const Text(
+              'Refresh Diagnostic',
+              style: TextStyle(color: AppColors.editorialWhite),
+            ),
           ),
         ],
       ),
@@ -184,7 +211,11 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
                 shape: BoxShape.circle,
                 color: AppColors.primary.withValues(alpha: 0.1),
                 boxShadow: [
-                  BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 100, spreadRadius: 30),
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    blurRadius: 100,
+                    spreadRadius: 30,
+                  ),
                 ],
               ),
             ),
@@ -196,6 +227,8 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildDeviceSection(theme, discoveryResult.value),
+                  const SizedBox(height: 16),
+                  _buildDatabaseInspectionSection(theme),
                   const SizedBox(height: 16),
                   _buildCapabilitiesSection(theme, capabilities),
                   const SizedBox(height: 16),
@@ -213,27 +246,167 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
       ),
     );
   }
-  
-  Widget _buildDeviceSection(ThemeData theme, Map<String, dynamic>? discoveryResult) {
-    final activeDevice = ref.watch(liveSessionProvider).activeDevice;
-    
+
+  Widget _buildDatabaseInspectionSection(ThemeData theme) {
+    final allEventsAsync = ref.watch(allEventsProvider);
+    final sessionsAsync = ref.watch(sessionManagerProvider);
+    final live = ref.watch(liveSessionProvider).activeDevice;
     return LiquidGlassSurface(
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('DEVICE', style: theme.textTheme.labelMedium?.copyWith(color: AppColors.editorialWhite, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('Name: ${activeDevice?.displayName ?? 'Unknown'}', style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant)),
-          Text('Address: ${activeDevice?.canonicalDeviceId ?? 'Unknown'}', style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant)),
-          const SizedBox(height: 4),
-          Text('GATT Connected: $_gattState', 
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: _gattState == 'CONNECTED' || _gattState == 'SERVICES_DISCOVERED' ? AppColors.primary : AppColors.error
-            )
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'PERSISTED DB AND SESSION INSPECTION',
+                  style: theme.textTheme.labelMedium,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.print, size: 18),
+                tooltip: 'Dump bounded preview to Logcat',
+                onPressed: () {
+                  final events = allEventsAsync.asData?.value ?? [];
+                  final sessions = sessionsAsync.asData?.value ?? [];
+                  debugPrint(
+                    '[LIFECYCLE-INSPECT] BOUNDED_DUMP '
+                    'maxEvents=$diagnosticEventLimit '
+                    'maxSessions=${DiagnosticSessionPreview.sessionLimit} '
+                    'maxIntervals=${DiagnosticSessionPreview.intervalLimit}',
+                  );
+                  for (final line in diagnosticDumpLines(events, sessions)) {
+                    debugPrint('[LIFECYCLE-INSPECT] $line');
+                  }
+                  debugPrint(
+                    '[LIFECYCLE-INSPECT] Live state (not DB history): '
+                    'device=${live?.canonicalDeviceId} playback=${live?.playbackState.name} '
+                    'start=${live?.currentPlaybackStartTime}',
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Bounded preview dumped to logcat'),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-          if (_gattMessage != null) 
-            Text('Message: $_gattMessage', style: const TextStyle(fontSize: 10, color: AppColors.error)),
+          Text(
+            'Current live state: ${live?.playbackState.name ?? 'no device'}; '
+            'start=${live?.currentPlaybackStartTime ?? 'none'}',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          allEventsAsync.when(
+            data: (events) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Persisted rows: ${events.length}; showing newest 6',
+                  style: theme.textTheme.bodySmall,
+                ),
+                for (final event in events.reversed.take(6))
+                  Text(
+                    '${event.timestamp} [${event.eventType}] '
+                    '${diagnosticLabel(event.canonicalDeviceId)}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+              ],
+            ),
+            loading: () => const Text('Loading DB events...'),
+            error: (error, _) => Text('DB unavailable: $error'),
+          ),
+          const Divider(height: 16),
+          sessionsAsync.when(
+            data: (sessions) {
+              final preview = DiagnosticSessionPreview(sessions);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sessions: ${preview.totalSessions}; showing ${preview.sessions.length}. '
+                    'Open connections in preview: ${preview.openConnectionCount}; '
+                    'open playback in preview: ${preview.openPlaybackCount}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  for (final session in preview.sessions)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '${diagnosticLabel(session.canonicalDeviceId)}: '
+                        'disconnected=${session.isDisconnected}, '
+                        'playing metadata=${session.isPlaying}, '
+                        'open playback=${!session.isDisconnected && session.currentPlaybackStartTime != null}; '
+                        'closed/static duration in shown intervals='
+                        '${preview.shownClosedDuration(session).inSeconds}s '
+                        '(showing up to ${DiagnosticSessionPreview.intervalLimit} intervals)',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  if (preview.totalSessions > preview.sessions.length)
+                    Text(
+                      'Older sessions omitted: ${preview.totalSessions - preview.sessions.length}',
+                    ),
+                ],
+              );
+            },
+            loading: () => const Text('Loading sessions...'),
+            error: (error, _) => Text('Session inspection unavailable: $error'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeviceSection(
+    ThemeData theme,
+    Map<String, dynamic>? discoveryResult,
+  ) {
+    final activeDevice = ref.watch(liveSessionProvider).activeDevice;
+
+    return LiquidGlassSurface(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'DEVICE',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.editorialWhite,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Name: ${activeDevice?.displayName ?? 'Unknown'}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            'Address: ${activeDevice?.canonicalDeviceId ?? 'Unknown'}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'GATT Connected: $_gattState',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color:
+                  _gattState == 'CONNECTED' ||
+                      _gattState == 'SERVICES_DISCOVERED'
+                  ? AppColors.primary
+                  : AppColors.error,
+            ),
+          ),
+          if (_gattMessage != null)
+            Text(
+              'Message: $_gattMessage',
+              style: const TextStyle(fontSize: 10, color: AppColors.error),
+            ),
         ],
       ),
     );
@@ -245,15 +418,30 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CAPABILITIES', style: theme.textTheme.labelMedium?.copyWith(color: AppColors.editorialWhite, fontWeight: FontWeight.bold)),
+          Text(
+            'CAPABILITIES',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.editorialWhite,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 8),
           _capRow('Active Provider:', caps.providerName, isHighlight: true),
           _capRow('BLE Available:', caps.bleAvailable.name.toUpperCase()),
           _capRow('GATT Available:', caps.gattAvailable.name.toUpperCase()),
           _capRow('LE Audio (PACS):', caps.leAudioAvailable.name.toUpperCase()),
-          _capRow('Individual Bud Identity:', caps.individualBudIdentity.name.toUpperCase()),
-          _capRow('Left/Right Identity:', caps.leftRightIdentity.name.toUpperCase()),
-          _capRow('Left/Right Connection:', caps.leftRightConnectionState.name.toUpperCase()),
+          _capRow(
+            'Individual Bud Identity:',
+            caps.individualBudIdentity.name.toUpperCase(),
+          ),
+          _capRow(
+            'Left/Right Identity:',
+            caps.leftRightIdentity.name.toUpperCase(),
+          ),
+          _capRow(
+            'Left/Right Connection:',
+            caps.leftRightConnectionState.name.toUpperCase(),
+          ),
           _capRow('In-Ear Detection:', caps.inEarDetection.name.toUpperCase()),
           _capRow('Per-Ear Exposure:', caps.perEarExposure.name.toUpperCase()),
         ],
@@ -267,25 +455,38 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
           Text(
-            value, 
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            value,
             style: TextStyle(
-              fontSize: 12, 
-              color: isHighlight ? AppColors.secondary : (value == 'SUPPORTED' ? AppColors.primary : AppColors.onSurfaceVariant),
+              fontSize: 12,
+              color: isHighlight
+                  ? AppColors.secondary
+                  : (value == 'SUPPORTED'
+                        ? AppColors.primary
+                        : AppColors.onSurfaceVariant),
               fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
-            )
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildServicesSection(ThemeData theme, Map<String, dynamic>? discoveryResult) {
+  Widget _buildServicesSection(
+    ThemeData theme,
+    Map<String, dynamic>? discoveryResult,
+  ) {
     if (discoveryResult == null) {
       return const SizedBox.shrink();
     }
-    
+
     final deviceMap = discoveryResult['device'] as Map<String, dynamic>?;
     final services = deviceMap?['services'] as List<dynamic>? ?? [];
 
@@ -294,7 +495,13 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SERVICES & CHARACTERISTICS', style: theme.textTheme.labelMedium?.copyWith(color: AppColors.editorialWhite, fontWeight: FontWeight.bold)),
+          Text(
+            'SERVICES & CHARACTERISTICS',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.editorialWhite,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 8),
           ...services.map((s) {
             final chars = s['characteristics'] as List<dynamic>? ?? [];
@@ -303,12 +510,25 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Service: ${s['uuid']}', style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Service: ${s['uuid']}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   ...chars.map((c) {
                     final props = (c['properties'] as List<dynamic>).join(', ');
                     return Padding(
                       padding: const EdgeInsets.only(left: 12.0, top: 2.0),
-                      child: Text('Char: ${c['uuid']}\nProps: $props', style: const TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant)),
+                      child: Text(
+                        'Char: ${c['uuid']}\nProps: $props',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
                     );
                   }),
                 ],
@@ -396,7 +616,8 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
                 itemCount: _logs.length,
                 itemBuilder: (context, index) {
                   final log = _logs[index];
-                  final timeStr = "${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}:${log.timestamp.second.toString().padLeft(2, '0')}.${log.timestamp.millisecond.toString().padLeft(3, '0')}";
+                  final timeStr =
+                      "${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}:${log.timestamp.second.toString().padLeft(2, '0')}.${log.timestamp.millisecond.toString().padLeft(3, '0')}";
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 6.0),
                     child: Text(
@@ -404,8 +625,12 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 10,
-                        color: log.isAction ? AppColors.secondary : AppColors.onSurfaceVariant,
-                        fontWeight: log.isAction ? FontWeight.bold : FontWeight.normal,
+                        color: log.isAction
+                            ? AppColors.secondary
+                            : AppColors.onSurfaceVariant,
+                        fontWeight: log.isAction
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   );

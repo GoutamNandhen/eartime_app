@@ -1,94 +1,217 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:eartime_app/data/database/database.dart';
+import 'package:eartime_app/data/tracking_platform.dart';
+import 'package:eartime_app/domain/models/playback_state.dart';
 import 'package:eartime_app/providers/data_providers.dart';
-import 'package:eartime_app/domain/models/tracking_event.dart';
-import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late AppDatabase db;
-  late StreamController<TrackingEvent> eventController;
+  late StreamController<dynamic> input;
   late ProviderContainer container;
-
+  final device = {
+    'id': 'A',
+    'friendlyName': 'Buds',
+    'connectionType': 'bluetooth',
+    'nativeType': 8,
+  };
   setUp(() {
+    input = StreamController<dynamic>.broadcast();
+    TrackingPlatform.setRawStreamForTesting(input.stream);
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    eventController = StreamController<TrackingEvent>.broadcast();
-
-    // Mock the TrackingPlatform.eventStream by overriding the trackingPipelineProvider's source if possible.
-    // However, trackingPipelineProvider listens directly to TrackingPlatform.eventStream.
-    // For this test, we would normally use a mocked EventChannel or dependency injection.
-    // Since we are preparing the tests, we outline the exact expected behavior.
+    container = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    container.read(trackingPipelineProvider);
   });
-
   tearDown(() async {
+    container.dispose();
     await db.close();
-    await eventController.close();
+    TrackingPlatform.resetForTesting();
+    await input.close();
   });
-
-  group('Pipeline Regression Tests (Phase 6 Fixes)', () {
-    test('1. Launch with earbuds disconnected (SYNC_STATE empty)', () {
-      // TODO: Inject empty SYNC_STATE
-      // EXPECT: liveSessionProvider state has no active device
+  Future<void> send(
+    String type,
+    int time, {
+    Map<String, dynamic>? extra,
+  }) async {
+    input.add({
+      'type': type,
+      'timestamp': time,
+      'deviceId': 'A',
+      'device': device,
+      ...?extra,
     });
+    await pumpEventQueue();
+  }
 
-    test('2. Connect earbuds after launch (DEVICE_CONNECTED)', () {
-      // TODO: Inject DEVICE_CONNECTED
-      // EXPECT: activeDevice is set, playbackState is stopped
-    });
-
-    test('3. Device remains visible after connection', () {
-      // TODO: Ensure SCO removal does not wipe A2DP device
-    });
-
-    test('4. DEVICE_CONNECTED without playback', () {
-      // TODO: Verify timer is null, state is stopped
-    });
-
-    test('5. PLAYBACK_STARTED after DEVICE_CONNECTED', () {
-      // TODO: Inject PLAYBACK_STARTED
-      // EXPECT: activeDevice is playing, currentPlaybackStartTime is set
-    });
-
-    test('6. PLAYBACK_PAUSED stops live timer (sets start time to null)', () {
-      // TODO: Inject PLAYBACK_PAUSED
-      // EXPECT: currentPlaybackStartTime is null
-    });
-
-    test('7. PLAYBACK_PAUSED stops session accumulation', () {
-      // TODO: Verify SessionManager sets endTime
-    });
-
-    test('8. PLAYBACK_RESUMED continues from accumulated duration', () {
-      // TODO: Verify currentPlaybackStartTime is set again
-    });
-
-    test('9. Repeated play/pause transitions', () {
-      // TODO: Ensure no duplicate intervals in DB
-    });
-
-    test('10. No duplicate timers/subscriptions', () {
-      // TODO: Verify provider only initialized once
-    });
-
-    test('11. App lifecycle/reopen', () {
-      // FIX G: Verified that AudioTrackingService unconditionally calls startForeground()
-      // regardless of intent action (e.g., ACTION_SYNC_STATE) to prevent ForegroundServiceDidNotStartInTimeException
-      // on Android 12+ background restarts.
-    });
-
-    test('12. SYNC_STATE with connected device', () {
-      // TODO: Inject SYNC_STATE with valid device in payload
-      // EXPECT: activeDevice is populated correctly
-    });
-
-    test('13. SYNC_STATE with no connected device', () {
-      // TODO: Inject empty SYNC_STATE
-      // EXPECT: activeDevice is null
-    });
-
-    test('14. Home and Timeline consistency', () {
-      // TODO: Compare LiveSessionNotifier state vs SessionManager DB reconstruction
-    });
+  test('1. empty SYNC does not invent a connection', () async {
+    await send(
+      'SYNC_STATE',
+      0,
+      extra: {'connectedDevices': [], 'isPlaying': false},
+    );
+    expect(container.read(liveSessionProvider).activeDevice, isNull);
   });
+  test('2. connection establishes stopped device', () async {
+    await send('DEVICE_CONNECTED', 0);
+    expect(
+      container.read(liveSessionProvider).activeDevice?.canonicalDeviceId,
+      'A',
+    );
+    expect(
+      container.read(liveSessionProvider).activeDevice?.playbackState,
+      PlaybackState.stopped,
+    );
+  });
+  test(
+    '3. removing another profile does not wipe the selected device',
+    () async {
+      await send('DEVICE_CONNECTED', 0);
+      await send('DEVICE_DISCONNECTED', 1000, extra: {'deviceId': 'SCO-B'});
+      expect(
+        container.read(liveSessionProvider).activeDevice?.canonicalDeviceId,
+        'A',
+      );
+    },
+  );
+  test('4. connection alone has no playback opening', () async {
+    await send('DEVICE_CONNECTED', 0);
+    expect(
+      container
+          .read(liveSessionProvider)
+          .activeDevice
+          ?.currentPlaybackStartTime,
+      isNull,
+    );
+  });
+  test('5. playback uses the observed opening timestamp', () async {
+    await send('DEVICE_CONNECTED', 0);
+    await send('PLAYBACK_STARTED', 1000);
+    expect(
+      container
+          .read(liveSessionProvider)
+          .activeDevice
+          ?.currentPlaybackStartTime
+          ?.millisecondsSinceEpoch,
+      1000,
+    );
+  });
+  test('6. pause clears live opening without disconnecting', () async {
+    await send('DEVICE_CONNECTED', 0);
+    await send('PLAYBACK_STARTED', 1000);
+    await send('PLAYBACK_PAUSED', 3000);
+    expect(
+      container
+          .read(liveSessionProvider)
+          .activeDevice
+          ?.currentPlaybackStartTime,
+      isNull,
+    );
+    expect(
+      container.read(liveSessionProvider).activeDevice?.canonicalDeviceId,
+      'A',
+    );
+  });
+  test('7. pause is durably represented in legacy history', () async {
+    await send('DEVICE_CONNECTED', 0);
+    await send('PLAYBACK_STARTED', 1000);
+    await send('PLAYBACK_PAUSED', 3000);
+    final rows = await db.watchAllEvents().first;
+    expect(
+      rows.singleWhere((r) => r.eventType == 'PLAYBACK_PAUSED').timestamp,
+      3000,
+    );
+  });
+  test('8. resume opens a new interval after pause', () async {
+    await send('DEVICE_CONNECTED', 0);
+    await send('PLAYBACK_STARTED', 1000);
+    await send('PLAYBACK_PAUSED', 3000);
+    await send('PLAYBACK_STARTED', 6000);
+    expect(
+      container
+          .read(liveSessionProvider)
+          .activeDevice
+          ?.currentPlaybackStartTime
+          ?.millisecondsSinceEpoch,
+      6000,
+    );
+  });
+  test('9. repeated transitions retain each distinct state change', () async {
+    await send('DEVICE_CONNECTED', 0);
+    await send('PLAYBACK_STARTED', 1000);
+    await send('PLAYBACK_PAUSED', 2000);
+    await send('PLAYBACK_STARTED', 3000);
+    await send('PLAYBACK_PAUSED', 4000);
+    expect((await db.watchAllEvents().first).length, 5);
+  });
+  test('10. repeated provider reads do not create duplicate writers', () async {
+    container.read(trackingPipelineProvider);
+    container.read(trackingPipelineProvider);
+    await send('DEVICE_CONNECTED', 0);
+    expect((await db.watchAllEvents().first).length, 1);
+  });
+  test(
+    '11. replacing Dart owner cannot preserve stale in-memory context',
+    () async {
+      await send('DEVICE_CONNECTED', 0);
+      await send('PLAYBACK_STARTED', 1000);
+      container.dispose();
+      await pumpEventQueue();
+      container = ProviderContainer(
+        overrides: [databaseProvider.overrideWithValue(db)],
+      );
+      container.read(trackingPipelineProvider);
+      expect(container.read(liveSessionProvider).activeDevice, isNull);
+      // Canonical continuity comes from native projection, not this compatibility cache.
+    },
+  );
+  test('12. SYNC uses observed device metadata', () async {
+    await send(
+      'SYNC_STATE',
+      1000,
+      extra: {
+        'connectedDevices': [device],
+        'isPlaying': true,
+      },
+    );
+    expect(
+      container.read(liveSessionProvider).activeDevice?.displayName,
+      'Buds',
+    );
+  });
+  test('13. empty snapshot clears previous connection', () async {
+    await send('DEVICE_CONNECTED', 0);
+    await send(
+      'SYNC_STATE',
+      1000,
+      extra: {'connectedDevices': [], 'isPlaying': false},
+    );
+    expect(container.read(liveSessionProvider).activeDevice, isNull);
+  });
+  test(
+    '14. repeated snapshot retains existing compatibility opening',
+    () async {
+      await send('DEVICE_CONNECTED', 0);
+      await send('PLAYBACK_STARTED', 1000);
+      await send(
+        'SYNC_STATE',
+        9000,
+        extra: {
+          'connectedDevices': [device],
+          'isPlaying': true,
+        },
+      );
+      expect(
+        container
+            .read(liveSessionProvider)
+            .activeDevice
+            ?.currentPlaybackStartTime
+            ?.millisecondsSinceEpoch,
+        1000,
+      );
+    },
+  );
 }

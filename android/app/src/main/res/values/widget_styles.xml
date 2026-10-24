@@ -1,0 +1,31 @@
+<resources>
+    <style name="WidgetDeviceCard">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/widget_device_background</item>
+    </style>
+    <style name="WidgetDeviceIcon">
+        <item name="android:layout_width">20dp</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="android:src">@drawable/widget_headphones</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="WidgetDeviceName">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+    <style name="WidgetDeviceState" parent="WidgetDeviceName">
+        <item name="android:textColor">#BEC5CD</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    <style name="WidgetDeviceBattery" parent="WidgetDeviceState">
+        <item name="android:textColor">#9BD8C4</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+</resources>

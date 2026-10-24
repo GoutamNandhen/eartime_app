@@ -16,14 +16,15 @@ class MethodChannelTracking extends TrackingPlatform {
     await methodChannel.invokeMethod<void>('stopTracking');
   }
 
-  @override
   Future<void> stopMonitoring() async {
     await methodChannel.invokeMethod<void>('stopMonitoring');
   }
 
   @override
   Future<void> startBleDiagnostic(String hardwareAddress) async {
-    await methodChannel.invokeMethod<void>('startBleDiagnostic', {'address': hardwareAddress});
+    await methodChannel.invokeMethod<void>('startBleDiagnostic', {
+      'address': hardwareAddress,
+    });
   }
 
   @override

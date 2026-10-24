@@ -1,23 +1,19 @@
-# Known Bugs & Resolutions
+# Bugs And Open Limits
 
-## Resolved
-- **[Phase 6] Stale Home State After Process Death**: App loaded with a false "PAUSED" state if the process died before a disconnect event could fire. Fixed by separating the DB history from the `LiveSessionNotifier` and introducing a native `SYNC_STATE` bootloader event.
-- **[Phase 6] CPH2447 Misidentification**: The earbuds were showing up as the host phone model. Fixed by merging Bluetooth A2DP naming metadata with the AudioManager device properties.
-- **[Phase 4] Splash Screen Freeze**: App locked up on the splash screen when reopened from a cold boot (cleared from Recents). Fixed by moving the synchronous `checkInitialAudioState` to a background thread.
-- **[Phase 4] Unreliable GATT Service Discovery**: Service discovery was hanging after `connectGatt`. Fixed by ensuring `discoverServices` is explicitly invoked within `onConnectionStateChange`, particularly during refresh requests.
+Updated 2026-10-24. Older local forensic reports are retained privately.
 
-## Open / Pending Investigation
-- **[Phase 6] False Disconnection (Test A)**: `AudioDeviceDetector` receives an SCO route removal and erroneously removes the matching A2DP device from the cache because they share the same ID.
-- **[Phase 6] Missing Live State on Boot (Test B)**: `SYNC_STATE` payload mismatch. Kotlin sends `connectedDevices` at root, but Flutter `TrackingEvent.fromJson` ignores it, booting with a wiped state.
-- **[Phase 6] Infinite Timer on Pause (Test D/E)**: `PLAYBACK_PAUSED` logic fails to set `currentPlaybackStartTime` to null, causing `LiveTimerWidget` to continue ticking.
-- **[Phase 6] Crash on Reopen (Test G)**: `ForegroundServiceDidNotStartInTimeException`. When the service is already running (e.g., restarted by OS), reopening the app triggers `startForegroundService` but skips `startForeground` due to `isInitialized == true`.
+| Issue | Evidence | State |
+| --- | --- | --- |
+| Physical G immediate reopen/splash | Known-good reference `0a8be43`; ownership/startup model tests pass | Physical regression mechanism unproven; no current device PASS |
+| B02 opening replaced by SYNC S | Native fixture T1=1000/S=5000/pause=9000 retains T1 and duration=8000 | Observed projection corrected; production liveness still gated |
+| Output attribution | Protected collector reports global playback and fallback device claims | All real activity remains unverified, never confirmed listening |
+| Collector liveness | Process can live after failed initialization or service recreation | Production extrapolation disabled; durable health/generation hook required |
+| Physical identity | Legacy names/MAC fallbacks are not verified physical aliases | Provisional, epoch-scoped; normalization/association remains open |
+| Experimental BLE | Inherited automatic discovery; no validated proprietary decoder | Do not claim opt-in operation or battery/wearing hardware support |
+| Storage/performance | Indexed devices, bounded hints/results/work ceiling | Long-run profiling and cooperative replay fairness remain open |
+| Data controls | Legacy data preserved read-only; OS backup excluded | Export/restore/deletion still incomplete |
+| Release | Debug packaging and Kotlin debug/release compile pass | Authorized signing and physical acceptance required |
 
-## Phase 6 Fixes (A/B Issues Resolved)
-* Confirmed SYNC_STATE contract bug where Kotlin sent connectedDevices at the root of the JSON map instead of inside the device key, causing Dart to falsely evaluate connected devices as empty.
-* Confirmed Multi-Route Removal Bug where removing an SCO route falsely removed the physical device identity from connectedDevices, even if the A2DP route was still active.
-* Exact Fixes: 
-    * Wrapped SYNC_STATE payload inside a device key in Kotlin.
-    * Modified onAudioDevicesRemoved to ensure no other remaining AudioManager output devices map to the same stableId before emitting DEVICE_DISCONNECTED.
-* Tests added: Dart unit tests for TrackingEvent JSON deserialization.
-* Current A/B Status: Fixes implemented. Ready for physical testing.
-* Current G Status: Remains PASS.
+See [Feature Matrix](FEATURE_MATRIX.md) for the complete approved scope and
+[Release Blockers](RELEASE_BLOCKERS.md) for acceptance requirements. No raw device
+data or identifying failure logs are included in this public issue summary.

@@ -1,5 +1,10 @@
 # Requirements
 
+Historical phase constraints below are retained for context. The approved
+production roadmap in `FEATURE_MATRIX.md` and current `CODEX_RESUME.md` govern
+current work, including the now-authorized product UI integration. No historical
+entry establishes physical G, telemetry support or release readiness.
+
 ## Core Constraints
 1. **Passive Tracking**: The user MUST NEVER have to manually press a "Start" or "Stop" button to track their listening session. The app must detect connections automatically in the background.
 2. **True Time Truth**: The UI Timer must rely on strict epoch timestamps (start time, accumulated pause time) rather than a local ticking state. This ensures resilience to app death.

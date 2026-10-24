@@ -1,178 +1,222 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/app_colors.dart';
-import '../widgets/liquid_glass_surface.dart';
+import '../../providers/listening_preferences_provider.dart';
 import 'audio_diagnostics_screen.dart';
 import 'developer_diagnostics_screen.dart';
+import 'observation_journal_screen.dart';
+import 'legacy_history_screen.dart';
 
-class ThemeModeNotifier extends Notifier<ThemeMode> {
+final themeModeProvider = Provider<ThemeMode>((ref) {
+  final mode = ref.watch(listeningPreferencesProvider).asData?.value.themeMode;
+  return ThemeMode.values.firstWhere(
+    (value) => value.name == mode,
+    orElse: () => ThemeMode.system,
+  );
+});
+
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
   @override
-  ThemeMode build() => ThemeMode.system;
-
-  void setThemeMode(ThemeMode mode) {
-    state = mode;
-  }
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _saving = false;
+  Future<void> save(Map<String, Object> values) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(listeningPreferencesClientProvider).update(values);
+      if (mounted) ref.invalidate(listeningPreferencesProvider);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Settings could not be saved.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+  Future<void> goal(int current) async {
+    final result = await showDialog<int>(
+      context: context,
+      builder: (_) => _GoalDialog(current),
+    );
+    if (result != null && mounted) await save({'dailyGoalMinutes': result});
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final themeMode = ref.watch(themeModeProvider);
-
+  Widget build(BuildContext context) {
+    final preferences = ref.watch(listeningPreferencesProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Stack(
+      appBar: AppBar(title: const Text('Settings')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
         children: [
-          // Ambient Orbs
-          Positioned(
-            top: 50,
-            left: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.1),
-                boxShadow: [
-                  BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 100, spreadRadius: 30),
-                ],
+          if (_saving) const LinearProgressIndicator(),
+          preferences.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, _) => ListTile(
+              title: const Text('Settings unavailable'),
+              trailing: IconButton(
+                tooltip: 'Retry settings',
+                onPressed: () => ref.invalidate(listeningPreferencesProvider),
+                icon: const Icon(Icons.refresh),
               ),
             ),
-          ),
-          
-          SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            data: (value) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'APPEARANCE',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    letterSpacing: 1.5,
-                  ),
+                  'Appearance',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: 16),
-                
-                LiquidGlassSurface(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: [
-                      _buildThemeOption(
-                        context: context,
-                        ref: ref,
-                        title: 'System Default',
-                        mode: ThemeMode.system,
-                        currentMode: themeMode,
-                      ),
-                      const Divider(height: 1, color: AppColors.glassBorder),
-                      _buildThemeOption(
-                        context: context,
-                        ref: ref,
-                        title: 'Light Mode',
-                        mode: ThemeMode.light,
-                        currentMode: themeMode,
-                      ),
-                      const Divider(height: 1, color: AppColors.glassBorder),
-                      _buildThemeOption(
-                        context: context,
-                        ref: ref,
-                        title: 'Dark Mode',
-                        mode: ThemeMode.dark,
-                        currentMode: themeMode,
-                      ),
-                    ],
+                DropdownButtonFormField<ThemeMode>(
+                  initialValue: ThemeMode.values.firstWhere(
+                    (mode) => mode.name == value.themeMode,
                   ),
-                ),
-                const SizedBox(height: 32),
-                
-                Text(
-                  'DIAGNOSTICS',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                LiquidGlassSurface(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        title: Text(
-                          'Run Device Diagnostic',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: AppColors.primary,
-                          ),
+                  decoration: const InputDecoration(labelText: 'Theme'),
+                  items: ThemeMode.values
+                      .map(
+                        (mode) => DropdownMenuItem(
+                          value: mode,
+                          child: Text(switch (mode) {
+                            ThemeMode.system => 'System',
+                            ThemeMode.light => 'Light',
+                            ThemeMode.dark => 'Dark',
+                          }),
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primary),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const AudioDiagnosticsScreen(),
-                            ),
-                          );
+                      )
+                      .toList(),
+                  onChanged: _saving
+                      ? null
+                      : (mode) {
+                          if (mode != null) save({'themeMode': mode.name});
                         },
-                      ),
-                      const Divider(height: 1, color: AppColors.glassBorder),
-                      ListTile(
-                        leading: const Icon(Icons.science, color: AppColors.secondary),
-                        title: const Text('Developer Earbud Diagnostics', style: TextStyle(color: AppColors.editorialWhite)),
-                        subtitle: const Text('Per-ear protocol capabilities and telemetry', style: TextStyle(color: AppColors.onSurfaceVariant)),
-                        trailing: const Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const DeveloperDiagnosticsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Wellbeing',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Daily listening goal'),
+                  subtitle: Text(
+                    value.dailyGoalMinutes == 0
+                        ? 'Disabled'
+                        : '${value.dailyGoalMinutes} minutes',
                   ),
+                  trailing: IconButton(
+                    tooltip: 'Edit daily goal',
+                    onPressed: _saving
+                        ? null
+                        : () => goal(value.dailyGoalMinutes),
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
+                ),
+                const Text(
+                  'A personal duration goal, not a safe sound-exposure limit. Automatic listening reminders are unavailable until output attribution is verified.',
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Data and diagnostics',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          _link(
+            'Observation Journal',
+            Icons.receipt_long_outlined,
+            const ObservationJournalScreen(),
+          ),
+          _link(
+            'Preserved legacy history',
+            Icons.history,
+            const LegacyHistoryScreen(),
+          ),
+          _link(
+            'Audio diagnostics',
+            Icons.monitor_heart_outlined,
+            const AudioDiagnosticsScreen(),
+          ),
+          _link(
+            'Experimental earbud diagnostics',
+            Icons.science_outlined,
+            const DeveloperDiagnosticsScreen(),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'EarTime stores observations on this device. Vendor earbud telemetry is unverified. Battery, case and wearing values remain unknown without validated observations.',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildThemeOption({
-    required BuildContext context,
-    required WidgetRef ref,
-    required String title,
-    required ThemeMode mode,
-    required ThemeMode currentMode,
-  }) {
-    final theme = Theme.of(context);
-    final isSelected = currentMode == mode;
+  Widget _link(String title, IconData icon, Widget screen) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(icon),
+    title: Text(title),
+    trailing: const Icon(Icons.chevron_right),
+    onTap: () => Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => screen)),
+  );
+}
 
-    return ListTile(
-      title: Text(
-        title,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: isSelected ? AppColors.primary : theme.colorScheme.onSurface,
-        ),
-      ),
-      trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
-      onTap: () {
-        ref.read(themeModeProvider.notifier).setThemeMode(mode);
-      },
-    );
+class _GoalDialog extends StatefulWidget {
+  const _GoalDialog(this.current);
+  final int current;
+  @override
+  State<_GoalDialog> createState() => _GoalDialogState();
+}
+
+class _GoalDialogState extends State<_GoalDialog> {
+  late final controller = TextEditingController(
+    text: '${widget.current == 0 ? 60 : widget.current}',
+  );
+  String? error;
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Daily goal'),
+    content: TextField(
+      controller: controller,
+      autofocus: true,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      decoration: InputDecoration(labelText: 'Minutes', errorText: error),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancel'),
+      ),
+      TextButton(
+        onPressed: () => Navigator.pop(context, 0),
+        child: const Text('Disable'),
+      ),
+      FilledButton(
+        onPressed: () {
+          final minutes = int.tryParse(controller.text);
+          if (minutes == null || minutes < 1 || minutes > 1440) {
+            setState(() => error = 'Enter 1 to 1440 minutes');
+            return;
+          }
+          Navigator.pop(context, minutes);
+        },
+        child: const Text('Save'),
+      ),
+    ],
+  );
 }

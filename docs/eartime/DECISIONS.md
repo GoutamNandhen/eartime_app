@@ -1,5 +1,9 @@
 # Architectural & Engineering Decisions
 
+Historical decisions below are superseded where they conflict with the current
+native journal/projection architecture. Read `ARCHITECTURE.md` and
+`LISTENING_PROJECTION.md`; an in-memory notifier is no longer product truth.
+
 ## 1. Deprecating `activeDeviceProvider` for `LiveSessionNotifier`
 - **Context**: We previously relied on the SQLite event history (`activeDeviceProvider`) to determine what the Home screen should display.
 - **Problem**: If the app was killed while a session was active, and the earbuds were disconnected while the app was dead, reopening the app resulted in it falsely pulling the last historical "PAUSED" state and displaying it as currently active.

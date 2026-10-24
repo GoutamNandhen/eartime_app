@@ -30,7 +30,10 @@ We must update `onAudioDevicesRemoved` to verify that no active output routes re
 
 ### Proposed Changes
 
-#### [MODIFY] [AudioTrackingService.kt](file:///f:/projects/eartime_flutter/eartime_app/android/app/src/main/kotlin/com/eartime/eartime_app/tracking/AudioTrackingService.kt)
+#### Historical Proposal: AudioTrackingService.kt
+
+This proposal is not authorization to modify the protected service. Current
+production work preserves `0a8be43`; see `CODEX_RESUME.md` and `BUGS.md`.
 Update the `onAudioDevicesRemoved` block to query the `audioManager`:
 ```kotlin
 if (connectedDevices.containsKey(id)) {

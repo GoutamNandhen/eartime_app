@@ -1,0 +1,4 @@
+<resources>
+    <string name="listening_widget_name">EarTime devices</string>
+    <string name="listening_widget_description">Connected devices and confirmed listening today</string>
+</resources>

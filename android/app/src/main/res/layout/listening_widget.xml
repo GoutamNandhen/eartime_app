@@ -1,0 +1,38 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:background="@drawable/widget_background" android:contentDescription="EarTime devices and listening">
+    <TextView android:id="@+id/widget_total" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="--" android:textColor="#FFFFFF" android:textSize="22sp" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/widget_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Waiting for history" android:textColor="#BEC5CD" android:textSize="12sp" android:maxLines="2" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <LinearLayout style="@style/WidgetDeviceCard" android:layout_marginEnd="4dp">
+            <ImageView style="@style/WidgetDeviceIcon" />
+            <TextView android:id="@+id/device_name_1" style="@style/WidgetDeviceName" />
+            <TextView android:id="@+id/device_state_1" style="@style/WidgetDeviceState" />
+            <TextView android:id="@+id/device_battery_1" style="@style/WidgetDeviceBattery" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDeviceCard" android:layout_marginStart="4dp">
+            <ImageView style="@style/WidgetDeviceIcon" />
+            <TextView android:id="@+id/device_name_2" style="@style/WidgetDeviceName" />
+            <TextView android:id="@+id/device_state_2" style="@style/WidgetDeviceState" />
+            <TextView android:id="@+id/device_battery_2" style="@style/WidgetDeviceBattery" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/widget_second_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <LinearLayout style="@style/WidgetDeviceCard" android:layout_marginEnd="4dp">
+            <ImageView style="@style/WidgetDeviceIcon" />
+            <TextView android:id="@+id/device_name_3" style="@style/WidgetDeviceName" />
+            <TextView android:id="@+id/device_state_3" style="@style/WidgetDeviceState" />
+            <TextView android:id="@+id/device_battery_3" style="@style/WidgetDeviceBattery" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDeviceCard" android:layout_marginStart="4dp">
+            <ImageView style="@style/WidgetDeviceIcon" />
+            <TextView android:id="@+id/device_name_4" style="@style/WidgetDeviceName" />
+            <TextView android:id="@+id/device_state_4" style="@style/WidgetDeviceState" />
+            <TextView android:id="@+id/device_battery_4" style="@style/WidgetDeviceBattery" />
+        </LinearLayout>
+    </LinearLayout>
+    <TextView android:id="@+id/widget_more" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp" android:text="EarTime" android:textSize="11sp" android:textColor="#9BD8C4" />
+</LinearLayout>

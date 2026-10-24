@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/data_providers.dart';
+import '../../providers/listening_projection_provider.dart';
 import '../home/home_screen.dart';
 import '../timeline/timeline_screen.dart';
 import '../analytics/analytics_screen.dart';
@@ -11,6 +11,7 @@ import '../settings/settings_screen.dart';
 import '../permissions/permission_screen.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/permission_provider.dart';
+import '../../core/diagnostics/startup_trace.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -21,6 +22,7 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
+  String? _lastStartupMilestoneKey;
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -31,9 +33,9 @@ class _AppShellState extends ConsumerState<AppShell> {
   ];
 
   void _openSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
   }
 
   @override
@@ -41,57 +43,59 @@ class _AppShellState extends ConsumerState<AppShell> {
     debugPrint('[GFLOW] AppShell.build START');
     // Check permission state first
     final permissionState = ref.watch(permissionProvider);
-    
-    if (permissionState != PermissionStatusState.granted) {
+    final startupOwner = ref.read(permissionProvider.notifier).startupOwner;
+    final milestoneKey =
+        '$startupOwner/${permissionState.generation}/${permissionState.status.name}';
+    final newStartupStage = milestoneKey != _lastStartupMilestoneKey;
+    if (newStartupStage) {
+      _lastStartupMilestoneKey = milestoneKey;
+      StartupTrace.mark(
+        'APP_SHELL_BUILD',
+        'startupOwner=$startupOwner generation=${permissionState.generation} status=${permissionState.status.name}',
+      );
+    }
+
+    if (permissionState.status != PermissionStatusState.granted) {
       debugPrint('[GFLOW] AppShell.build END (Permission Screen)');
       return const PermissionScreen();
     }
 
-    // Wake up tracking pipeline passively ONLY if permissions are granted
-    ref.watch(trackingPipelineProvider);
+    // Subscribe to committed invalidation hints only after permission is granted.
+    ref.watch(trackingProjectionActivationProvider);
 
     final widget = Scaffold(
-      extendBody: true, // Important for floating glass nav
       appBar: AppBar(
-        title: const Text('EarTime', style: TextStyle(fontWeight: FontWeight.w300, letterSpacing: 2.0)),
+        title: const Text(
+          'EarTime',
+          style: TextStyle(fontWeight: FontWeight.w500, letterSpacing: 0),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
+            tooltip: 'Settings',
             icon: const Icon(Icons.settings_outlined, color: AppColors.primary),
             onPressed: _openSettings,
-          )
+          ),
         ],
       ),
-      body: Stack(
-        children: [
-          // Screen Content with AnimatedSwitcher
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _screens[_currentIndex],
-          ),
-          // Floating Navigation
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: GlassNavigation(
-              currentIndex: _currentIndex,
-              onIndexChanged: (index) {
-                if (index == 4) {
-                  _openSettings();
-                  return;
-                }
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-            ),
-          ),
-        ],
+      body: SafeArea(child: _screens[_currentIndex]),
+      bottomNavigationBar: GlassNavigation(
+        currentIndex: _currentIndex,
+        onIndexChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
       ),
     );
     debugPrint('[GFLOW] AppShell.build END (Main Screen)');
+    if (newStartupStage) {
+      StartupTrace.mark(
+        'APP_SHELL_READY',
+        'startupOwner=$startupOwner generation=${permissionState.generation} meaning=shellConstructedNotRasterized',
+      );
+    }
     return widget;
   }
 }

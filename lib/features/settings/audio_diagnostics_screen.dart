@@ -9,10 +9,12 @@ class AudioDiagnosticsScreen extends ConsumerStatefulWidget {
   const AudioDiagnosticsScreen({super.key});
 
   @override
-  ConsumerState<AudioDiagnosticsScreen> createState() => _AudioDiagnosticsScreenState();
+  ConsumerState<AudioDiagnosticsScreen> createState() =>
+      _AudioDiagnosticsScreenState();
 }
 
-class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen> {
+class _AudioDiagnosticsScreenState
+    extends ConsumerState<AudioDiagnosticsScreen> {
   Map<String, dynamic>? _diagData;
   bool _isLoading = false;
 
@@ -65,7 +67,11 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                 shape: BoxShape.circle,
                 color: AppColors.secondary.withValues(alpha: 0.1),
                 boxShadow: [
-                  BoxShadow(color: AppColors.secondary.withValues(alpha: 0.1), blurRadius: 100, spreadRadius: 30),
+                  BoxShadow(
+                    color: AppColors.secondary.withValues(alpha: 0.1),
+                    blurRadius: 100,
+                    spreadRadius: 30,
+                  ),
                 ],
               ),
             ),
@@ -74,14 +80,17 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
             child: _isLoading && _diagData == null
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
+                    ),
                     children: [
                       _buildSectionHeader(theme, 'SYSTEM'),
                       _buildDataBox(
                         'Android Version: ${_diagData?['androidVersion'] ?? 'N/A'}\n'
                         'API Level: ${_diagData?['apiLevel'] ?? 'N/A'}',
                       ),
-                      
+
                       _buildSectionHeader(theme, 'PERMISSIONS'),
                       _buildDataBox(
                         'BLUETOOTH_CONNECT: ${_diagData?['hasBluetoothConnect'] ?? false}\n'
@@ -98,28 +107,34 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
 
                       _buildSectionHeader(theme, 'AUDIO MANAGER (Outputs)'),
                       if (_diagData?['audioManagerDevices'] != null)
-                        ...(_diagData!['audioManagerDevices'] as List<dynamic>).map((d) {
-                          final map = d as Map<dynamic, dynamic>;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: _buildDataBox(
-                              'Product: ${map['productName']}\n'
-                              'Type: ${map['type']}\n'
-                              'Address: ${map['address']}\n'
-                              'ID: ${map['id']}\n'
-                              'isSink: ${map['isSink']}\n'
-                              'isSource: ${map['isSource']}',
-                            ),
-                          );
-                        }),
+                        ...(_diagData!['audioManagerDevices'] as List<dynamic>)
+                            .map((d) {
+                              final map = d as Map<dynamic, dynamic>;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: _buildDataBox(
+                                  'Product: ${map['productName']}\n'
+                                  'Type: ${map['type']}\n'
+                                  'Address: ${map['address']}\n'
+                                  'ID: ${map['id']}\n'
+                                  'isSink: ${map['isSink']}\n'
+                                  'isSource: ${map['isSource']}',
+                                ),
+                              );
+                            }),
 
-                      _buildSectionHeader(theme, 'PER-EAR CAPABILITY DIAGNOSTIC (BLE/GATT)'),
+                      _buildSectionHeader(
+                        theme,
+                        'PER-EAR CAPABILITY DIAGNOSTIC (BLE/GATT)',
+                      ),
                       bleResultAsync.when(
                         data: (bleData) {
                           if (bleData.isEmpty) {
-                            return _buildDataBox('No BLE GATT discovery data available. Connect earbuds to scan.');
+                            return _buildDataBox(
+                              'No BLE GATT discovery data available. Connect earbuds to scan.',
+                            );
                           }
-                          
+
                           // Check if it's the expected OnePlus buds or similar
                           final capabilities = {
                             "Individual bud identity": "UNKNOWN",
@@ -129,14 +144,22 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                             "Individual battery state": "UNKNOWN",
                           };
 
-                          final rawServices = (bleData['services'] as List<dynamic>?)?.cast<Map<dynamic, dynamic>>() ?? [];
-                          
+                          final rawServices =
+                              (bleData['services'] as List<dynamic>?)
+                                  ?.cast<Map<dynamic, dynamic>>() ??
+                              [];
+
                           if (rawServices.isNotEmpty) {
-                             capabilities["Individual bud identity"] = "UNSUPPORTED";
-                             capabilities["Left/Right designation"] = "UNSUPPORTED";
-                             capabilities["Individual connection state"] = "UNSUPPORTED";
-                             capabilities["Individual wear state"] = "UNSUPPORTED";
-                             capabilities["Individual battery state"] = "UNSUPPORTED";
+                            capabilities["Individual bud identity"] =
+                                "UNSUPPORTED";
+                            capabilities["Left/Right designation"] =
+                                "UNSUPPORTED";
+                            capabilities["Individual connection state"] =
+                                "UNSUPPORTED";
+                            capabilities["Individual wear state"] =
+                                "UNSUPPORTED";
+                            capabilities["Individual battery state"] =
+                                "UNSUPPORTED";
                           }
 
                           // If we find specific vendor characteristics in the future, we can update these
@@ -144,34 +167,54 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ...capabilities.entries.map((e) => Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(e.key, style: const TextStyle(color: AppColors.editorialWhite)),
-                                    Text(e.value, style: TextStyle(
-                                      color: e.value == 'SUPPORTED' ? AppColors.secondary : AppColors.onSurfaceVariant,
-                                      fontWeight: FontWeight.bold,
-                                    )),
-                                  ],
+                              ...capabilities.entries.map(
+                                (e) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        e.key,
+                                        style: const TextStyle(
+                                          color: AppColors.editorialWhite,
+                                        ),
+                                      ),
+                                      Text(
+                                        e.value,
+                                        style: TextStyle(
+                                          color: e.value == 'SUPPORTED'
+                                              ? AppColors.secondary
+                                              : AppColors.onSurfaceVariant,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              )),
+                              ),
                               const SizedBox(height: 16),
-                              const Text('RAW GATT DISCOVERY:', style: TextStyle(color: AppColors.primary)),
+                              const Text(
+                                'RAW GATT DISCOVERY:',
+                                style: TextStyle(color: AppColors.primary),
+                              ),
                               const SizedBox(height: 8),
                               ...rawServices.map((service) {
-                                final chars = (service['characteristics'] as List<dynamic>?)?.cast<Map<dynamic, dynamic>>() ?? [];
+                                final chars =
+                                    (service['characteristics']
+                                            as List<dynamic>?)
+                                        ?.cast<Map<dynamic, dynamic>>() ??
+                                    [];
                                 return _buildDataBox(
-                                  'Service: ${service['uuid']}\n' +
-                                  chars.map((c) => '  Char: ${c['uuid']}\n    Props: ${(c['properties'] as List<dynamic>?)?.join(", ")}').join('\n')
+                                  'Service: ${service['uuid']}\n${chars.map((c) => '  Char: ${c['uuid']}\n    Props: ${(c['properties'] as List<dynamic>?)?.join(", ")}').join('\n')}',
                                 );
                               }),
                             ],
                           );
                         },
                         loading: () => _buildDataBox('Waiting for BLE scan...'),
-                        error: (e, st) => _buildDataBox('Error reading BLE data: $e'),
+                        error: (e, st) =>
+                            _buildDataBox('Error reading BLE data: $e'),
                       ),
 
                       const SizedBox(height: 32),
@@ -181,7 +224,7 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                         'STEP 2: Remove LEFT earbud. Press Refresh Diagnostic. Show whether anything changed.\n'
                         'STEP 3: Insert LEFT again. Press Refresh Diagnostic.\n'
                         'STEP 4: Remove RIGHT earbud. Press Refresh Diagnostic.\n'
-                        'STEP 5: Insert RIGHT again. Press Refresh Diagnostic.\n'
+                        'STEP 5: Insert RIGHT again. Press Refresh Diagnostic.\n',
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
@@ -192,10 +235,13 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                             backgroundColor: AppColors.primary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('Refresh Diagnostic', style: TextStyle(color: AppColors.editorialWhite)),
+                          child: const Text(
+                            'Refresh Diagnostic',
+                            style: TextStyle(color: AppColors.editorialWhite),
+                          ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 32),
                       _buildSectionHeader(theme, 'DIAGNOSTIC RESULT'),
                       LiquidGlassSurface(
@@ -227,7 +273,9 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                                   ? 'Android exposes the connected A2DP device and GATT services, but independent left/right state has not yet been identified in the exposed UUIDs.'
                                   : 'Independent left/right state is not currently exposed through accessible Bluetooth/GATT interfaces.',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.onSurfaceVariant),
+                              style: const TextStyle(
+                                color: AppColors.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),

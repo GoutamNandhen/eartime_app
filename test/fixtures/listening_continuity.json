@@ -1,0 +1,16 @@
+{
+  "events": [
+    {"kind":"PLAYBACK_STARTED","wall":1000,"payload":{}},
+    {"kind":"SYNC_STATE","wall":5000,"payload":{"connectedDevices":[],"isPlaying":true}},
+    {"kind":"PLAYBACK_PAUSED","wall":9000,"payload":{}}
+  ],
+  "projection": {
+    "projectionVersion":1,"sourceId":"fixture-source","sequence":3,
+    "fromUtcMs":0,"untilUtcMs":100000,"confirmedMs":0,"unverifiedMs":8000,
+    "gapCount":0,"intervalCount":1,"nextOffset":1,"hasMore":false,
+    "devices":[],"days":[{"startUtcMs":0,"confirmedMs":0,"unverifiedMs":8000}],
+    "intervals":[{"id":"fixture-interval","deviceId":null,"attribution":"UNVERIFIED",
+      "startUtcMs":1000,"endUtcMs":9000,"clippedStartUtcMs":1000,"clippedEndUtcMs":9000,
+      "durationMs":8000,"open":false,"live":false,"closeReason":"stopped"}]
+  }
+}

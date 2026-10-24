@@ -1,65 +1,20 @@
-# EarTime Project Handoff
+# Engineering Handoff
 
-Welcome to the EarTime project! This document serves as the primary entry point for any new AI agent taking over engineering tasks.
+Read [CODEX_RESUME.md](CODEX_RESUME.md), [FEATURE_MATRIX.md](FEATURE_MATRIX.md),
+[PRODUCTION_IMPLEMENTATION_LEDGER.md](PRODUCTION_IMPLEMENTATION_LEDGER.md) and
+[LISTENING_PROJECTION.md](LISTENING_PROJECTION.md) before making changes.
 
-## 1. What is EarTime?
-EarTime is a Flutter application designed to passively track Bluetooth earbud ambient listening time (like Screen Time, but for audio). It relies on a persistent native Android foreground service to detect when earbuds connect, disconnect, play, or pause audio, and logs this data to a local SQLite database (Drift) to visualize listening habits.
+Preserve `AudioTrackingService.kt` at `0a8be43`. No current physical G/telemetry
+or production-readiness claim is supported. Keep confirmed route fixtures
+distinct from real unknown-attribution observations. Do not re-enable the legacy
+writer, promote fallback names/MACs to physical identity, infer a collector lease
+from process lifetime or fabricate duration across collection gaps.
 
-## 2. What has already been implemented?
-- A robust Drift (SQLite) database architecture (`SessionManager`).
-- A Riverpod-based reactive pipeline (`LiveSessionNotifier`).
-- A persistent Android foreground service (`AudioTrackingService`) that survives app termination.
-- A platform channel (`EventChannel`) bridging Android audio callbacks to Flutter.
-- A glassmorphic UI with real-time timers and a historical timeline.
-- A permission onboarding flow.
+Continue the approved roadmap autonomously in bounded, tested checkpoints.
+Update the feature matrix, ledger, resume and regression evidence with each
+implementation. Keep private local checkpoints and unrelated work intact.
+Publish only reviewed source/tests/configuration/public documentation to the
+review branch, never raw logs/device data/research/signing keys/build outputs.
 
-## 3. How does the architecture work?
-- **Native**: `AudioTrackingService` registers `AudioDeviceCallback` and `AudioPlaybackCallback`. It maps physical devices to logical models in `AudioDeviceDetector`. It pipes events to `TrackingEventBroker`.
-- **Bridge**: `TrackingPlatform` listens to the `EventChannel` and emits strongly-typed `TrackingEvent`s.
-- **Flutter**: `trackingPipelineProvider` routes events to `LiveSessionNotifier`, which builds the `LiveSessionState`. `SessionManager` silently commits new sessions and updates to Drift.
-
-## 4. What is currently broken?
-- **Bug A2**: Earbuds appear upon connection, but instantly disappear.
-- **Bugs B/D/E**: The `LiveTimerWidget` continues ticking when paused, and play/pause state synchronization is buggy.
-
-## 5. What has actually been physically tested?
-See `CURRENT_STATE.md` for the full physical test matrix. Disconnected launches (A1), disconnect events (A4), timeline accuracy (A5), and midnight crossing (F) all PASS.
-
-## 6. What is confirmed?
-- The app's startup "reopen failure" was confirmed to be a Flutter UI redraw loop (`cancelAndRedraw`), which is now FIXED.
-- The A2 bug is confirmed to be an identity eviction bug in `onAudioDevicesRemoved` when secondary Bluetooth routes (like SCO) are disconnected by the OS.
-
-## 7. What is only a hypothesis?
-- The timer glitches (B/D/E) are hypothesized to be `LiveSessionNotifier` state management flaws, but they haven't been conclusively diagnosed with logs yet.
-
-## 8. What files implement each feature?
-- **Android Tracking**: `AudioTrackingService.kt`, `AudioDeviceDetector.kt`
-- **Flutter State**: `live_session_state.dart`, `data_providers.dart`
-- **Database**: `session_manager.dart`, `database.dart`
-- **UI**: `app_shell.dart`, `live_timer_widget.dart`
-
-## 9. What should NOT be changed?
-- DO NOT modify the Drift database schema.
-- DO NOT modify the `LiveTimerWidget` or Pause/Resume logic until formally diagnosed.
-- DO NOT invent new Android architectural patterns (like WorkManager) to replace the existing FGS.
-
-## 10. What is the exact next engineering task?
-Implement the diagnosed fix for **Bug A2** in `AudioTrackingService.kt`. Update `onAudioDevicesRemoved` to ensure that no remaining active output routes exist for the physical MAC address before evicting it from `connectedDevices`.
-
-## 11. What evidence is required before implementation?
-We already have the diagnosis for A2. Before implementing the timer fixes (B/D/E), we must capture actual Flutter logs or state dumps of the `LiveSessionState` during the play/pause physical actions.
-
-## 12. What documentation must be updated after every future change?
-**FUTURE ENGINEERING RULE**: Every future feature, bug fix, architectural change, protocol change, state-model change, test, or important engineering discovery MUST update the persistent engineering documentation (including `CURRENT_STATE.md`, `TEST_RESULTS.md`, `BUGS.md`, and this `HANDOFF.md`) in the same implementation task.
-
-You must leave enough information behind that another agent can read these files and immediately resume work.
-
-## Phase 6 Fixes (A/B Issues Resolved)
-* Confirmed SYNC_STATE contract bug where Kotlin sent connectedDevices at the root of the JSON map instead of inside the device key, causing Dart to falsely evaluate connected devices as empty.
-* Confirmed Multi-Route Removal Bug where removing an SCO route falsely removed the physical device identity from connectedDevices, even if the A2DP route was still active.
-* Exact Fixes: 
-    * Wrapped SYNC_STATE payload inside a device key in Kotlin.
-    * Modified onAudioDevicesRemoved to ensure no other remaining AudioManager output devices map to the same stableId before emitting DEVICE_DISCONNECTED.
-* Tests added: Dart unit tests for TrackingEvent JSON deserialization.
-* Current A/B Status: Fixes implemented. Ready for physical testing.
-* Current G Status: Remains PASS.
+Never force-push or rewrite published history. Use `git revert` for auditable
+rollback. Do not merge into `main` or publish a release without authorization.

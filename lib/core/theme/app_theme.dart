@@ -8,9 +8,9 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.obsidianDeep,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.obsidianDeep,
+        primary: Color(0xFF9BD8C4),
+        secondary: Color(0xFFE4A9AD),
+        surface: Color(0xFF17191C),
         error: AppColors.error,
         onPrimary: AppColors.obsidianDeep,
         onSecondary: AppColors.obsidianDeep,
@@ -23,7 +23,7 @@ class AppTheme {
         displayColor: AppColors.editorialWhite,
       ),
       useMaterial3: true,
-      // Liquid glass properties aren't native ThemeData concepts, 
+      // Liquid glass properties aren't native ThemeData concepts,
       // they will be implemented in Custom Widgets using AppColors
     );
   }
@@ -33,8 +33,8 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
-        primary: Color(0xFF4338CA), // Indigo-700
-        secondary: Color(0xFF059669), // Emerald-600
+        primary: Color(0xFF176B58),
+        secondary: Color(0xFF8F4254),
         surface: Color(0xFFF5F5F7),
         error: Color(0xFFDC2626), // Red-600
       ),
