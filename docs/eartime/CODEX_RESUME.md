@@ -1,13 +1,18 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
-Latest continuation: reports/recorded goal streaks, two additional native widget
-variants and safe launcher navigation. Full gates: 132 Flutter / 188 native,
-analyzer clean, Kotlin debug/release and debug APK pass. Implementation count:
-25 IMPLEMENTED / 76 IN_PROGRESS / 18 NOT_STARTED (119). This is a milestone,
-not completion. Next active phase: production data export/backup/restore/delete;
-then remaining identity, partitions, telemetry, reminders, UI and release scope.
-See `REPORTS_AND_NAVIGATION.md`. No service edits in this continuation.
+Latest continuation: reports/recorded goal streaks, widget variants/navigation
+and integrated native journal export/confirmed transactional restore/recovery.
+Reports checkpoint `a3d60dcfdff542eb074c38bda05d8ab670d3ab76` is remote-verified;
+remote main remains `13ae6609d22cb2a0daf8890fca081fb97c93b36b`.
+Full gates: 139 Flutter / 222 native, analyzer clean, both Kotlin variants and
+debug APK pass, including the final command-owner recheck. Count: 25 IMPLEMENTED /
+78 IN_PROGRESS / 16 NOT_STARTED (119). H17/H18 remain partial: native-only archives
+exclude legacy history/preferences. This is NOT feature-complete or RELEASE_READY.
+See `JOURNAL_ARCHIVES.md` and `REPORTS_AND_NAVIGATION.md`. No service edits.
+Next active data task: full legacy/preferences backup/restore policy, confirmed
+deletion including recovery copies and provider/process-death hardening. Then
+remaining identity, partitions, telemetry, reminders, UI and release scope.
 Review branch `codex/production-checkpoint-20261024`; protected baseline `0a8be43`.
 Initial publication verified at `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`;
 the follow-up adds known-device pagination without changing listening accounting.
@@ -181,6 +186,22 @@ Prior pagination debug artifact (historical hash, not the current build):
   EarTime, ID `com.eartime.eartime_app`, min SDK 24/target SDK 36.
 
 ## Preservation And Next Work
+
+Native archive continuation: 139 Flutter pass; 222 native across 20 suites with
+zero failures/errors/skips. New archive native coverage: 27 parser/SQLite cases,
+six Activity picker cases and one runtime restore/drain fence case. Seven Flutter
+transfer UI/contract cases, including 360px / 2x text confirmation. 1500 sessions /
+3000 source observations round-trip without dropped pages; mid-import cancellation
+and precommit fault preserve original rows/source/cursor. Initial non-void JUnit
+declarations and analyzer style findings were corrected. The mobile test now
+scrolls to a lazily built action and scales the Navigator/dialog, not just home.
+No warnings or assertions were suppressed. Archives contain private plaintext
+observations, not full-app data, and must never be published. Stalled-provider
+hard cancellation, whole-app backup/deletion and physical durability remain open.
+Schema/projection stay 3; existing fault evidence/preferences/legacy are retained.
+Latest ignored debug APK SHA-256:
+`CCCC186377E739AA3A27594480E2A3ACA905475252AECE7E5AA4CAFF818935C2`.
+Artifact was not installed, signed for production, released or published.
 
 Latest reports/widgets/navigation validation: 132 Flutter tests passed, 188
 native tests in 18 suites, zero failures/errors/skips. Native additions: five

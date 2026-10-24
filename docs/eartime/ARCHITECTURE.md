@@ -6,6 +6,14 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Explicit native journal archives use bounded versioned JSON lines with source/
+sequence cutoff and an integrity footer. Document I/O has its own worker; source
+pages still belong to the journal owner. Restore retains a private recovery file
+before an atomic source/projection/cursor replacement and gap. Pre-restore queued
+events get a separate epoch. Preferences and preserved legacy history are not
+replaced or promoted. See `JOURNAL_ARCHIVES.md`: not yet whole-app backup/restore,
+and no schema 3 migration or new competing projection was added.
+
 `Android callbacks -> protected AudioTrackingService/BLE broker emissions ->
 NativeJournalRuntime -> ObservationJournal + ListeningProjection transaction ->
 committed EventChannel invalidation hints`.

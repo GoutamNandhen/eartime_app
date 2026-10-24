@@ -12,6 +12,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
 import java.util.UUID
+import java.io.File
+import java.io.FileOutputStream
 
 data class ObservationInput(
     val id: String,
@@ -60,6 +62,7 @@ class ObservationJournal(
     databaseName: String = "eartime_observations.sqlite",
     private val commitClock: () -> Long = System::currentTimeMillis,
 ) : AutoCloseable {
+    private val appContext = context.applicationContext
     private val preferences = ListeningPreferences(context)
     private val helper = object : SQLiteOpenHelper(
         context.applicationContext, databaseName, null, 3,
@@ -171,6 +174,93 @@ class ObservationJournal(
         val db = database()
         return db.rawQuery("SELECT * FROM observations ORDER BY sequence DESC LIMIT 1", null).use {
             if (it.moveToFirst()) readRow(it, sourceId(db)) else null
+        }
+    }
+
+    fun writeArchive(output: java.io.OutputStream, cancelled: () -> Boolean = { false }): JournalArchiveSummary {
+        val db = database()
+        return JournalArchive.write(output, sourceId(db), lastSequence(db), { readAfter(it, 128) }, cancelled)
+    }
+
+    fun recoveryArchives(offset: Int = 0): Map<String, Any?> {
+        require(offset in 0..1000000)
+        val files = recoveryFiles()
+        return mapOf("items" to files.drop(offset).take(20).map {
+            mapOf("id" to it.name.removeSuffix(".eartime"), "createdUtcMs" to it.lastModified(), "bytes" to it.length())
+        }, "nextOffset" to minOf(files.size, offset + 20), "hasMore" to (offset + 20 < files.size))
+    }
+
+    private fun recoveryFiles(): List<File> = File(appContext.filesDir, "journal_recovery").listFiles()
+        ?.filter { it.isFile && it.extension == "eartime" && runCatching {
+            UUID.fromString(it.nameWithoutExtension).toString() == it.nameWithoutExtension
+        }.getOrDefault(false) }?.sortedWith(compareByDescending<File> { it.lastModified() }.thenBy { it.name }) ?: emptyList()
+
+    fun recoveryArchive(id: String): File {
+        require(UUID.fromString(id).toString() == id)
+        return recoveryFiles().firstOrNull { it.name == "$id.eartime" }
+            ?: throw IllegalArgumentException("Recovery archive unavailable")
+    }
+
+    /** Explicit user-confirmed replacement, with a synced local recovery archive before any mutation. */
+    fun restoreArchive(file: File, time: ObservationTime, processGeneration: String,
+        cancelled: () -> Boolean = { false }, beforeCommit: (() -> Unit)? = null): Map<String, Any?> {
+        val db = database()
+        ListeningProjection(db).requiresUpgrade()
+        val currentSource = sourceId(db)
+        val currentLast = lastSequence(db)
+        var matched = 0L
+        val summary = file.inputStream().use { stream -> JournalArchive.read(stream, cancelled) { row ->
+            if (row.sourceId == currentSource && row.sequence <= currentLast) {
+                db.rawQuery("SELECT observation_id, fingerprint FROM observations WHERE sequence = ?", arrayOf(row.sequence.toString())).use {
+                    require(it.moveToFirst() && it.getString(0) == row.input.id && it.getString(1) == fingerprint(row.input)) {
+                        "Conflicting archive history; current observations retained"
+                    }
+                    matched++
+                }
+            }
+        } }
+        if (summary.sourceId == currentSource) {
+            val expected = db.rawQuery("SELECT COUNT(*) FROM observations WHERE sequence <= ?",
+                arrayOf(minOf(currentLast, summary.lastSequence).toString())).use { it.moveToFirst(); it.getLong(0) }
+            require(matched == expected) { "Archive omits committed observations" }
+            if (summary.lastSequence <= currentLast) return summary.toWire() + ("unchanged" to true)
+        }
+        if (cancelled()) throw ArchiveCancelled()
+        val directory = File(appContext.filesDir, "journal_recovery").apply { check(isDirectory || mkdirs()) }
+        val id = UUID.randomUUID().toString()
+        val temporary = File(directory, "$id.partial")
+        val recovery = File(directory, "$id.eartime")
+        try {
+            FileOutputStream(temporary).use { out -> writeArchive(out, cancelled); out.fd.sync() }
+            temporary.inputStream().use { JournalArchive.read(it, cancelled) }
+            check(temporary.renameTo(recovery)) { "Could not retain recovery archive" }
+        } finally { temporary.delete() }
+        return transaction(db) {
+            if (cancelled()) throw ArchiveCancelled()
+            db.delete("observations", null, null)
+            db.delete("consumer_cursors", null, null)
+            ListeningProjection(db).reset()
+            db.execSQL("UPDATE journal_metadata SET value = ? WHERE key = 'source_id'", arrayOf(summary.sourceId))
+            val restored = file.inputStream().use { stream -> JournalArchive.read(stream, cancelled) { row ->
+                val input = row.input
+                db.insertOrThrow("observations", null, ContentValues().apply {
+                    put("sequence", row.sequence); put("observation_id", input.id); put("kind", input.kind)
+                    put("collector", input.collector); put("process_generation", input.processGeneration)
+                    put("collection_epoch", input.time.collectionEpoch); put("boot_id", input.time.bootId)
+                    put("wall_utc_ms", input.time.wallUtcMs); put("elapsed_ms", input.time.elapsedMs)
+                    put("payload_version", input.payloadVersion); put("payload_json", input.payloadJson)
+                    put("provenance", input.provenance); put("confidence", input.confidence.name)
+                    put("fingerprint", fingerprint(input)); put("committed_utc_ms", row.committedUtcMs)
+                })
+            } }
+            require(restored == summary) { "Archive changed during restore" }
+            catchUpProjection(db, cancelled)
+            append(ObservationInput(UUID.randomUUID().toString(), "COLLECTION_GAP", "journal_restore",
+                processGeneration, time, JournalJson.encode(mapOf("reason" to "user_restored_history",
+                    "continuityProven" to false)), "local_archive_restore"))
+            if (cancelled()) throw ArchiveCancelled()
+            beforeCommit?.invoke()
+            summary.toWire() + mapOf("unchanged" to false, "recoveryId" to id)
         }
     }
 

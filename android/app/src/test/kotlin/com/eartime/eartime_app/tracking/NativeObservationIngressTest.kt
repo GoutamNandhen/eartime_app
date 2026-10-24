@@ -16,6 +16,48 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], manifest = Config.NONE, application = Application::class)
 class NativeObservationIngressTest {
+    @Test fun restorePublishesAfterCommitAndFencesObservationsQueuedBeforeTheRestoreBoundary() {
+        val context = RuntimeEnvironment.getApplication()
+        val name = "r-${UUID.randomUUID().toString().take(6)}.db"
+        val sourceName = "s-${UUID.randomUUID().toString().take(6)}.db"
+        val file = java.io.File.createTempFile("restore-", ".fixture", context.cacheDir)
+        val seedWorker = java.util.concurrent.Executors.newSingleThreadExecutor()
+        seedWorker.submit {
+            ObservationJournal(context, sourceName).use { source ->
+                source.append(ObservationInput(UUID.randomUUID().toString(), "PLAYBACK_STARTED", "fixture", "fixture-process",
+                    ObservationTime(1000, 1000, "boot", "fixture-epoch"), "{}"))
+                file.outputStream().use { source.writeArchive(it) }
+            }
+        }.get(20, TimeUnit.SECONDS)
+        seedWorker.shutdown()
+        val published = CopyOnWriteArrayList<Map<String, Any?>>()
+        val ingress = NativeObservationIngress(context, published::add, {}, name)
+        val entered = CompletableFuture<Unit>()
+        val release = CompletableFuture<Unit>()
+        try {
+            page(ingress)
+            ingress.archivePage(0, { entered.complete(Unit); release.get(20, TimeUnit.SECONDS) }, { fail(it) })
+            entered.get(20, TimeUnit.SECONDS)
+            val restored = CompletableFuture<Map<String, Any?>>()
+            ingress.restoreArchive(file, { false }, restored::complete, { restored.completeExceptionally(IllegalStateException(it)) })
+            ingress.submit(mapOf("type" to "PLAYBACK_STARTED", "timestamp" to 9000L))
+            release.complete(Unit)
+            assertEquals(false, restored.get(20, TimeUnit.SECONDS)["unchanged"])
+            val rows = page(ingress)["observations"] as List<*>
+            val queued = rows.last() as Map<*, *>
+            assertTrue((queued["collectionEpoch"] as String).startsWith("pre-restore-queued-"))
+            assertEquals("COLLECTION_GAP", published.first()["type"])
+            org.robolectric.shadows.ShadowSystemClock.advanceBy(java.time.Duration.ofSeconds(2))
+            ingress.submit(mapOf("type" to "PLAYBACK_PAUSED", "timestamp" to 11000L))
+            val fresh = ((page(ingress)["observations"] as List<*>).last() as Map<*, *>)
+            assertNotEquals(queued["collectionEpoch"], fresh["collectionEpoch"])
+        } finally {
+            release.complete(Unit)
+            ingress.close(); file.delete(); context.deleteDatabase(name); context.deleteDatabase(sourceName)
+            java.io.File(context.filesDir, "journal_recovery").listFiles()?.forEach { it.delete() }
+        }
+    }
+
     @Test fun observerCaptureSourceAndHealthAcknowledgmentAreDurableWithoutConfirmedListening() {
         val context = RuntimeEnvironment.getApplication()
         val name = "o-${UUID.randomUUID().toString().take(8)}.db"

@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: recorded reports/streaks, native widget variants and navigation, 132 Flutter / 188 native
+Latest checkpoint: reports/widgets/navigation and native journal archives, 139 Flutter / 222 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -46,6 +46,35 @@ PHYSICAL_PENDING. No signed release or installation. Next: data management and
 the remaining exact approved matrix, not additional scope.
 
 ## Implementation phases
+
+### Native Journal Archives
+
+Continued after normally pushing and verifying reports checkpoint
+`a3d60dcfdff542eb074c38bda05d8ab670d3ab76`; main/baseline refs unchanged.
+Delivered streaming versioned native export, bounded/checksummed validation,
+explicitly confirmed transactional restore, synced local recovery archives and
+paged recovery UI. Restore closes at last evidence and fences pre-restore queued
+events from subsequent collection. Document I/O has its own worker; no new
+storage permission or automatic export/import. Transfer setup is lazy: normal
+startup/reopen/teardown does not initialize a worker or call picker cleanup.
+Retired/superseded engines cannot start/cancel transfers or consume the newer
+engine's navigation target. No collector edits or hardware interaction.
+
+H17/H18 move to IN_PROGRESS, not IMPLEMENTED: native-only archives exclude
+preserved legacy history/preferences/fault evidence. Existing preferences,
+legacy history and fault records remain intact. H19 deletion is still NOT_STARTED.
+No automatic recovery-history pruning. Count: 25 IMPLEMENTED / 78 IN_PROGRESS /
+16 NOT_STARTED. Format, limits and remaining work: `JOURNAL_ARCHIVES.md`.
+
+All gates executed: 139 Flutter, 222 native in 20 suites, zero failures/errors/
+skips; analyzer clean; debug/release Kotlin and debug APK pass, rerun after final
+engine fencing. Coverage includes 1500 sessions/3000 observations, corruption/
+version/depth/UTF-8/duplicate-key refusal, atomic crash/mid-import cancellation
+rollback, reopen/idempotence, picker lifecycle and queued/future epoch separation.
+Initial JUnit return declarations, analyzer style findings and off-screen mobile
+fixture interaction were repaired without removing assertions or suppression.
+Stalled-provider cancellation, full-app backup/deletion and physical OS death/
+power loss remain open, along with the remaining exact approved matrix.
 
 | Phase | Scope / feature IDs | State | Evidence / next work |
 | --- | --- | --- | --- |

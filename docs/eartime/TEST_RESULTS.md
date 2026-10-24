@@ -4,9 +4,9 @@ Last verified implementation baseline: 2026-10-24.
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 132 passed, 0 failures |
+| Flutter full suite | 139 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 188 passed in 18 suites, 0 failures/errors/skips |
+| Android native suite | 222 passed in 20 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |
@@ -46,3 +46,14 @@ handler. Two widget cases verify canonical daily totals, unknown current output
 and unavailable history. Three Flutter cases cover consume/disposal, malformed
 report contracts and actual Wellbeing report rendering at 2x text. No assertions
 were weakened. The initial analyzer style finding was corrected and rerun clean.
+
+Native archive continuation adds 34 native cases: 27 bounded format/SQLite restore
+cases (including API 28 1500 sessions/3000 observations), six API 28/35 document
+picker cases and one API 28 queued-event restore-boundary integration. Seven
+Flutter cases cover explicit confirmation/cancel, success counts/errors, busy
+disposal, recovery pages, channel contracts and 360px/2x text. Initial JUnit
+non-void method initialization failure was repaired; no test was disabled. The
+large-text fixture initially tapped an off-screen/lazily built row; it now
+scrolls and scales the Navigator/dialog as well as the page. Final owner-fenced
+Kotlin debug/release and debug packaging pass. Phone process death, stalled
+document providers and power-loss durability are not established by these models.

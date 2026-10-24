@@ -5,7 +5,7 @@ Updated 2026-10-24. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **25 IMPLEMENTED, 76 IN_PROGRESS, 18 NOT_STARTED = 119**.
+Implementation count: **25 IMPLEMENTED, 78 IN_PROGRESS, 16 NOT_STARTED = 119**.
 New software-complete IDs: E10, F6, I1, I2, I3. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
@@ -16,7 +16,7 @@ Executable evidence keys:
 - D: `flutter test --no-pub test/observation_journal_test.dart`.
 - J: `android/gradlew.bat :app:testDebugUnitTest --tests '*ObservationJournalTest' --tests '*NativeObservationIngressTest'` (run from `android` as `.\gradlew.bat`).
 - R: same Gradle task with `--tests '*TrackingContractTest' --tests '*BoundedIngressQueueTest'`.
-- P: `ListeningProjectionTest` (48 API 28/35 cases), including shared JSON fixture,
+- P: `ListeningProjectionTest` (50 API 28/35 cases), including shared JSON fixture,
   B02, atomic rollback, replay/rebuild, v1/v2 migrations, DST and aggregate parity.
 - U: `flutter test --no-pub test/listening_projection_test.dart` (20 cases).
 - C: `CollectorHealthTest` (20 API 28/35 cases) and `OutputAttributionTest`
@@ -26,12 +26,15 @@ Executable evidence keys:
 - V: `ListeningHistoryLoadTest` (3 API 28 cases): 1200 sessions, transaction-bound
   rebuild cancellation/reopen parity, live paging insertion and v2-cache upgrade.
 - Q: `ListeningPreferencesTest` (12 native cases) and `test/listening_settings_test.dart` (4 Flutter cases).
-- W: `ListeningWidgetTest` (6 native resource/render cases); physical launcher acceptance pending.
+- W: `ListeningWidgetTest` (8 native resource/render cases); physical launcher acceptance pending.
 - T: `test/telemetry_capability_test.dart` (2 conservative capability cases).
 - N: `ListeningReportTest`, projection persisted-goal/reopen/replay case,
   `NavigationTargetTest`, summary widget render cases and Flutter
   `app_navigation_test.dart` / `listening_report_test.dart`.
   See `REPORTS_AND_NAVIGATION.md` for scope and limits.
+- X: `JournalArchiveTest`, `JournalFileTransferTest`, restore-boundary ingress
+  case and `test/journal_transfer_test.dart`. Native-only transfers; full-app
+  backup is unfinished. See `JOURNAL_ARCHIVES.md`.
 - OPEN: executable production acceptance test is missing. Add it with the
   implementation; never count this row as passing based on a source review.
 
@@ -145,7 +148,7 @@ Executable evidence keys:
 | G6 | Evidence-backed attribution | IN_PROGRESS; C rejects inventory/global/communication/predicted route claims; actual third-party route proof OPEN |
 | G7 | One authoritative interval projection | IMPLEMENTED / AUTOMATED_PASS P/U/W; production confirmed attribution/liveness remain gated |
 | G8 | Live/history agreement | IN_PROGRESS; P/U B02 observed opening corrected; validated production live lease OPEN |
-| G9 | Durable recovery/migrations | IN_PROGRESS; J/P v1/v2 migrations/replay preserve raw/source/cursors; legacy read-only preservation, import OPEN |
+| G9 | Durable recovery/migrations | IN_PROGRESS; J/P/X migrations/replay plus transactional native archive restore/recovery/queued-event fence; full-app legacy/preferences restoration OPEN |
 | G10 | Collection-gap uncertainty | IMPLEMENTED / AUTOMATED_PASS J/P/U/C/V; known owner stops close at last evidence, stale/duplicate stops fenced; physical death pending |
 | G11 | Bounded startup | IMPLEMENTED inherited S; native/OEM timing PHYSICAL_PENDING |
 | G12 | Engine/sink ownership | IMPLEMENTED / AUTOMATED_PASS S + JVM owner tests |
@@ -155,7 +158,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 129 Flutter/173 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 139 Flutter/222 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -170,16 +173,16 @@ Executable evidence keys:
 | H6 | Analytics | IN_PROGRESS; P/U native actual aggregates, no placeholder scores; full metrics OPEN |
 | H7 | Devices | IN_PROGRESS; U native known-device next/previous pages/details/name overrides; verified aliases/telemetry OPEN |
 | H8 | Wellbeing | IN_PROGRESS; Q/U persisted goals/native summaries; reminders OPEN |
-| H9 | Settings | IN_PROGRESS; Q themes/goals, legacy/journal diagnostics; export/restore/delete OPEN |
+| H9 | Settings | IN_PROGRESS; Q/X themes/goals, native archive controls/recovery, legacy/journal diagnostics; full backup/delete OPEN |
 | H10 | Developer diagnostics | IN_PROGRESS; D journal screen delivered; safe vendor controls OPEN |
 | H11 | Android widgets | IN_PROGRESS; W multi-device dark two-column native provider; unknown battery honest; physical launcher/freshness pending |
 | H12 | Foreground notification/controls | IN_PROGRESS; inherited notification; control/status tests OPEN |
 | H13 | Goals/reminders/preferences | IN_PROGRESS; Q native goals/themes/names; reminders/quiet-hours OPEN |
-| H14 | Data-management settings | IN_PROGRESS; paged read-only preserved legacy history; destructive/export/import controls OPEN |
+| H14 | Data-management settings | IN_PROGRESS; X native export/confirmed restore and recovery UI; full-app backup/confirmed deletion OPEN |
 | H15 | Local-first privacy | IN_PROGRESS; OS cloud/transfer backup excluded; inherited native logs/BLE discovery audit OPEN |
 | H16 | Offline functionality | IN_PROGRESS; native/local queries and system fonts; full offline acceptance OPEN |
-| H17 | Export | NOT_STARTED; versioned format/roundtrip tests OPEN |
-| H18 | Backup/restore | NOT_STARTED; idempotent/conflict/rollback tests OPEN |
+| H17 | Export | IN_PROGRESS; X integrated streaming versioned native journal export/checksum/cutoff; legacy/preferences export OPEN, not full-app backup |
+| H18 | Backup/restore | IN_PROGRESS; X explicit transactional native restore, synced recovery, idempotence/conflict/crash/cancel/reopen and 1500-session tests; full legacy/preferences backup OPEN |
 | H19 | User deletion | NOT_STARTED; explicit-confirmation/transaction tests OPEN |
 | H20 | Accessibility | IN_PROGRESS; D large-text test; all-screen semantics OPEN |
 | H21 | Localization readiness | NOT_STARTED; string extraction/locale tests OPEN |

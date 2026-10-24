@@ -6,6 +6,7 @@ import 'audio_diagnostics_screen.dart';
 import 'developer_diagnostics_screen.dart';
 import 'observation_journal_screen.dart';
 import 'legacy_history_screen.dart';
+import 'data_management_screen.dart';
 
 final themeModeProvider = Provider<ThemeMode>((ref) {
   final mode = ref.watch(listeningPreferencesProvider).asData?.value.themeMode;
@@ -128,6 +129,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Text(
             'Data and diagnostics',
             style: Theme.of(context).textTheme.titleMedium,
+          ),
+          _link(
+            'Local data',
+            Icons.folder_outlined,
+            const DataManagementScreen(),
           ),
           _link(
             'Observation Journal',

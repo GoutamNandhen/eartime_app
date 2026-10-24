@@ -34,6 +34,7 @@ class NativeObservationIngress(
     private var bootId: String? = null
     private var started = false
     private var commitLossCount = 0L
+    private var restoreFenceElapsed: Long? = null
     @Volatile private var lastError: String? = null
     private val lifecycleLock = Any()
     @Volatile private var closing = false
@@ -146,7 +147,9 @@ class NativeObservationIngress(
                                     }
                                     val committed = store.append(ObservationInput(
                                         pending.id, pending.event["type"] as String, pending.collector,
-                                        processGeneration, pending.time.copy(bootId = bootId), JournalJson.encode(pending.event),
+                                        processGeneration, pending.time.copy(bootId = bootId,
+                                            collectionEpoch = if (restoreFenceElapsed?.let { (pending.time.elapsedMs ?: -1) <= it } == true)
+                                                "pre-restore-queued-$epoch" else epoch), JournalJson.encode(pending.event),
                                         if (pending.collector == CollectorHealth.SOURCE) "supported_audio_api_sample_wall_and_elapsed" else "legacy_collector_wall_and_broker_receipt_elapsed",
                                     ))
                                     try { publish(pending.event + ("journal" to committed.metadata())) }
@@ -214,6 +217,31 @@ class NativeObservationIngress(
                 com.eartime.eartime_app.widgets.ListeningWidgets.observationCommitted(context)
             }
         } }, failure, success)
+    }
+
+    internal fun archivePage(after: Long, success: (List<JournalObservation>) -> Unit, failure: (String) -> Unit) {
+        command({ ensureStarted().readAfter(after, 128) }, failure, success)
+    }
+
+    internal fun recoveryArchives(offset: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({ ensureStarted().recoveryArchives(offset) }, failure, success)
+    }
+
+    internal fun restoreArchive(file: java.io.File, cancelled: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({
+            val store = ensureStarted()
+            val restored = store.restoreArchive(file, now(), processGeneration, cancelled)
+            if (restored["unchanged"] == false) {
+                restoreFenceElapsed = SystemClock.elapsedRealtime()
+                store.lastObservation()?.let {
+                    try { publish(mapOf("type" to "COLLECTION_GAP", "timestamp" to it.input.time.wallUtcMs,
+                        "journal" to it.metadata())) }
+                    catch (_: Exception) { report("Restored history committed; refresh delivery failed") }
+                }
+            }
+            restored
+        }, failure, success)
     }
 
     private fun health(): Map<String, Any?> = mapOf("pendingCount" to queue.pendingCount(),
@@ -306,5 +334,21 @@ object NativeJournalRuntime {
         val target = ingress
         if (target == null) failure("Native journal was not initialized")
         else target.preferences(values, success, failure)
+    }
+
+    internal fun archivePage(after: Long, success: (List<JournalObservation>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.archivePage(after, success, failure)
+    }
+
+    fun recoveryArchives(offset: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.recoveryArchives(offset, success, failure)
+    }
+
+    fun restoreArchive(file: java.io.File, cancelled: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.restoreArchive(file, cancelled, success, failure)
     }
 }

@@ -1,0 +1,70 @@
+import 'package:flutter/services.dart';
+
+class JournalTransferClient {
+  const JournalTransferClient({
+    MethodChannel channel = const MethodChannel('com.eartime.app/tracking'),
+  }) : _channel = channel;
+  final MethodChannel _channel;
+  Future<Map<dynamic, dynamic>> transfer(
+    String operation, {
+    String? recoveryId,
+  }) async {
+    if (!{
+      'exportNativeJournal',
+      'restoreNativeJournal',
+      'restoreJournalRecovery',
+    }.contains(operation)) {
+      throw ArgumentError.value(operation);
+    }
+    final result = await _channel.invokeMapMethod<dynamic, dynamic>(operation, {
+      if (operation != 'exportNativeJournal') 'confirmed': true,
+      'id': ?recoveryId,
+    });
+    if (result?['cancelled'] == true) return result!;
+    if (result == null ||
+        result['version'] != 1 ||
+        result['scope'] != 'native_observations_only' ||
+        result['count'] is! int ||
+        (result['count'] as int) < 0 ||
+        result['sha256'] is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(result['sha256'] as String)) {
+      throw const FormatException('Invalid journal transfer result');
+    }
+    return result;
+  }
+
+  Future<Map<dynamic, dynamic>> recoveries(int offset) async {
+    final result = await _channel.invokeMapMethod<dynamic, dynamic>(
+      'listJournalRecoveries',
+      {'offset': offset},
+    );
+    if (result == null ||
+        result['items'] is! List ||
+        (result['items'] as List).length > 20 ||
+        result['hasMore'] is! bool ||
+        result['nextOffset'] is! int ||
+        (result['nextOffset'] as int) < 0 ||
+        (result['hasMore'] == true &&
+            (result['nextOffset'] as int) <= offset)) {
+      throw const FormatException('Invalid recovery page');
+    }
+    for (final item in result['items'] as List) {
+      if (item is! Map ||
+          item['id'] is! String ||
+          !RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+          ).hasMatch(item['id'] as String) ||
+          item['createdUtcMs'] is! int ||
+          (item['createdUtcMs'] as int).abs() > 8640000000000000 ||
+          item['bytes'] is! int ||
+          (item['bytes'] as int) < 0) {
+        throw const FormatException('Invalid recovery archive metadata');
+      }
+    }
+    return result;
+  }
+
+  Future<void> cancel() async {
+    await _channel.invokeMethod<void>('cancelJournalTransfer');
+  }
+}

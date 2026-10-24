@@ -10,6 +10,7 @@ import com.eartime.eartime_app.tracking.TrackingEventBroker
 import com.eartime.eartime_app.tracking.EngineAttachmentOwner
 import com.eartime.eartime_app.tracking.StartupTrace
 import com.eartime.eartime_app.tracking.NativeJournalRuntime
+import com.eartime.eartime_app.tracking.JournalFileTransfer
 import android.os.Handler
 import android.os.Looper
 import io.flutter.embedding.android.FlutterActivity
@@ -27,6 +28,8 @@ class MainActivity : FlutterActivity() {
     private var navigationTarget: String? = null
     private var navigationChannel: MethodChannel? = null
     private var navigationOwner: String? = null
+    private val journalTransferDelegate = lazy { JournalFileTransfer(this) }
+    private val journalTransfer by journalTransferDelegate
 
     private fun milestone(stage: String, fields: String = "") {
         StartupTrace.mark(stage, "act=$actId $fields")
@@ -44,8 +47,15 @@ class MainActivity : FlutterActivity() {
 
     override fun onDestroy() {
         milestone("ACTIVITY_DESTROY_BEGIN", "isFinishing=$isFinishing")
+        if (journalTransferDelegate.isInitialized()) journalTransfer.close()
         super.onDestroy()
         milestone("ACTIVITY_DESTROYED")
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == JournalFileTransfer.REQUEST_CODE && journalTransferDelegate.isInitialized())
+            journalTransfer.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -98,7 +108,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         navigationChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.eartime.app/navigation").also { channel ->
             channel.setMethodCallHandler { call, result ->
-                if (call.method == "consumeNavigationTarget") owner.runIfActive {
+                if (call.method == "consumeNavigationTarget" && owner.isActive && navigationOwner == owner.token) owner.runIfActive {
                     result.success(navigationTarget)
                     navigationTarget = null
                 } else result.notImplemented()
@@ -129,6 +139,31 @@ class MainActivity : FlutterActivity() {
         Log.i("EarTimeDiag", "[GFLOW] MethodChannel REGISTERED")
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
+                "exportNativeJournal", "restoreNativeJournal", "restoreJournalRecovery" -> {
+                    if (!owner.isActive || navigationOwner != owner.token) {
+                        result.error("ENGINE_RETIRED", "This engine no longer owns commands", null)
+                    } else if (call.method != "exportNativeJournal" && call.argument<Boolean>("confirmed") != true) {
+                        result.error("CONFIRMATION_REQUIRED", "Explicit restore confirmation required", null)
+                    } else {
+                        val success: (Map<String, Any?>) -> Unit = { value -> owner.runIfActive { result.success(value) }; Unit }
+                        val failure: (String) -> Unit = { message -> owner.runIfActive { result.error("JOURNAL_TRANSFER_FAILED", message, null) }; Unit }
+                        try {
+                            if (call.method == "restoreJournalRecovery") journalTransfer.restoreRecovery(call.argument<String>("id") ?: "", success, failure)
+                            else journalTransfer.select(if (call.method == "exportNativeJournal") "export" else "restore", success, failure)
+                        } catch (_: Exception) { failure("Invalid journal transfer request") }
+                    }
+                }
+                "cancelJournalTransfer" -> {
+                    if (!owner.isActive || navigationOwner != owner.token) {
+                        result.error("ENGINE_RETIRED", "This engine no longer owns commands", null)
+                    } else {
+                        if (journalTransferDelegate.isInitialized()) journalTransfer.cancel()
+                        result.success(null)
+                    }
+                }
+                "listJournalRecoveries" -> NativeJournalRuntime.recoveryArchives(call.argument<Number>("offset")?.toInt() ?: 0,
+                    { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
+                    { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("RECOVERY_READ_FAILED", "Recovery list unavailable", null) } } })
                 "readListeningPreferences", "updateListeningPreferences" -> {
                     val rawValues = call.arguments as? Map<*, *>
                     val values = if (call.method == "updateListeningPreferences" && rawValues != null && rawValues.keys.all { it is String })
