@@ -29,12 +29,12 @@ class ListeningWidgetTest {
     @Test fun nativeWidgetUsesProjectionTotalsAndNeverInventsBatteryPercentages() {
         val context = RuntimeEnvironment.getApplication()
         val snapshot = mapOf("confirmedMs" to 3720000L, "unverifiedMs" to 9999999L,
-            "devices" to listOf(mapOf("name" to "Disconnected headset", "connected" to false),
+            "devices" to listOf(mapOf("name" to "Disconnected headset", "connected" to false, "connectionState" to "DISCONNECTED_REPORTED"),
                 mapOf("name" to "A very long connected device name that must truncate", "connected" to true)))
         val view = ListeningWidgets.render(context, snapshot).apply(context, null)
         assertEquals("1h 2m", view.findViewById<TextView>(R.id.widget_total).text.toString())
-        assertEquals("Connected", view.findViewById<TextView>(R.id.device_state_1).text.toString())
-        assertEquals("Disconnected", view.findViewById<TextView>(R.id.device_state_2).text.toString())
+        assertEquals("Last observed connected", view.findViewById<TextView>(R.id.device_state_1).text.toString())
+        assertEquals("Disconnection reported", view.findViewById<TextView>(R.id.device_state_2).text.toString())
         assertEquals("Battery unknown", view.findViewById<TextView>(R.id.device_battery_1).text.toString())
         assertEquals(1, view.findViewById<TextView>(R.id.device_name_1).maxLines)
         assertNotNull(view.findViewById<TextView>(R.id.device_name_1).ellipsize)
@@ -55,7 +55,17 @@ class ListeningWidgetTest {
             "devices" to (1..6).map { mapOf("name" to "Headset $it", "connected" to (it == 1)) })
         val view = ListeningWidgets.render(scaled, snapshot).apply(scaled, null)
         assertEquals(android.view.View.GONE, view.findViewById<android.view.View>(R.id.widget_second_row).visibility)
-        assertEquals("+4 devices", view.findViewById<TextView>(R.id.widget_more).text.toString())
+        assertEquals("+4 records", view.findViewById<TextView>(R.id.widget_more).text.toString())
         assertEquals("Battery unknown", view.findViewById<TextView>(R.id.device_battery_2).text.toString())
+    }
+
+    @Test fun missingOrLostConnectionEvidenceNeverClaimsDisconnection() {
+        val context = RuntimeEnvironment.getApplication()
+        val snapshot = mapOf("confirmedMs" to 0L, "devices" to listOf(
+            mapOf("name" to "Unknown endpoint", "connected" to false, "connectionState" to "UNKNOWN"),
+            mapOf("name" to "Old record", "connected" to false)))
+        val view = ListeningWidgets.render(context, snapshot).apply(context, null)
+        assertEquals("Connection unknown", view.findViewById<TextView>(R.id.device_state_1).text.toString())
+        assertEquals("Connection unknown", view.findViewById<TextView>(R.id.device_state_2).text.toString())
     }
 }

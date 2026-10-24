@@ -147,6 +147,15 @@ class ObservationJournal(
                 val sequence = db.insertOrThrow("observations", null, values)
                 val observation = JournalObservation(sourceId(db), sequence, input, committed)
                 ListeningProjection(db).apply(observation)
+                EndpointIdentity.observations(input).forEach { observed ->
+                    if (EndpointIdentityProjection(db).alias(observed.address) == null) {
+                        append(ObservationInput(UUID.randomUUID().toString(), EndpointIdentity.KIND, EndpointIdentity.COLLECTOR,
+                            input.processGeneration, input.time, JournalJson.encode(mapOf(
+                                "action" to "OBSERVED_ENDPOINT", "address" to observed.address,
+                                "aliasId" to UUID.randomUUID().toString(), "deviceId" to UUID.randomUUID().toString(),
+                                "observationId" to input.id)), "durable_same_endpoint_association"))
+                    }
+                }
                 beforeCommit?.invoke()
                 observation
             }
@@ -274,6 +283,34 @@ class ObservationJournal(
                 put("consumer", consumer); put("sequence", accepted)
             }, SQLiteDatabase.CONFLICT_REPLACE)
             accepted
+        }
+    }
+
+    fun deviceIdentity(deviceId: String, aliasOffset: Int = 0, candidateOffset: Int = 0): Map<String, Any?> {
+        val db = database(); catchUpProjection(db)
+        return transaction(db) { EndpointIdentityProjection(db).details(deviceId, aliasOffset, candidateOffset, preferences::deviceName) +
+            mapOf("sourceId" to sourceId(db), "sequence" to lastSequence(db)) }
+    }
+
+    fun changeEndpointIdentity(source: String, aliasId: String, expectedRevision: Long, targetDeviceId: String?,
+        time: ObservationTime, processGeneration: String): Map<String, Any?> {
+        val db = database(); catchUpProjection(db)
+        return transaction(db) {
+            require(source == sourceId(db)) { "Journal source changed; refresh associations" }
+            require(EndpointIdentity.validId(aliasId) && (targetDeviceId == null || EndpointIdentity.validId(targetDeviceId)))
+            val registry = EndpointIdentityProjection(db)
+            val alias = registry.byId(aliasId) ?: throw IllegalArgumentException("Endpoint association unavailable")
+            require(expectedRevision == alias["revision"]) { "Association changed; refresh before editing" }
+            val target = targetDeviceId ?: alias["originDeviceId"] as String
+            val known = db.rawQuery("SELECT COUNT(*) FROM listening_endpoint_aliases WHERE origin_device_id=?", arrayOf(target))
+                .use { it.moveToFirst(); it.getInt(0) > 0 }
+            require(known) { "Unknown target device identity" }
+            if (target == alias["deviceId"]) return@transaction mapOf("unchanged" to true)
+            append(ObservationInput(UUID.randomUUID().toString(), EndpointIdentity.KIND, EndpointIdentity.COLLECTOR,
+                processGeneration, time, JournalJson.encode(mapOf("action" to if (targetDeviceId == null) "RESET_ASSOCIATION" else "USER_ASSOCIATED",
+                    "address" to alias["address"], "aliasId" to aliasId, "deviceId" to target,
+                    "expectedRevision" to expectedRevision)), "explicit_user_device_association"))
+            mapOf("unchanged" to false)
         }
     }
 

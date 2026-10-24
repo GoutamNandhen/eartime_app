@@ -7,6 +7,12 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+Latest endpoint integration: 146 Flutter / 264 native (22 suites), analyzer clean,
+both Kotlin variants/debug APK pass. Endpoint UUIDs and user associations remain
+unverified physical identity; raw addresses/private archives are not publication
+candidates. No new collector-service edit, release or device interaction. Counts
+stay 25 IMPLEMENTED / 78 IN_PROGRESS / 16 NOT_STARTED. See `ENDPOINT_IDENTITY.md`.
+
 Passive A2DP acquisition gates: 140 Flutter / 237 native, analyzer clean, debug/
 release Kotlin and debug APK. Real API candidates still have UNKNOWN attribution
 and no live eligibility. Raw endpoint identifiers remain private data; only

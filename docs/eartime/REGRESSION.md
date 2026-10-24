@@ -31,16 +31,19 @@ based only on a local model test. Repository commands were reviewed: local
 build/test writes only; initial Robolectric download was separately authorized
 through the tool boundary. No device install/data mutation.
 
-Current evidence: Flutter 129 pass; JVM 173 pass; analyzer exit 0/no issues;
+Current evidence: Flutter 146 pass; JVM 264 pass; analyzer exit 0/no issues;
 debug/release Kotlin compile and debug packaging exit 0. Fifteen former
 placeholders now have real assertions. Signing refusal without keys is an
 expected exit 1, not a signed release success. Exact artifact: `CODEX_RESUME.md`.
 
 ## Device and route contracts
 
-Downstream consumers today: journal timestamps and confidence. Physical-device
-alias persistence and the pure route reducer are not yet connected to legacy
-collector attribution. Do not infer a verified runtime edge where none exists.
+Downstream consumers: journal timestamps/confidence and disposable endpoint alias
+projection. Supported A2DP samples now commit random endpoint associations before
+publication; names are not matching keys. Explicit edits close affected routes
+at last evidence without rewriting history or the B02 opening. The pure route
+reducer is not yet a confirmed legacy collector attribution path. See
+`ENDPOINT_IDENTITY.md`; physical matching and live-route proof remain pending.
 
 Regression acceptance: complete JVM suite plus Flutter scoped-device/journal
 targets. Preserve source confidence UNKNOWN on all legacy observations.

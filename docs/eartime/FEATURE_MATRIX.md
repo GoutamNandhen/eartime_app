@@ -42,6 +42,10 @@ Executable evidence keys:
   is integrated; confidence/live eligibility are still UNKNOWN/false.
 - OPEN: executable production acceptance test is missing. Add it with the
   implementation; never count this row as passing based on a source review.
+- Z: `EndpointIdentityTest` (24 API 28/35 cases), retired-owner ingress and
+  widget unknown-state regressions; `test/device_identity_test.dart` (6 cases).
+  `ENDPOINT_IDENTITY.md`: durable random endpoint UUIDs, explicit reversible
+  associations and replay/migration/restore, not verified physical identity.
 
 ## A: Core Listening
 
@@ -64,9 +68,9 @@ Executable evidence keys:
 
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
-| B1 | Evidence-backed physical identity | IN_PROGRESS; R typed IDs; persistent association OPEN |
-| B2 | Device/route/endpoint/alias/name distinction | IN_PROGRESS; R contracts; collector integration OPEN |
-| B3 | Editable device names | IN_PROGRESS; Q/P durable display-only overrides and UI; physical identity/rename acceptance pending |
+| B1 | Evidence-backed physical identity | IN_PROGRESS; R/Z persistent endpoint association integrated; physical/cross-profile proof OPEN |
+| B2 | Device/route/endpoint/alias/name distinction | IN_PROGRESS; R/Z journal-backed random UUIDs and reversible user associations; LE/wired/USB integration OPEN |
+| B3 | Editable device names | IN_PROGRESS; Q/P/Z display-only overrides persist through endpoint reconnect/reopen/replay; physical identity/rename acceptance pending |
 | B4 | Device history/totals | IN_PROGRESS; P native per-device union/known-device pages; provisional identities not merged; history drilldown OPEN |
 | B5 | Left/right battery | NOT_STARTED; standard/vendor observation tests OPEN |
 | B6 | Case battery | NOT_STARTED; compatibility/physical evidence OPEN |
@@ -163,7 +167,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 140 Flutter/237 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 146 Flutter/264 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

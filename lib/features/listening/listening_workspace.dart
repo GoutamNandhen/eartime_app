@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/listening_projection.dart';
 import '../../providers/listening_projection_provider.dart';
 import '../../providers/listening_preferences_provider.dart';
+import '../devices/device_identity_screen.dart';
 
 enum ListeningView { home, timeline, analytics, devices, wellbeing }
 
@@ -445,7 +446,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
-              '${device.connected ? 'Connected' : 'Disconnected'}${device.identityVerified ? '' : ' - identity unverified'}',
+              '${device.connectionLabel}${device.identityVerified ? '' : ' - identity unverified'}',
             ),
             trailing: details
                 ? IconButton(
@@ -466,14 +467,41 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                               const SizedBox(height: 16),
-                              Text(
-                                device.connected ? 'Connected' : 'Disconnected',
-                              ),
+                              Text(device.connectionLabel),
                               Text(
                                 device.identityVerified
                                     ? 'Verified physical identity'
+                                    : device.hasEndpointIdentity
+                                    ? 'Stable endpoint association; physical identity unverified'
                                     : 'Provisional identity; not merged across collection restarts',
                               ),
+                              if (device.lastSeen != null)
+                                Text(
+                                  'Last observation: ${date(device.lastSeen!)} ${clock(device.lastSeen!)}',
+                                ),
+                              if (device.hasEndpointIdentity)
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const Icon(Icons.link),
+                                  title: const Text('Endpoint associations'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () async {
+                                    Navigator.pop(context);
+                                    await Navigator.of(this.context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => DeviceIdentityScreen(
+                                          deviceId: device.id,
+                                          name: device.name,
+                                        ),
+                                      ),
+                                    );
+                                    if (mounted) {
+                                      ref.invalidate(
+                                        listeningProjectionProvider(window()),
+                                      );
+                                    }
+                                  },
+                                ),
                               const SizedBox(height: 12),
                               FilledButton.icon(
                                 icon: const Icon(Icons.edit_outlined),

@@ -4,9 +4,33 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: reports/widgets/archives/navigation and passive A2DP acquisition, 140 Flutter / 237 native
+Latest checkpoint: durable endpoint associations, 146 Flutter / 264 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Interrupted Endpoint Work Resumed
+
+Resumed from `3d879aabce3d19f5e5375453ddc1bf7f321b68d5`, preserving all
+12 unfinished source/test files and local checkpoints. Completed the journal-
+backed endpoint registry, production association/reset UI, source/revision/owner
+fences, cache-v4 replay and honest connection uncertainty. Display names are
+captured off-main and remain independent of stable random transport associations.
+No name-only merging, history relabeling, verified physical identity, real route
+confirmation or listening timer was introduced. See `ENDPOINT_IDENTITY.md`.
+
+Added 24 API 28/35 identity cases, one queued-owner ingress regression, two
+widget unknown-state cases and six Flutter contract/UI cases. Existing A2DP
+probe assertions now verify name sanitization and explicit connection evidence.
+Full gates: 146 Flutter, 264 native in 22 suites, zero failures/errors/skips;
+analyzer clean; debug/release Kotlin and debug packaging pass; strict hook-only
+guard and diff checks pass. Initial lints, scroll-frame/layout test issues and
+Windows fixture database-path failure were repaired without weakened assertions.
+Build reports inherited SDK XML-version/Gradle deprecation warnings, not errors.
+The first staged audit passed 305 files/274 text candidates; rerun the exact
+final tree after documentation staging before publication. No new service edit.
+Feature counts remain 25/78/16 (119): B1/B2/B3 advance but retain unresolved
+physical/transport/rename acceptance. Continue per-device history and the exact
+remaining matrix; this is not final feature completion or physical G evidence.
 
 ## Recovery and baseline
 

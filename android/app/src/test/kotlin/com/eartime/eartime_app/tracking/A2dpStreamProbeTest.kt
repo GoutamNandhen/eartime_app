@@ -6,7 +6,7 @@ import java.util.concurrent.Semaphore
 
 class A2dpStreamProbeTest {
     private class Device(override val address: String = "02:11:22:33:44:55",
-        var isConnected: Boolean = true, var isStreaming: Boolean = false) : A2dpDeviceRead {
+        var isConnected: Boolean = true, var isStreaming: Boolean = false, override val name: String? = null) : A2dpDeviceRead {
         var onQuery: () -> Unit = {}
         override fun connected() = isConnected
         override fun streaming(): Boolean { onQuery(); return isStreaming }
@@ -43,13 +43,15 @@ class A2dpStreamProbeTest {
     private fun deviceRows(sample: Map<String, Any?>) = sample["devices"] as List<*>
 
     @Test fun positiveSampleIsDeviceScopedButDoesNotGrantConfirmedDurationOrLease() {
-        val f = Fixture(); val profile = Profile(listOf(Device(isStreaming = true)))
+        val f = Fixture(); val profile = Profile(listOf(Device(isStreaming = true, name = "Fixture\n headset")))
         f.attach(profile)
         val sample = f.probe.sample()
         assertEquals("SAMPLED", sample["state"])
         assertEquals("UNKNOWN", sample["confidence"])
         assertEquals(false, sample["liveListeningEligible"])
         assertEquals("STREAMING_REPORTED", (deviceRows(sample).single() as Map<*, *>)["streamState"])
+        assertEquals(true, (deviceRows(sample).single() as Map<*, *>)["connectedReported"])
+        assertEquals("Fixture headset", (deviceRows(sample).single() as Map<*, *>)["observedName"])
         f.probe.close(); f.cleanup(); assertEquals(1, profile.closes)
     }
     @Test fun falseAndEmptyReadingsAreAmbiguousRatherThanProvenPauseOrSpeaker() {

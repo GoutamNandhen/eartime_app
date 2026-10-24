@@ -40,6 +40,7 @@ internal class AndroidA2dpProfileConnector(private val context: Context, private
                         return devices.map { device ->
                             object : A2dpDeviceRead {
                                 override val address: String get() = device.address
+                                override val name: String? get() = device.name
                                 override fun connected() = proxy.getConnectionState(device) == BluetoothProfile.STATE_CONNECTED
                                 override fun streaming() = proxy.isA2dpPlaying(device)
                             }

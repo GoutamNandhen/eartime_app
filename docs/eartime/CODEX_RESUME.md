@@ -1,6 +1,23 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
+Latest resumed implementation: durable endpoint identities/reversible associations,
+owner/revision/source fencing and truthful unknown-connection rendering. Full
+gates: 146 Flutter / 264 native (22 suites, zero failures/errors/skips), analyzer
+clean, debug/release Kotlin compilation and debug APK pass. Four-hook service
+guard and public-tree audit pass. Source schema 3, disposable projection 4.
+See `ENDPOINT_IDENTITY.md`. Count remains 25 IMPLEMENTED / 78 IN_PROGRESS /
+16 NOT_STARTED = 119; this does not finish physical identity or route attribution.
+Prior verified remote tip: `3d879aabce3d19f5e5375453ddc1bf7f321b68d5`.
+Next safe work: native-filtered per-device history drilldown using the canonical
+projection, then remaining tracking/data/product acceptance gaps. Do not promote
+legacy global activity to a device or infer confirmed time from A2DP samples.
+Debug APK SHA-256 (ignored, unpublished):
+`31BD5423EDC000DBC12D3E8E01274674319D82511B6F572406D79A65355854C2`.
+No hardware interaction, physical G or signed release validation occurred.
+
+## Earlier Checkpoints
+
 Latest continuation: reports/recorded goal streaks, widget variants/navigation
 and integrated native journal export/confirmed transactional restore/recovery.
 Reports checkpoint `a3d60dcfdff542eb074c38bda05d8ab670d3ab76` is remote-verified;

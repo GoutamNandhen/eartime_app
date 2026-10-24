@@ -39,7 +39,8 @@ hint cache is capped at 256 and flushes 32 per turn; it is not canonical history
   before commit rolls back source and projection together. Reopen retains the
   checkpoint; a new process appends a gap before new collector publication.
 - Future DB versions fail closed without corruption deletion or raw-data loss.
-- Derived projection v2 caches replay as v3 to apply current-owner stop closure;
+- Derived projection v2/v3 caches replay as v4 to apply owner-stop closure and
+  durable endpoint associations. Alias observations remain in the same raw journal;
   source schema remains 3. Internal rebuild cancellation preserves completed
   128-row transactions and cannot return partial totals. See `HISTORY_REPLAY.md`.
 - Legacy Drift remains schema 1, untouched. It is not imported, upcast or added

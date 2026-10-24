@@ -27,7 +27,7 @@ class MainActivity : FlutterActivity() {
     private val engineOwners = IdentityHashMap<FlutterEngine, EngineAttachmentOwner>()
     private var navigationTarget: String? = null
     private var navigationChannel: MethodChannel? = null
-    private var navigationOwner: String? = null
+    @Volatile private var navigationOwner: String? = null
     private val journalTransferDelegate = lazy { JournalFileTransfer(this) }
     private val journalTransfer by journalTransferDelegate
 
@@ -139,6 +139,19 @@ class MainActivity : FlutterActivity() {
         Log.i("EarTimeDiag", "[GFLOW] MethodChannel REGISTERED")
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
+                "readDeviceIdentity" -> NativeJournalRuntime.deviceIdentity(call.argument<String>("deviceId") ?: "",
+                    call.argument<Number>("aliasOffset")?.toInt() ?: 0, call.argument<Number>("candidateOffset")?.toInt() ?: 0,
+                    { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
+                    { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("IDENTITY_READ_FAILED", "Device associations unavailable", null) } } })
+                "changeDeviceIdentity" -> {
+                    if (!owner.isActive || navigationOwner != owner.token || call.argument<Boolean>("confirmed") != true)
+                        result.error("CONFIRMATION_REQUIRED", "Current owner and explicit association confirmation required", null)
+                    else NativeJournalRuntime.changeDeviceIdentity(call.argument<String>("sourceId") ?: "", call.argument<String>("aliasId") ?: "",
+                        call.argument<Number>("expectedRevision")?.toLong() ?: -1, call.argument<String>("targetDeviceId"),
+                        { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
+                        { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("IDENTITY_UPDATE_FAILED", "Association changed or unavailable; refresh and retry", null) } } },
+                        { owner.isActive && navigationOwner == owner.token })
+                }
                 "exportNativeJournal", "restoreNativeJournal", "restoreJournalRecovery" -> {
                     if (!owner.isActive || navigationOwner != owner.token) {
                         result.error("ENGINE_RETIRED", "This engine no longer owns commands", null)

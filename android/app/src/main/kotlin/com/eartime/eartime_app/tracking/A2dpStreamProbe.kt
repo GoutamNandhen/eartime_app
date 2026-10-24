@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 internal interface A2dpDeviceRead {
     val address: String
+    val name: String? get() = null
     fun connected(): Boolean
     fun streaming(): Boolean
 }
@@ -105,6 +106,8 @@ internal class A2dpStreamProbe(
                 val connectedAfter = device.connected()
                 val at = clock()
                 mapOf("endpointAddress" to endpoint?.address, "profile" to "A2DP",
+                    "connectedReported" to (connectedBefore && connectedAfter),
+                    "observedName" to device.name?.filterNot { it.isISOControl() }?.take(80),
                     "streamState" to if (endpoint != null && connectedBefore && connectedAfter && streaming)
                         "STREAMING_REPORTED" else "NOT_STREAMING_OR_API_UNAVAILABLE",
                     "observedWallUtcMs" to at.wallUtcMs, "observedElapsedMs" to at.elapsedMs)

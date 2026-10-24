@@ -1,6 +1,6 @@
 package com.eartime.eartime_app.tracking
 
-/** Main-thread-only engine lease. Cancellation is not retirement; cleanup is. */
+/** Main-thread-owned lease; workers may read retirement. Cancellation is not retirement. */
 class EngineAttachmentOwner(val token: String) {
     companion object {
         // Issued only on the main thread. This orders engine leases, not events.
@@ -8,7 +8,7 @@ class EngineAttachmentOwner(val token: String) {
     }
 
     val generation: Long = ++lastGeneration
-    var isActive: Boolean = true
+    @Volatile var isActive: Boolean = true
         private set
 
     fun retire() { isActive = false }

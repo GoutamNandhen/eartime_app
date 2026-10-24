@@ -223,6 +223,25 @@ class NativeObservationIngress(
         command({ ensureStarted().readAfter(after, 128) }, failure, success)
     }
 
+    fun deviceIdentity(deviceId: String, aliasOffset: Int, candidateOffset: Int,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({ ensureStarted().deviceIdentity(deviceId, aliasOffset, candidateOffset) }, failure, success)
+    }
+
+    fun changeDeviceIdentity(source: String, aliasId: String, expectedRevision: Long, target: String?,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, ownerActive: () -> Boolean = { true }) {
+        command({
+            check(ownerActive()) { "Identity command owner retired" }
+            ensureStarted().changeEndpointIdentity(source, aliasId, expectedRevision, target, now(), processGeneration).also {
+            if (it["unchanged"] == false) {
+                ensureStarted().lastObservation()?.let { committed ->
+                    try { publish(mapOf("type" to EndpointIdentity.KIND, "timestamp" to committed.input.time.wallUtcMs,
+                        "journal" to committed.metadata())) } catch (_: Exception) { report("Identity committed; refresh delivery failed") }
+                }
+            }
+        } }, failure, success)
+    }
+
     internal fun recoveryArchives(offset: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         command({ ensureStarted().recoveryArchives(offset) }, failure, success)
     }
@@ -339,6 +358,18 @@ object NativeJournalRuntime {
     internal fun archivePage(after: Long, success: (List<JournalObservation>) -> Unit, failure: (String) -> Unit) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized") else target.archivePage(after, success, failure)
+    }
+
+    fun deviceIdentity(deviceId: String, aliasOffset: Int, candidateOffset: Int,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.deviceIdentity(deviceId, aliasOffset, candidateOffset, success, failure)
+    }
+
+    fun changeDeviceIdentity(source: String, aliasId: String, expectedRevision: Long, deviceId: String?,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, ownerActive: () -> Boolean) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.changeDeviceIdentity(source, aliasId, expectedRevision, deviceId, success, failure, ownerActive)
     }
 
     fun recoveryArchives(offset: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {

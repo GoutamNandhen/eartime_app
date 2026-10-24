@@ -11,7 +11,7 @@ import kotlin.math.abs
 /** A disposable, versioned read model. Observations are always the source of truth. */
 internal class ListeningProjection(private val db: SQLiteDatabase) {
     companion object {
-        const val VERSION = 3
+        const val VERSION = 4
         fun create(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE listening_projection (
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1), version INTEGER NOT NULL,
@@ -23,6 +23,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 close_reason TEXT, start_sequence INTEGER NOT NULL, end_sequence INTEGER NOT NULL)""")
             db.execSQL("CREATE INDEX listening_interval_window ON listening_intervals(end_utc_ms, start_utc_ms)")
             createDevices(db)
+            EndpointIdentityProjection.create(db)
         }
         fun createDevices(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE listening_devices (
@@ -45,11 +46,14 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
     fun collectorHealth(now: ObservationTime) = CollectorHealth.snapshot(state(), now)
 
     fun requiresUpgrade(): Boolean = db.rawQuery("SELECT version FROM listening_projection WHERE singleton=1", null).use {
-        if (!it.moveToFirst() || it.getInt(0) == VERSION) false
-        else { check(it.getInt(0) == 2) { "Unsupported listening projection version; source retained" }; true }
+        if (!it.moveToFirst()) true
+        else if (it.getInt(0) == VERSION) false
+        else { check(it.getInt(0) in 2..3) { "Unsupported listening projection version; source retained" }; true }
     }
 
     fun reset() {
+        EndpointIdentityProjection.create(db)
+        db.delete("listening_endpoint_aliases", null, null)
         db.delete("listening_intervals", null, null)
         db.delete("listening_projection", null, null)
         db.delete("listening_devices", null, null)
@@ -71,12 +75,20 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
         val previousEpoch = root.optString("epoch")
         if (previousEpoch.isNotEmpty() && previousEpoch != time.collectionEpoch || input.kind == "COLLECTION_GAP" || input.payloadVersion != 1) {
             routes.keys().asSequence().toList().forEach { close(routes, it, observation, false, "collection_gap") }
-            devices.keys().forEach { devices.getJSONObject(it).put("connected", false) }
+            devices.keys().forEach { devices.getJSONObject(it).put("connected", false).put("connectionState", "UNKNOWN") }
             endpoints.keys().asSequence().toList().forEach { endpoints.remove(it) }
             root.put("gapCount", root.optLong("gapCount") + 1)
             CollectorHealth.lose(root, "collection_gap")
         }
         root.put("epoch", time.collectionEpoch)
+        val identity = EndpointIdentityProjection(db)
+        identity.apply(observation, devices) { previous ->
+            routes.keys().asSequence().toList().forEach { key ->
+                if (routes.getJSONObject(key).optString("device") == previous)
+                    close(routes, key, observation, false, "device_identity_changed")
+            }
+        }
+        identity.observe(input, devices)
         if (CollectorHealth.apply(root, observation)) {
             routes.keys().asSequence().toList().forEach { close(routes, it, observation, false, "service_owner_stopped") }
             root.put("gapCount", root.optLong("gapCount") + 1)
@@ -89,6 +101,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             val id = UUID.nameUUIDFromBytes("${time.collectionEpoch}:$nativeId".toByteArray()).toString()
             devices.put(id, JSONObject().put("id", id).put("name", raw.optString("friendlyName", "Audio device"))
                 .put("nativeId", nativeId).put("connected", true).put("identityVerified", false)
+                .put("connectionState", "CONNECTED_REPORTED")
                 .put("lastSeenUtcMs", time.wallUtcMs).put("nativeType", raw.optInt("nativeType", -1)))
             return id
         }
@@ -101,13 +114,14 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 devices.keys().forEach { key ->
                     val device = devices.getJSONObject(key)
                     if (device.optString("nativeId") == nativeId) device.put("connected", false)
+                        .put("connectionState", "DISCONNECTED_REPORTED").put("lastSeenUtcMs", time.wallUtcMs)
                 }
             }
             "SYNC_STATE" -> {
                 val snapshot = if (payload.has("connectedDevices")) payload else payload.optJSONObject("device") ?: payload
                 val list = snapshot.optJSONArray("connectedDevices")
                 if (list != null) {
-                    devices.keys().forEach { devices.getJSONObject(it).put("connected", false) }
+                    devices.keys().forEach { devices.getJSONObject(it).put("connected", false).put("connectionState", "UNKNOWN") }
                     for (index in 0 until list.length()) list.optJSONObject(index)?.let { legacyDevice(it) }
                     update(routes, "legacy-global", null, "UNVERIFIED", snapshot.optBoolean("isPlaying"), observation)
                 }

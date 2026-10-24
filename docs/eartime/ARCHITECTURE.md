@@ -8,9 +8,15 @@ asserted physical G without corresponding evidence.
 
 Passive public per-device A2DP queries now add nested transport observations to
 the same OUTPUT_EVIDENCE journal path. This is acquisition, not a route-duration
-producer: addresses are not promoted to physical IDs, false/empty API fallbacks
+producer: addresses are not promoted to verified physical IDs, false/empty API fallbacks
 remain ambiguous, and confidence/live eligibility are UNKNOWN/false. No second
 writer/projection or service-file edit. See `A2DP_OBSERVATIONS.md`.
+
+Fresh supported A2DP endpoint evidence now atomically adds raw random-UUID
+association observations and derived alias rows. Explicit confirmed/reset edits
+are source/revision/engine-owner fenced and never rewrite earlier identity.
+Names remain display-only; physical identity stays unverified. Connection loss
+of evidence is UNKNOWN, not disconnection. See `ENDPOINT_IDENTITY.md`.
 
 Explicit native journal archives use bounded versioned JSON lines with source/
 sequence cutoff and an integrity footer. Document I/O has its own worker; source
@@ -26,7 +32,7 @@ committed EventChannel invalidation hints`.
 
 `EarTimeApplication` initializes the native worker without awaiting Flutter.
 Journal schema 3 owns raw source observations, source identity, sequence and
-replay/ack cursors. Projection version 3 owns disposable interval/device rows and
+replay/ack cursors. Projection version 4 owns disposable interval/device/alias rows and
 its transactional replay cursor. A separate SQLite reader verifies both source
 and projection commit visibility before publication. Flutter never writes this DB.
 

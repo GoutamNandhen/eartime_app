@@ -16,6 +16,26 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], manifest = Config.NONE, application = Application::class)
 class NativeObservationIngressTest {
+    @Test fun queuedIdentityCommandRechecksRetiredOwnerBeforeMutatingJournal() {
+        val context = RuntimeEnvironment.getApplication()
+        val name = "i-${UUID.randomUUID().toString().take(8)}.db"
+        val ingress = NativeObservationIngress(context, {}, {}, name)
+        val release = CompletableFuture<Unit>()
+        try {
+            val before = page(ingress)
+            val entered = CompletableFuture<Unit>()
+            ingress.archivePage(0, { entered.complete(Unit); release.get(20, TimeUnit.SECONDS) }, { fail(it) })
+            entered.get(20, TimeUnit.SECONDS)
+            val active = java.util.concurrent.atomic.AtomicBoolean(true)
+            val rejected = CompletableFuture<String>()
+            ingress.changeDeviceIdentity("invalid-source", "invalid-alias", 1, null,
+                { rejected.completeExceptionally(AssertionError("Retired owner must not succeed")) }, rejected::complete, active::get)
+            active.set(false); release.complete(Unit)
+            assertTrue(rejected.get(20, TimeUnit.SECONDS).contains("owner retired"))
+            assertEquals(before["observations"], page(ingress)["observations"])
+        } finally { release.complete(Unit); ingress.close(); context.deleteDatabase(name) }
+    }
+
     @Test fun a2dpPublicApiCandidateIsDurableWithoutImplicitIdentityOrConfirmedListening() {
         val context = RuntimeEnvironment.getApplication()
         val name = "a-${UUID.randomUUID().toString().take(6)}.db"

@@ -65,11 +65,27 @@ class ProjectedDevice {
     : id = map['id'] as String,
       name = map['name'] as String,
       connected = map['connected'] as bool,
-      identityVerified = map['identityVerified'] as bool;
+      identityVerified = map['identityVerified'] as bool,
+      identityKind = map['identityKind'] as String? ?? 'PROVISIONAL',
+      connectionState = map['connectionState'] as String?,
+      lastSeen = map['lastSeenUtcMs'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(map['lastSeenUtcMs'] as int);
   final String id;
   final String name;
   final bool connected;
   final bool identityVerified;
+  final String identityKind;
+  final String? connectionState;
+  final DateTime? lastSeen;
+  bool get hasEndpointIdentity => identityKind == 'ENDPOINT_ASSOCIATED';
+  String get connectionLabel => connectionState == 'UNKNOWN'
+      ? 'Connection unknown'
+      : connected
+      ? 'Last observed connected'
+      : connectionState == 'DISCONNECTED_REPORTED'
+      ? 'Disconnection reported'
+      : 'Connection unknown';
 }
 
 class ProjectedDay {
@@ -184,7 +200,7 @@ class ListeningSnapshot {
       nextDeviceOffset =
           map['nextDeviceOffset'] as int? ?? (map['devices'] as List).length,
       hasMoreDevices = map['hasMoreDevices'] as bool? ?? false {
-    if (![1, 2, 3].contains(map['projectionVersion']) ||
+    if (![1, 2, 3, 4].contains(map['projectionVersion']) ||
         sequence < 0 ||
         confirmed.isNegative ||
         unverified.isNegative ||

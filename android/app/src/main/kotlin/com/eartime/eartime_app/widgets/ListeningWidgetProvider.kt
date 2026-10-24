@@ -90,12 +90,18 @@ object ListeningWidgets {
         for (index in names.indices) {
             val device = devices.getOrNull(index)
             views.setTextViewText(names[index], device?.get("name") as? String ?: "No device")
-            views.setTextViewText(states[index], if (device == null) "Not observed" else if (device["connected"] == true) "Connected" else "Disconnected")
+            views.setTextViewText(states[index], when {
+                device == null -> "Not observed"
+                device["connectionState"] == "UNKNOWN" -> "Connection unknown"
+                device["connected"] == true -> "Last observed connected"
+                device["connectionState"] == "DISCONNECTED_REPORTED" -> "Disconnection reported"
+                else -> "Connection unknown"
+            })
             // No validated battery collector exists. Unknown is never rendered as zero or a stale percentage.
             views.setTextViewText(batteries[index], "Battery unknown")
         }
         val deviceCount = snapshot["deviceCount"] as? Long ?: devices.size.toLong()
-        views.setTextViewText(R.id.widget_more, if (deviceCount > visibleCount) "+${deviceCount - visibleCount} devices" else "EarTime")
+        views.setTextViewText(R.id.widget_more, if (deviceCount > visibleCount) "+${deviceCount - visibleCount} records" else "EarTime")
         return views
     }
 
