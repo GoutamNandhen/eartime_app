@@ -11,6 +11,11 @@ Passive A2DP acquisition gates: 140 Flutter / 237 native, analyzer clean, debug/
 release Kotlin and debug APK. Real API candidates still have UNKNOWN attribution
 and no live eligibility. Raw endpoint identifiers remain private data; only
 synthetic fixture addresses are public. Source guard/service hooks unchanged.
+Audit correction: the first A2DP push incorrectly proceeded after one newly
+invented fixture address failed the allowlist check. It was not user data.
+Replace it with an already approved fixture and require a passing exact-tree
+audit for the corrective commit; preserve published history. The scanner remains
+unchanged. See the implementation ledger for the recorded gate failure.
 
 Latest native archive gates: 139 Flutter / 222 native, clean analyzer, both Kotlin
 variants/debug APK. H17/H18 remain partial; legacy/preferences are separate.

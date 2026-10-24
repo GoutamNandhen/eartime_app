@@ -69,7 +69,7 @@ class A2dpStreamProbeTest {
     }
     @Test fun twoEndpointsAreNeverMergedAndUnknownAddressCannotSupplyPositiveEvidence() {
         val f = Fixture()
-        f.attach(Profile(listOf(Device(isStreaming = true), Device("02:11:22:33:44:66"), Device("02:00:00:00:00:00", isStreaming = true))))
+        f.attach(Profile(listOf(Device(isStreaming = true), Device("00:11:22:33:44:55"), Device("02:00:00:00:00:00", isStreaming = true))))
         val rows = deviceRows(f.probe.sample()).map { it as Map<*, *> }
         assertEquals(3, rows.size)
         assertEquals("STREAMING_REPORTED", rows[0]["streamState"])

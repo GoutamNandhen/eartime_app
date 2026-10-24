@@ -49,6 +49,14 @@ the remaining exact approved matrix, not additional scope.
 
 ### Public A2DP Acquisition
 
+Publication correction: commit `15c417b4d963801b26d99381a0b773596f4147b6`
+was pushed after the audit flagged a newly invented second synthetic test address
+outside its existing allowlist. The orchestration incorrectly continued after
+that failure. No user device address/credential was used. The corrective commit
+uses an already approved distinct fixture; the scanner and assertions are not
+weakened. Tests/audit must pass before corrective publication. History is retained;
+future orchestration checks each gate's exit status before commit/push.
+
 Continued after remote-verified navigation commit `7be2bbb9ae6e8c5a85435de106fd8dba4d4c5930`.
 Implemented passive public profile proxy acquisition/query/cleanup on native
 workers; fresh per-device streaming candidates now enter the existing durable
