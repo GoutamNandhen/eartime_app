@@ -67,8 +67,10 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             devices.keys().forEach { devices.getJSONObject(it).put("connected", false) }
             endpoints.keys().asSequence().toList().forEach { endpoints.remove(it) }
             root.put("gapCount", root.optLong("gapCount") + 1)
+            CollectorHealth.lose(root, "collection_gap")
         }
         root.put("epoch", time.collectionEpoch)
+        CollectorHealth.apply(root, observation)
 
         fun legacyDevice(raw: JSONObject): String? {
             val nativeId = raw.optString("id")
@@ -186,7 +188,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
 
     /** Intervals are clipped once here for all consumers. Overlapping routes are unioned, not added. */
     fun snapshot(from: Long, until: Long, zoneId: String, now: ObservationTime?, offset: Int = 0, limit: Int = 100,
-        deviceOffset: Int = 0): Map<String, Any?> {
+        deviceOffset: Int = 0, healthTime: ObservationTime? = now): Map<String, Any?> {
         require(until > from && until - from in 1L..(367L * 86400000) &&
             offset in 0..(Int.MAX_VALUE - 100) && deviceOffset in 0..(Int.MAX_VALUE - 100) && limit in 1..100)
         require(zoneId in TimeZone.getAvailableIDs()) { "Unknown calendar time zone" }
@@ -266,6 +268,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             "hourly" to hourly.mapIndexed { hour, value -> mapOf("hour" to hour, "durationMs" to value) },
             "gapCount" to root.optLong("gapCount"), "days" to days,
             "devices" to devices, "deviceCount" to deviceCount,
+            "collectorHealth" to CollectorHealth.snapshot(root, healthTime),
             "deviceOffset" to deviceOffset, "nextDeviceOffset" to minOf(deviceOffset.toLong() + devices.size, deviceCount),
             "hasMoreDevices" to (deviceOffset.toLong() + devices.size < deviceCount),
             "intervals" to segments.drop(offset).take(limit), "intervalCount" to segments.size,

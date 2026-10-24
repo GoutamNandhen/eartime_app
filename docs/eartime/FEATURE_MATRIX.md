@@ -14,7 +14,9 @@ Executable evidence keys:
 - R: same Gradle task with `--tests '*TrackingContractTest' --tests '*BoundedIngressQueueTest'`.
 - P: `ListeningProjectionTest` (48 API 28/35 cases), including shared JSON fixture,
   B02, atomic rollback, replay/rebuild, v1/v2 migrations, DST and aggregate parity.
-- U: `flutter test --no-pub test/listening_projection_test.dart` (17 cases).
+- U: `flutter test --no-pub test/listening_projection_test.dart` (19 cases).
+- C: `CollectorHealthTest` (16 API 28/35 cases) and `OutputAttributionTest`
+  (16 synthetic policy cases); runtime observer integration remains OPEN.
 - Q: `ListeningPreferencesTest` (12 native cases) and `test/listening_settings_test.dart` (4 Flutter cases).
 - W: `ListeningWidgetTest` (6 native resource/render cases); physical launcher acceptance pending.
 - T: `test/telemetry_capability_test.dart` (2 conservative capability cases).
@@ -67,7 +69,7 @@ Executable evidence keys:
 | C5 | Connected/listening/idle breakdown | NOT_STARTED; interval partition tests OPEN |
 | C6 | Battery/wearing indicators | NOT_STARTED; capability widgets OPEN |
 | C7 | Goal progress | IMPLEMENTED / AUTOMATED_PASS Q/U; personal duration goal uses confirmed native total; not an exposure limit |
-| C8 | Permission/stale/error status | IN_PROGRESS; S/D/U visible journal errors/gaps; complete collector health OPEN |
+| C8 | Permission/stale/error status | IN_PROGRESS; S/D/U/C visible journal errors/gaps and scoped health states; runtime health emitter OPEN |
 | C9 | Cross-screen/widget consistency | IN_PROGRESS; P/U/W share native query; physical launcher/engine parity pending |
 | C10 | Efficient live updates | IN_PROGRESS; U coalesced foreground-only reads/cancellation; liveness ticking and long-run profiling OPEN |
 
@@ -128,7 +130,7 @@ Executable evidence keys:
 | G3 | Serialized sequence/transactions | IMPLEMENTED / AUTOMATED_PASS J/R |
 | G4 | Duplicate-safe processing/replay | IMPLEMENTED / AUTOMATED_PASS J/P/U; product reads native projection, hints not history |
 | G5 | Device-scoped state | IN_PROGRESS; L/R; legacy global context remains |
-| G6 | Evidence-backed attribution | IN_PROGRESS; explicit UNKNOWN journal; verified collector OPEN |
+| G6 | Evidence-backed attribution | IN_PROGRESS; C rejects inventory/global/communication/predicted route claims; actual third-party route proof OPEN |
 | G7 | One authoritative interval projection | IMPLEMENTED / AUTOMATED_PASS P/U/W; production confirmed attribution/liveness remain gated |
 | G8 | Live/history agreement | IN_PROGRESS; P/U B02 observed opening corrected; validated production live lease OPEN |
 | G9 | Durable recovery/migrations | IN_PROGRESS; J/P v1/v2 migrations/replay preserve raw/source/cursors; legacy read-only preservation, import OPEN |
@@ -141,7 +143,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; bounded ingress/hints/results, indexed device pages, window work ceiling; profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 126 Flutter/116 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 128 Flutter/148 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

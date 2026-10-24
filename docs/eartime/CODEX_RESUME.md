@@ -4,6 +4,9 @@ Updated 2026-10-24. Paths in this document are repository-relative.
 Review branch `codex/production-checkpoint-20261024`; protected baseline `0a8be43`.
 Initial publication verified at `1b3ee7ea4d56afef30ffc018749e1ed25a841af5`;
 the follow-up adds known-device pagination without changing listening accounting.
+The interrupted health/attribution contract work is now completed and tested.
+See `COLLECTOR_HEALTH.md`; no runtime observer or confirmed route producer is
+implied by that contract checkpoint.
 Read `PRODUCTION_IMPLEMENTATION_LEDGER.md`, `LISTENING_PROJECTION.md` and
 `FEATURE_MATRIX.md`. Autonomous implementation remains authorized; do not ask
 for routine phase approval. This is NOT RELEASE_READY.
@@ -102,14 +105,14 @@ flutter analyze --no-pub
 .\gradlew.bat :app:checkReleaseSigning --offline
 ```
 
-- Flutter: **126 passed**, exit 0. Original 103 slots retained, including 15
-  formerly empty/trivial tests rewritten as actual assertions; 23 additional
+- Flutter: **128 passed**, exit 0. Original 103 slots retained, including 15
+  formerly empty/trivial tests rewritten as actual assertions; 25 additional
   projection/settings/telemetry/layout cases. No skips/excluded test files.
 - Analyzer: **No issues found**, exit 0. All 21 inherited findings and final
   formatter-exposed block lints corrected without suppression.
-- Native: **116 passed**, 0 failures/errors/skips. Original 46 plus 70 new:
+- Native: **148 passed**, 0 failures/errors/skips. Original 46 plus 102 new:
   projection 48; preferences 12; widget 6; durable hint buffer 2; ingress 2 new
-  (3 total). API 28/35 modeled for SQLite/projection/preferences/widget tests.
+  (3 total); health 16 and synthetic output-policy 16. API 28/35 modeled for SQLite/projection/preferences/widget/health tests.
 - Kotlin debug/release compile and debug packaging: exit 0, BUILD SUCCESSFUL.
   Inherited Kotlin/Gradle/old BLE API deprecation warnings remain; service code
   was not edited to remove them.
@@ -124,7 +127,7 @@ Interim failures were fixed, not hidden: RPC deadline leaked after disposal;
 Windows native SQLite fixture paths exceeded practical path length; ingress
 close raced queued work; final formatting exposed missing block braces.
 
-Debug artifact (not installed/released):
+Prior pagination debug artifact (not installed/released; historical hash):
 
 - `build/app/outputs/flutter-apk/app-debug.apk`, 158947452 bytes.
 - SHA-256 `1FB489CA9C3B2AB4C1C6B58002BA5EF2962ADB2B27DC89BA925A76BFD393F943`.
@@ -141,7 +144,9 @@ Publication uses reviewed feature-branch commits only; no destructive migration,
 main update, force push or device mutation. See `PUBLIC_CHECKPOINT.md`.
 
 1. Establish a validated collector health/continuity contract without silently
-   altering the protected service. Keep production extrapolation disabled until
+   altering the protected service. Durable generation/epoch/lease contract and
+   status UI now pass; actual observer ownership/cleanup integration is next.
+   Keep production extrapolation disabled until
    real lifetime/route evidence exists; retain all unknown/gap behavior.
 2. Finish evidence-backed identity/alias normalization and a permitted route
    collector. Generic global playback or a discovered UUID is not that proof.

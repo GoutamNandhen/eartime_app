@@ -44,6 +44,7 @@ listening. Compatibility reducers remain for regression tests, not product total
   Long-history replay fairness/performance remains unfinished.
 
 Read [Listening Projection](LISTENING_PROJECTION.md), [Native Contract](NATIVE_FLUTTER_CONTRACT.md),
+[Collector Health](COLLECTOR_HEALTH.md),
 [Feature Matrix](FEATURE_MATRIX.md), [Regression Gates](REGRESSION.md) and
 [Resume Checkpoint](CODEX_RESUME.md). Raw logs, device identifiers and local
 research are not part of the public checkpoint. Published rollback uses `git revert`.

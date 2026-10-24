@@ -97,6 +97,47 @@ class ProjectedDeviceTotal {
   final Duration duration;
 }
 
+class ProjectedCollectorHealth {
+  ProjectedCollectorHealth(Map<dynamic, dynamic>? map)
+    : state = map?['state'] as String? ?? 'UNKNOWN',
+      reason = map?['reason'] as String? ?? 'no_collector_acknowledgment',
+      scope = map?['scope'] as String? ?? 'inventory_and_global_activity' {
+    if (map != null &&
+        (map['contractVersion'] != 1 ||
+            map['liveListeningEligible'] != false ||
+            scope != 'inventory_and_global_activity')) {
+      throw const FormatException('Unsupported collector health contract');
+    }
+    if (!const {
+      'NOT_STARTED',
+      'STARTING',
+      'HEALTHY',
+      'TEMPORARILY_UNAVAILABLE',
+      'PERMISSION_BLOCKED',
+      'SUSPENDED',
+      'STOPPED',
+      'UNKNOWN',
+      'CONTINUITY_LOST',
+    }.contains(state)) {
+      throw const FormatException('Unknown collector health state');
+    }
+  }
+  final String state;
+  final String reason;
+  final String scope;
+  String get label => switch (state) {
+    'NOT_STARTED' => 'Collection has not started',
+    'STARTING' => 'Starting audio observation',
+    'HEALTHY' => 'Audio inventory and activity observation available',
+    'TEMPORARILY_UNAVAILABLE' => 'Audio observation temporarily unavailable',
+    'PERMISSION_BLOCKED' => 'Audio observation permission blocked',
+    'SUSPENDED' => 'Audio observation suspended',
+    'STOPPED' => 'Audio observation stopped',
+    'CONTINUITY_LOST' => 'Audio observation continuity lost',
+    _ => 'Audio observation health unknown',
+  };
+}
+
 class ListeningSnapshot {
   ListeningSnapshot.fromMap(Map<dynamic, dynamic> map)
     : sourceId = map['sourceId'] as String,
@@ -107,6 +148,9 @@ class ListeningSnapshot {
       lastError = map['lastError'] as String?,
       pendingCount = map['pendingCount'] as int? ?? 0,
       failedCount = map['failedCount'] as int? ?? 0,
+      collectorHealth = ProjectedCollectorHealth(
+        map['collectorHealth'] as Map?,
+      ),
       longest = Duration(milliseconds: map['longestMs'] as int? ?? 0),
       average = Duration(milliseconds: map['averageMs'] as int? ?? 0),
       listeningRuns = map['listeningRuns'] as int? ?? 0,
@@ -167,6 +211,7 @@ class ListeningSnapshot {
   final String? lastError;
   final int pendingCount;
   final int failedCount;
+  final ProjectedCollectorHealth collectorHealth;
   final Duration longest;
   final Duration average;
   final int listeningRuns;

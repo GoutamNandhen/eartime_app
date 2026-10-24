@@ -63,6 +63,53 @@ class PagedFixtureProjectionClient extends ListeningProjectionClient {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('projection-test');
+  test(
+    'collector health is scoped, optional for old snapshots and fails closed',
+    () {
+      final old = ListeningSnapshot.fromMap(fixture());
+      expect(old.collectorHealth.state, 'UNKNOWN');
+      final map = fixture()
+        ..['collectorHealth'] = {
+          'contractVersion': 1,
+          'state': 'HEALTHY',
+          'scope': 'inventory_and_global_activity',
+          'reason': 'sample_succeeded',
+          'liveListeningEligible': false,
+        };
+      expect(
+        ListeningSnapshot.fromMap(map).collectorHealth.label,
+        'Audio inventory and activity observation available',
+      );
+      expect(ListeningSnapshot.fromMap(map).confirmed, Duration.zero);
+      (map['collectorHealth'] as Map)['liveListeningEligible'] = true;
+      expect(() => ListeningSnapshot.fromMap(map), throwsFormatException);
+      (map['collectorHealth'] as Map)['liveListeningEligible'] = false;
+      (map['collectorHealth'] as Map)['state'] = 'FUTURE_STATE';
+      expect(() => ListeningSnapshot.fromMap(map), throwsFormatException);
+    },
+  );
+
+  test('every collector failure state has explicit uncertainty text', () {
+    for (final state in [
+      'NOT_STARTED',
+      'STARTING',
+      'TEMPORARILY_UNAVAILABLE',
+      'PERMISSION_BLOCKED',
+      'SUSPENDED',
+      'STOPPED',
+      'UNKNOWN',
+      'CONTINUITY_LOST',
+    ]) {
+      final health = ProjectedCollectorHealth({
+        'contractVersion': 1,
+        'state': state,
+        'scope': 'inventory_and_global_activity',
+        'liveListeningEligible': false,
+      });
+      expect(health.label, isNotEmpty);
+      expect(health.label, isNot('Listening'));
+    }
+  });
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   final window = ListeningWindow(

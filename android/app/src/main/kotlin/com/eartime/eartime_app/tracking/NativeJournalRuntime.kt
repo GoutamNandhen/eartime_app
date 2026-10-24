@@ -174,7 +174,7 @@ class NativeObservationIngress(
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0) {
         // A process clock is not a collector-liveness lease. The protected service has no durable
         // destruction/health hook, so production reads never extend beyond durable evidence.
-        command({ ensureStarted().listeningSnapshot(from, until, zoneId, null, offset, limit, deviceOffset) + health() }, failure, success)
+        command({ ensureStarted().listeningSnapshot(from, until, zoneId, null, offset, limit, deviceOffset, now()) + health() }, failure, success)
     }
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {

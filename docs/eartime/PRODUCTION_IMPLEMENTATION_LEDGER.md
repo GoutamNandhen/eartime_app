@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: unified projection and device pagination, 126 Flutter / 116 native
+Latest checkpoint: durable health/attribution contracts, 128 Flutter / 148 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -62,8 +62,8 @@ Resume instructions and exact next work live in `CODEX_RESUME.md`.
 
 ## Current checkpoint evidence
 
-Final suite: 126 Flutter tests passed (original 103 slots including 15 rewritten
-placeholder cases, plus 23 new). Native: 116 passing tests (original 46 plus 70),
+Final suite: 128 Flutter tests passed (original 103 slots including 15 rewritten
+placeholder cases, plus 25 new). Native: 148 passing tests (original 46 plus 102),
 0 failures/errors/skips. SQLite/projection/preferences/widget models use API
 28/35. Kotlin debug/release compile and debug APK packaging pass offline.
 Analyzer exits 0, no issues. Signing check intentionally exits 1 without
@@ -138,3 +138,30 @@ accounting/buffer state. No release readiness is claimed.
 - Follow-up local debug APK: 158947452 bytes, SHA-256
   `1FB489CA9C3B2AB4C1C6B58002BA5EF2962ADB2B27DC89BA925A76BFD393F943`.
   APK remains ignored/unpublished; no new hardware/signing acceptance claimed.
+
+## Recovered Health And Attribution Contract Checkpoint
+
+- Resumed the existing ten unfinished source/test changes after the usage-limit
+  interruption; preserved all modifications. No reset/clean, migration deletion,
+  device interaction or protected-service edit.
+- Durable health contract folds into the existing projection transaction, with
+  owner generations, continuity epochs, registration/sample acknowledgment,
+  bounded 15s leases, expiry/clock/boot fencing and explicit unavailable states.
+  Health time is not the live-extrapolation clock. UI reports scoped health;
+  old snapshots decode as UNKNOWN. No runtime health producer exists yet.
+- Supported Android API semantics reviewed against official references in
+  `COLLECTOR_HEALTH.md`. Cross-app playback route cannot be inferred from device
+  inventory, global playback, communication routing or attribute predictions.
+  The owned-player policy is pure/inactive; no real confirmed collector added.
+- New tests: 16 API 28/35 durable health cases, 16 synthetic route-policy cases,
+  two Flutter health contract/status cases. Full Flutter 128; native 148;
+  analyzer clean, debug/release Kotlin and debug packaging successful.
+- An initial native rerun failed because an interrupted Gradle process retained
+  `output.bin`. Read-only process/daemon inspection identified the idle build
+  daemon; stopped it normally and reran with `--no-daemon`, preserving reports.
+  This infrastructure failure is not counted as a passing test run.
+- Feature totals remain 20 IMPLEMENTED, 75 IN_PROGRESS, 24 NOT_STARTED = 119;
+  partial contracts do not complete production attribution or live continuity.
+- Next: separately tested native observer ownership/cleanup and captured-source
+  ingress. Any necessary service lifecycle hooks require an isolated reversible
+  change after this recoverable, source-equal checkpoint. Physical G stays pending.

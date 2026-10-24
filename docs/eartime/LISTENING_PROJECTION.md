@@ -111,10 +111,15 @@ than truncating totals. Realistic storage/performance profiling remains open.
 and Dart decoding/RPC/widget tests. This is cross-layer contract evidence,
 not a real FlutterEngine/device end-to-end test.
 
-Flutter projection/RPC/layout/paging suite: 17 cases. Device tests traverse 205
+Flutter projection/RPC/layout/paging/health suite: 19 cases. Device tests traverse 205
 synthetic identities, preserve totals/reopen results and reject invalid cursors.
-Full final gates: 126 Flutter, 116 native, zero failures/skips, analyzer clean,
+Full final gates: 128 Flutter, 148 native, zero failures/skips, analyzer clean,
 debug/release Kotlin compilation and debug APK packaging successful. Signing
 check correctly refuses missing keys. Protected service equality verified.
 Physical process killing, OnePlus G, route attribution, BLE hardware and launcher
 refresh/battery/resize acceptance are still pending. See `CODEX_RESUME.md`.
+
+The additive `collectorHealth` snapshot is folded from journaled acknowledgments,
+not inferred from uptime/EventChannel attachment. Production supplies a clock
+only for health freshness, not duration extrapolation. Scope is inventory/global
+activity and `liveListeningEligible` remains false. See `COLLECTOR_HEALTH.md`.

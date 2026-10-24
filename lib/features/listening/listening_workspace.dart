@@ -177,6 +177,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
             data: (snapshot) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _Notice(snapshot.collectorHealth.label, Icons.sensors),
                 if (snapshot.lastError != null || snapshot.failedCount > 0)
                   const _Notice(
                     'Collection has reported an error. Some activity may be missing.',

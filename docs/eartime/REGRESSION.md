@@ -31,7 +31,7 @@ based only on a local model test. Repository commands were reviewed: local
 build/test writes only; initial Robolectric download was separately authorized
 through the tool boundary. No device install/data mutation.
 
-Current evidence: Flutter 126 pass; JVM 116 pass; analyzer exit 0/no issues;
+Current evidence: Flutter 128 pass; JVM 148 pass; analyzer exit 0/no issues;
 debug/release Kotlin compile and debug packaging exit 0. Fifteen former
 placeholders now have real assertions. Signing refusal without keys is an
 expected exit 1, not a signed release success. Exact artifact: `CODEX_RESUME.md`.
@@ -80,6 +80,12 @@ preferences and actual RemoteViews tests. Hardware confidence and live leases
 remain explicit gates; no test may mark global playback CONFIRMED for green.
 
 ## Physical G
+
+Health contract evidence: `CollectorHealthTest` covers registration acknowledgment,
+generation/epoch retirement, lease expiry, gaps, clock/boot, duplicate/crash/replay.
+`OutputAttributionTest` contains 16 synthetic policy scenarios, not actual Android
+route-transition integration. No runtime adapter or live-credit eligibility is
+implied; see `COLLECTOR_HEALTH.md`.
 
 Unverified runtime edges: real FlutterActivity/renderer/OxygenOS startup,
 foreground-service restart and rapid Recents removal/reopen, hardware routing.
