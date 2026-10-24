@@ -5,11 +5,11 @@ Updated 2026-10-24. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **29 IMPLEMENTED, 74 IN_PROGRESS, 15 NOT_STARTED,
+Implementation count: **30 IMPLEMENTED, 73 IN_PROGRESS, 15 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -65,6 +65,9 @@ Executable evidence keys:
 - K: `AppBuildInformationTest` (12 API 24/28/35 executions), four Flutter
   `app_build_information_test.dart` cases, 17 version-tool self-tests, Gradle
   preBuild consistency gate and actual APK metadata inspection; VERSIONING.md.
+- O2: `PrivacyConfigurationTest` (4 API 28/35 executions) and six Flutter
+  `privacy_permissions_test.dart` cases; offline disclosure navigation and
+  original 2x/3x permission overflow RED-to-GREEN. PRIVACY_DISCLOSURES.md.
 
 ## A: Core Listening
 
@@ -186,7 +189,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 167 Flutter/354 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 173 Flutter/358 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -220,7 +223,7 @@ Executable evidence keys:
 | H25 | Versioning | IMPLEMENTED / AUTOMATED_PASS K; single tracked 1.1.0-dev.1+2, monotonic comparison tool, Gradle metadata gate, installed-package About and actual APK inspection; no release claim |
 | H26 | Release validation | IN_PROGRESS; analyzer/debug gates green, signing refusal verified; signed RC/physical gates OPEN |
 | H27 | Crash testing | IN_PROGRESS; J pre-commit injection; process/OS matrix OPEN |
-| H28 | Honest privacy/permission descriptions | IN_PROGRESS; startup states; complete policy/copy OPEN |
+| H28 | Honest privacy/permission descriptions | IMPLEMENTED / AUTOMATED_PASS O2; nine offline disclosure sections before grant/in Settings, actual data/permissions/diagnostic/archive/deletion limits, scrollable startup at 2x/3x; separate privacy audit H15 remains OPEN |
 
 ## I: Approved Advanced Features
 

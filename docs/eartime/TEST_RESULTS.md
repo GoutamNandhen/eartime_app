@@ -2,6 +2,13 @@
 
 Last verified implementation baseline: 2026-10-24.
 
+H28 adds 4 native API 28/35 permission/backup configuration executions and six
+Flutter cases. Original permission page overflowed 1084px at 2x and 3032px at 3x;
+scrollable presentation fixes both with same assertions. Actual offline disclosure
+navigation/back is tested before grant and in failed-native Settings at 1x/3x.
+All existing startup/rapid-reopen tests pass; no permission or device action is
+performed on disclosure opening. PRIVACY_DISCLOSURES.md records remaining limits.
+
 H25 adds 12 API 24/28/35 native executions and 4 Flutter cases, plus 17 version
 tool self-tests. Actual APK metadata was inspected (1.1.0-dev.1, code 2, debug).
 CRLF/capture-group tool defects and ambiguous Flutter scroll targets were fixed;
@@ -45,9 +52,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 167 passed, 0 failures |
+| Flutter full suite | 173 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 354 passed in 27 suites, 0 failures/errors/skips |
+| Android native suite | 358 passed in 28 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

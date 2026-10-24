@@ -7,6 +7,11 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+H28 gates: 173 Flutter / 358 native (28 suites), analyzer/Kotlin/debug packaging/
+protected guard pass. Offline disclosures and 2x/3x startup overflow correction
+are tested; count 30/73/15/1. Full privacy audit/data deletion/backup remain open,
+no actual device/G/release claim. See PRIVACY_DISCLOSURES.md.
+
 H25 gates: 167 Flutter / 354 native (27 suites), analyzer clean, Kotlin variants/
 debug APK/version-policy/protected guard pass. About displays installed metadata,
 not source assumptions. Actual APK 1.1.0-dev.1 build 2, no install/release. Counts

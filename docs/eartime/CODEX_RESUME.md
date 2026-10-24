@@ -1,6 +1,21 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-24. Paths in this document are repository-relative.
+Latest H28 checkpoint: offline privacy/permission disclosures reachable before
+grant and from Settings. Two existing large-font overflows reproduced and fixed
+without clamping or startup ownership changes. Six Flutter/four native new cases.
+Full gates: 173 Flutter / 358 native in 28 suites, no failures/errors/skips;
+analyzer clean, both Kotlin variants/debug APK/protected four-hook guard pass.
+Counts: 30 IMPLEMENTED / 73 IN_PROGRESS / 15 NOT_STARTED / 1 BLOCKED_BY_PLATFORM.
+Prior 9a1bd3b216bf14f3f087d0bef9ce9731e6294ace pushed/remote-verified; main
+unchanged. PRIVACY_DISCLOSURES.md explicitly leaves full backup/deletion/log audit
+open. No physical/service-file/release claim. Next D7/E1 calendar/custom date
+acceptance and paging-reset correctness, then remaining exact matrix.
+Latest ignored debug APK SHA-256:
+`1DEBEDA2D251E7FC87BA1A5E1A8BEC4730FF2CF5F001574AA33FB5785BAE425E`.
+
+## Version Checkpoint
+
 Latest checkpoint: H25 version policy and installed-package About. Full gates:
 167 Flutter / 354 native in 27 suites, zero failures/errors/skips; analyzer clean;
 debug/release Kotlin, debug APK, version checks and protected four-hook guard pass.

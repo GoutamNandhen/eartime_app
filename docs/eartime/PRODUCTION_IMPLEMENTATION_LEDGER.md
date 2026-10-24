@@ -4,9 +4,26 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: version policy/installed metadata, 167 Flutter / 354 native
+Latest checkpoint: privacy disclosures/permission layout, 173 Flutter / 358 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## H28 Disclosures And Permission Layout
+
+Continued after remote-verified 9a1bd3b216bf14f3f087d0bef9ce9731e6294ace.
+Nine offline sections expose actual data, permission, networking, diagnostics,
+native-only archive and missing-deletion limits before grant and in Settings.
+Disclosure navigation performs no platform/device/data action. Existing fixed
+startup layout reproduced 1084px/3032px overflow at 2x/3x; safe-area scrolling and
+natural controls fix it without font clamping or startup/collector logic edits.
+Four native merged-permission/backup-rule executions plus six Flutter cases pass.
+Lazy-list tests explicitly render/ensure targets instead of suppressing missed
+taps. All older rapid-reopen/owner assertions retained. Full gates: 173 Flutter /
+358 native in 28 suites, zero failures/errors/skips, clean analyzer, both Kotlin
+variants and debug packaging. H28 software complete; count 30/73/15/1 = 119.
+H15/privacy audit, H17/H18/full backup and H19/deletion are still open, not hidden
+behind policy copy. No physical G, accessibility-service, device/backup behavior,
+signed release or readiness claim. Next D7/E1 calendar/date acceptance.
 
 ## H25 Version Policy And Installed Metadata
 
