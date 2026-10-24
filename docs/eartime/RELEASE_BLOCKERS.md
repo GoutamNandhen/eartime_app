@@ -10,10 +10,10 @@ Feature-level implementation and acceptance gaps are in `FEATURE_MATRIX.md`.
 | Output attribution | All real protected-collector playback remains UNVERIFIED; confirmed route inputs exist only in modeled fixtures | Permitted verified route-scoped collector/evidence; never promote global playback or connected state |
 | Identity | Typed random IDs/alias contracts exist; legacy name fallback remains | Persistent evidence-backed identity normalization and alias migration |
 | Migration/replay integration | Schema 3 migrations/rebuild/native consumer cutover pass; legacy Drift preserved read-only | Deliberate legacy import policy, export/restore conflict/rollback tests and physical migration acceptance |
-| Memory/history size | Bounded ingress/hints/results, indexed 100-row device pages and window work ceiling | Realistic long-history/storage profiling, cooperative replay fairness and concurrent device paging |
+| Memory/history size | Bounded results, 1200-session/2400-row model, internal rebuild cancellation, live paging insertion tests | Realistic phone/storage/energy profiling, normal startup fairness, cross-layer cancellation and frozen multi-page consistency |
 | Telemetry/privacy | Experimental automatic BLE discovery is inherited; proprietary capabilities unverified | Explicit optional gating, real capability/freshness evidence, privacy/offline/backup review |
 | Missing product scope | Most remaining analytics, wellbeing, widgets and data-control features are incomplete | Implement/test the remaining approved feature matrix |
-| Static/test integration | Analyzer clean, 129 Flutter / 162 native pass; 15 placeholders replaced | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix |
+| Static/test integration | Analyzer clean, 129 Flutter / 173 native pass; 15 placeholders replaced | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix |
 | Release/signing | Debug APK/debug+release Kotlin compile pass; production signing env gate rejects missing keys, no debug fallback | Authorized keys, signed release packaging, hashes and final release/privacy gates |
 | Physical integration | No Android device/AVD available this session | Final background/process/restart/routing/widget/battery acceptance on supported devices |
 

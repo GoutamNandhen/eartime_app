@@ -31,7 +31,7 @@ replayable native data, not the volatile stream or a Flutter live reducer.
 | `readListeningPreferences` | Versioned theme, personal goal and display-name overrides |
 | `updateListeningPreferences` | Validated, durable native settings update; names cannot alter source identity |
 
-Journal schema 3 / projection version 2 are current. Additive device paging fields are `deviceOffset`,
+Journal schema 3 / projection version 3 are current. Additive device paging fields are `deviceOffset`,
 `nextDeviceOffset`, `hasMoreDevices`; at most 100 devices per page. Old page-zero
 responses remain decodable. Pages reflect current ordered state, not a frozen
 multi-page snapshot. Device cursors do not affect listening totals. Reads catch up

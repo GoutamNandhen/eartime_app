@@ -4,7 +4,7 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: scoped runtime observer integration, 129 Flutter / 162 native
+Latest checkpoint: service-stop/replay/worker startup hardening, 129 Flutter / 173 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
 
@@ -63,7 +63,7 @@ Resume instructions and exact next work live in `CODEX_RESUME.md`.
 ## Current checkpoint evidence
 
 Final suite: 129 Flutter tests passed (original 103 slots including 15 rewritten
-placeholder cases, plus 26 new). Native: 162 passing tests (original 46 plus 116),
+placeholder cases, plus 26 new). Native: 173 passing tests (original 46 plus 127),
 0 failures/errors/skips. SQLite/projection/preferences/widget models use API
 28/35. Kotlin debug/release compile and debug APK packaging pass offline.
 Analyzer exits 0, no issues. Signing check intentionally exits 1 without
@@ -215,3 +215,41 @@ accounting/buffer state. No release readiness is claimed.
   enable confirmed ticking/reminders based on this scoped observer.
 - Observer debug APK (local/unpublished): 158947452 bytes, SHA-256
   `DB3530312DB28152E82B1D2B95C16E6EBD8030C588475497F01D42FD9F523809`.
+
+## Proven Owner-Stop Gap And Replay Hardening
+
+- Observer commit `53277bee8591e3f5f800663c8801324d7ff30083` was normally
+  pushed and remote-verified before this phase. Main remained unchanged.
+- Two new owner-stop regressions ran RED on API 28/35 (four failures): health
+  STOPPED left a legacy interval open. After proof, the canonical reducer closes
+  at last evidence, never the later stop clock. Later SYNC starts a new interval;
+  valid B02 continuity still retains T1. Retired/duplicate stops cannot invalidate
+  newer ownership or multiply gaps. No additional service changes were required.
+- Disposable projection v2 -> v3 cache replay corrects already-consumed STOP rows.
+  Raw journal schema stays 3; source rows/IDs/cursors/legacy data are retained.
+  Future cache versions fail closed without deletion. Flutter accepts known v3.
+- Internal rebuild cancellation checks before reset and each 128-row transaction.
+  Partial committed cursors survive cancellation/reopen; reads finish catch-up
+  before returning totals. Normal startup fairness and cross-layer cancellation
+  are NOT yet implemented; do not claim that the worker now yields cooperatively.
+- Three API 28 load/migration cases exercise 1200 sessions / 2400 observations,
+  full pages/totals, cursor-384 cancellation, reopen parity, consumer preservation,
+  206-device paging with insertion and stale/future cache behavior. Focused model
+  run: seed 9071ms, total 9945ms, DB 1466368 bytes (not a phone performance SLA).
+- Full gates: 129 Flutter / 173 native, analyzer clean, Kotlin debug/release and
+  debug packaging pass; strict four-hook service guard unchanged. No device,
+  physical G, telemetry or signed release validation. Feature counts stay
+  20 IMPLEMENTED / 75 IN_PROGRESS / 24 NOT_STARTED = 119.
+- Next independent work: evidence-backed identity/alias integration, local data
+  controls and remaining analytics; preserve the route/live/reminder correctness
+  gate and the unresolved physical/OEM/energy acceptance. See `HISTORY_REPLAY.md`.
+- Startup review identified a new helper wait boundary: Android documents that
+  [HandlerThread.getLooper](https://developer.android.com/reference/android/os/HandlerThread#getLooper())
+  may block until Looper initialization. Moved handler/backend/owner creation
+  into `onLooperPrepared`; service start/close never await that initialization.
+  Four worker lifecycle models on API 28/35 prove return-before-unblock and
+  exactly-once cleanup. Backend initialization failures remain caught by the
+  owner. This is a corrective hardening change, not proof of historical G causality.
+- Final local debug APK: 158947452 bytes; both output paths SHA-256
+  `28E80584E5D57B36AB901F6D68BB3628EEAE35A83E1F82F801FFB832D04529E7`.
+  Artifact remains ignored/unpublished; no signing credentials or release used.

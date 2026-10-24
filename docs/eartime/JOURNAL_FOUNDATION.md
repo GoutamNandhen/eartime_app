@@ -4,7 +4,7 @@ Date: 2026-10-24. Implementation checkpoint, not release readiness.
 
 Historical foundation checkpoint. `LISTENING_PROJECTION.md` / `CODEX_RESUME.md`
 supersede schema, product consumer, unbounded-buffer and pending-projection
-statements below. Current schema is 3, projection version 2; product history is
+statements below. Current schema is 3, projection version 3; product history is
 native and delivery hints are bounded. Legacy Drift remains read-only/preserved.
 
 ## Delivered

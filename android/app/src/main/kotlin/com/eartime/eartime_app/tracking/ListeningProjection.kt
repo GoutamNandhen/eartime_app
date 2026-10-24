@@ -11,7 +11,7 @@ import kotlin.math.abs
 /** A disposable, versioned read model. Observations are always the source of truth. */
 internal class ListeningProjection(private val db: SQLiteDatabase) {
     companion object {
-        const val VERSION = 2
+        const val VERSION = 3
         fun create(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE listening_projection (
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1), version INTEGER NOT NULL,
@@ -44,6 +44,11 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
 
     fun collectorHealth(now: ObservationTime) = CollectorHealth.snapshot(state(), now)
 
+    fun requiresUpgrade(): Boolean = db.rawQuery("SELECT version FROM listening_projection WHERE singleton=1", null).use {
+        if (!it.moveToFirst() || it.getInt(0) == VERSION) false
+        else { check(it.getInt(0) == 2) { "Unsupported listening projection version; source retained" }; true }
+    }
+
     fun reset() {
         db.delete("listening_intervals", null, null)
         db.delete("listening_projection", null, null)
@@ -72,7 +77,10 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             CollectorHealth.lose(root, "collection_gap")
         }
         root.put("epoch", time.collectionEpoch)
-        CollectorHealth.apply(root, observation)
+        if (CollectorHealth.apply(root, observation)) {
+            routes.keys().asSequence().toList().forEach { close(routes, it, observation, false, "service_owner_stopped") }
+            root.put("gapCount", root.optLong("gapCount") + 1)
+        }
 
         fun legacyDevice(raw: JSONObject): String? {
             val nativeId = raw.optString("id")

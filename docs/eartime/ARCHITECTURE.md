@@ -12,7 +12,7 @@ committed EventChannel invalidation hints`.
 
 `EarTimeApplication` initializes the native worker without awaiting Flutter.
 Journal schema 3 owns raw source observations, source identity, sequence and
-replay/ack cursors. Projection version 2 owns disposable interval/device rows and
+replay/ack cursors. Projection version 3 owns disposable interval/device rows and
 its transactional replay cursor. A separate SQLite reader verifies both source
 and projection commit visibility before publication. Flutter never writes this DB.
 
@@ -41,6 +41,8 @@ listening. Compatibility reducers remain for regression tests, not product total
 - Restart/loss gaps close at last durable evidence, not at the later restart time.
   The separate observer journals owner generations/epochs and stops; it does not
   retrospectively validate the legacy collector's same-process gaps.
+  A valid current service-owner stop closes intervals at last evidence; stale
+  and duplicate owner stops do not close newer work. V2 caches replay as V3.
 - Identity from legacy names/MAC fallbacks is provisional and epoch-scoped;
   user display-name overrides cannot alter observations or physical identity.
 - Ingress and live hints are bounded; known-device results are paged at 100;

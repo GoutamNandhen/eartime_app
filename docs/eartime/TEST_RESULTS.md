@@ -6,7 +6,7 @@ Last verified implementation baseline: 2026-10-24.
 | --- | --- |
 | Flutter full suite | 129 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 162 passed, 0 failures/errors/skips |
+| Android native suite | 173 passed, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |
@@ -29,3 +29,10 @@ storm), three Android adapter API 24/28/35 models, one captured-source/durable-a
 ingress case and one Flutter hint decoder case. A missing-boot fixture initially
 failed health acknowledgment; explicit synthetic boot evidence fixed the test
 without weakening production refusal. Physical service/G/routing remains pending.
+
+Owner-stop continuity: four pre-fix failures reproduced, then passed with closes
+at last evidence and stale/duplicate fencing. Three history/load cases verify
+1200-session complete totals/pages, internal rebuild cancellation/reopen and
+version-2 cache correction/future refusal. No partial aggregates accepted.
+Four API 28/35 worker lifecycle tests additionally cover blocked initialization
+with nonblocking close and exactly-once resource cleanup. Physical G remains pending.

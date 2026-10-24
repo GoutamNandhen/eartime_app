@@ -52,6 +52,7 @@ data class JournalObservation(
 }
 
 class ObservationConflict(val observationId: String) : IllegalStateException("Conflicting observation ID: $observationId")
+class ProjectionReplayCancelled : IllegalStateException("Listening replay canceled; source observations retained")
 
 /** The only owner of eartime_observations.sqlite; all calls run on the ingress worker. */
 class ObservationJournal(
@@ -200,9 +201,11 @@ class ObservationJournal(
         )
     }
 
-    private fun catchUpProjection(db: SQLiteDatabase) {
+    private fun catchUpProjection(db: SQLiteDatabase, cancelled: () -> Boolean = { false }) {
         val projection = ListeningProjection(db)
+        if (projection.requiresUpgrade()) transaction(db) { projection.reset() }
         while (projection.cursor() < lastSequence(db)) {
+            if (cancelled()) throw ProjectionReplayCancelled()
             val batch = readAfter(projection.cursor(), 128)
             check(batch.isNotEmpty())
             transaction(db) { batch.forEach(projection::apply) }
@@ -224,10 +227,12 @@ class ObservationJournal(
         }
     }
 
-    fun rebuildListeningProjection() {
+    fun rebuildListeningProjection(cancelled: () -> Boolean = { false }) {
+        if (cancelled()) throw ProjectionReplayCancelled()
         val db = database()
+        ListeningProjection(db).requiresUpgrade()
         transaction(db) { ListeningProjection(db).reset() }
-        catchUpProjection(db)
+        catchUpProjection(db, cancelled)
     }
 
     internal fun observerStatusAcknowledged(generation: Number?, epoch: String?, phase: String?, now: ObservationTime): Boolean {

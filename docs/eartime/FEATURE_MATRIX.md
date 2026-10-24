@@ -15,9 +15,12 @@ Executable evidence keys:
 - P: `ListeningProjectionTest` (48 API 28/35 cases), including shared JSON fixture,
   B02, atomic rollback, replay/rebuild, v1/v2 migrations, DST and aggregate parity.
 - U: `flutter test --no-pub test/listening_projection_test.dart` (20 cases).
-- C: `CollectorHealthTest` (16 API 28/35 cases) and `OutputAttributionTest`
+- C: `CollectorHealthTest` (20 API 28/35 cases) and `OutputAttributionTest`
   (16 synthetic policy cases); `AudioObserverOwnerTest` (10), Android adapter
   (3 API 24/28/35 cases), scoped source/ack ingress and Flutter hint decoding.
+  `SupportedAudioObserverTest` adds four API 28/35 blocked-worker/cleanup cases.
+- V: `ListeningHistoryLoadTest` (3 API 28 cases): 1200 sessions, transaction-bound
+  rebuild cancellation/reopen parity, live paging insertion and v2-cache upgrade.
 - Q: `ListeningPreferencesTest` (12 native cases) and `test/listening_settings_test.dart` (4 Flutter cases).
 - W: `ListeningWidgetTest` (6 native resource/render cases); physical launcher acceptance pending.
 - T: `test/telemetry_capability_test.dart` (2 conservative capability cases).
@@ -88,7 +91,7 @@ Executable evidence keys:
 | D8 | Incomplete/uncertain labels | IMPLEMENTED / AUTOMATED_PASS P/U; gaps/lost continuity/unverified attribution visible |
 | D9 | Restart-correct durations | IMPLEMENTED / AUTOMATED_PASS P/J; close at last evidence, never bridge process gap; OS death pending |
 | D10 | Timeline/analytics reconciliation | IMPLEMENTED / AUTOMATED_PASS P/U; native shared clipping/union, no Flutter reducer |
-| D11 | Pagination/performance | IN_PROGRESS; P/U 100-interval pages/work ceiling; long-history profiling/cooperative replay OPEN |
+| D11 | Pagination/performance | IN_PROGRESS; P/U/V 100-row pages and 1200-session replay parity; device profiling/startup fairness OPEN |
 
 ## E: Analytics
 
@@ -107,7 +110,7 @@ Executable evidence keys:
 | E11 | Calendar/date boundaries | IMPLEMENTED / AUTOMATED_PASS P; midnight and spring/autumn DST reconciliation |
 | E12 | Empty/zero/partial/uncertain data | IN_PROGRESS; U truthful empty/error/zero states, no divide-by-zero; full acceptance pending |
 | E13 | Accessible charts | IN_PROGRESS; hourly progress semantics and large-text U; full assistive-technology audit OPEN |
-| E14 | Efficient projections | IN_PROGRESS; P incremental/checkpoint/rebuild/bounded results; realistic load/cooperative replay OPEN |
+| E14 | Efficient projections | IN_PROGRESS; P/V incremental/cache upgrade/bounded rebuild cancellation/1200 sessions; runtime fairness/device profiles OPEN |
 
 ## F: Wellbeing
 
@@ -135,7 +138,7 @@ Executable evidence keys:
 | G7 | One authoritative interval projection | IMPLEMENTED / AUTOMATED_PASS P/U/W; production confirmed attribution/liveness remain gated |
 | G8 | Live/history agreement | IN_PROGRESS; P/U B02 observed opening corrected; validated production live lease OPEN |
 | G9 | Durable recovery/migrations | IN_PROGRESS; J/P v1/v2 migrations/replay preserve raw/source/cursors; legacy read-only preservation, import OPEN |
-| G10 | Collection-gap uncertainty | IMPLEMENTED / AUTOMATED_PASS J/P/U; no invented gap duration; physical service death pending |
+| G10 | Collection-gap uncertainty | IMPLEMENTED / AUTOMATED_PASS J/P/U/C/V; known owner stops close at last evidence, stale/duplicate stops fenced; physical death pending |
 | G11 | Bounded startup | IMPLEMENTED inherited S; native/OEM timing PHYSICAL_PENDING |
 | G12 | Engine/sink ownership | IMPLEMENTED / AUTOMATED_PASS S + JVM owner tests |
 | G13 | Rapid reopen/splash | IN_PROGRESS; S model passes; physical root cause UNPROVEN |
@@ -143,8 +146,8 @@ Executable evidence keys:
 | G15 | Foreground notification/permissions | IN_PROGRESS; S permissions; physical recovery OPEN |
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
-| G18 | Memory/performance safeguards | IN_PROGRESS; bounded ingress/hints/results, indexed device pages, window work ceiling; profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 129 Flutter/162 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 129 Flutter/173 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

@@ -180,7 +180,7 @@ class ListeningSnapshot {
       nextDeviceOffset =
           map['nextDeviceOffset'] as int? ?? (map['devices'] as List).length,
       hasMoreDevices = map['hasMoreDevices'] as bool? ?? false {
-    if (![1, 2].contains(map['projectionVersion']) ||
+    if (![1, 2, 3].contains(map['projectionVersion']) ||
         sequence < 0 ||
         confirmed.isNegative ||
         unverified.isNegative ||

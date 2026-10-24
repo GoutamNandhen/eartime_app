@@ -64,6 +64,13 @@ rows never create listening intervals. Long-run storage/energy profiling remains
 open: even unchanged successful lease renewals add durable rows. No hardware
 timing, foreground-service/OEM behavior or physical G PASS is claimed.
 
+Handler/backend/owner setup runs from `onLooperPrepared`. The service constructor
+and close path never call `getLooper` or join the worker: Android documents that
+[getLooper can block during initialization](https://developer.android.com/reference/android/os/HandlerThread#getLooper()).
+Worker lifecycle tests hold initialization behind a latch and prove start/close
+return before it is released, with no post-close registration and exactly-once
+cleanup. These API 28/35 models do not validate OEM startup/splash behavior.
+
 ## Supported API Boundaries
 
 - `AudioManager.getDevices` is connected inventory; `getCommunicationDevice`
@@ -106,3 +113,8 @@ clock/lease loss, cleanup uncertainty and capture deadlines. Adapter models pass
 on API 24/28/35. Ingress integration verifies durable scoped acknowledgments,
 UNKNOWN confidence and source/provenance. Flutter decodes the new hint types
 without turning global activity into legacy playback or physical-device claims.
+
+Projection v3 additionally consumes a valid current-owner stop as a listening
+continuity boundary, closing at last evidence rather than the stop clock.
+Retired/duplicate stops are fenced; v2 caches replay without raw data deletion.
+See `HISTORY_REPLAY.md`. Collector health tests now total 20 API 28/35 cases.

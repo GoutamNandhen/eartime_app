@@ -41,6 +41,8 @@ Recovered contract checkpoint `9fd94b55a7e0c9eb31c0dcd6edae786c02accddd` was
 normally pushed and remote-verified (128 Flutter / 148 native). Runtime observer
 gates: 129 Flutter / 162 native, analyzer clean, both Kotlin variants/debug
 packaging. Its scoped inventory health does not enable confirmed live listening.
+The subsequent stop/replay/startup hardening gates are 129 Flutter / 173 native; see
+`HISTORY_REPLAY.md` for the reproduced failure, cache upgrade and synthetic load.
 
 Review [Architecture](ARCHITECTURE.md), [Feature Matrix](FEATURE_MATRIX.md),
 [Implementation Ledger](PRODUCTION_IMPLEMENTATION_LEDGER.md),

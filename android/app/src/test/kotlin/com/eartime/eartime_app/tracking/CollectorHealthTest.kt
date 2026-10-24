@@ -105,4 +105,37 @@ class CollectorHealthTest {
         journal.append(status(9000, "STARTING", 99).copy(collector = "legacy_audio_service"))
         assertEquals("NOT_STARTED", health(9000)["state"])
     }
+
+    @Test fun knownServiceOwnerStopClosesAtLastEvidenceAndLaterSyncCannotBridgeTheGap() = run {
+        ready()
+        journal.append(status(1000, "UNKNOWN").copy(kind = "PLAYBACK_STARTED", collector = "legacy_audio_service", payloadJson = "{}"))
+        fun sync(at: Long) = status(at, "UNKNOWN").copy(kind = "SYNC_STATE", collector = "legacy_audio_service",
+            payloadJson = JournalJson.encode(mapOf("connectedDevices" to emptyList<Any>(), "isPlaying" to true)))
+        journal.append(sync(5000))
+        journal.append(status(9000, "STOPPED", extra = mapOf("reason" to "observer_owner_stopped")))
+        val stopped = journal.listeningSnapshot(0, 100000, "UTC")
+        val old = (stopped["intervals"] as List<*>).single() as Map<*, *>
+        assertEquals(false, old["open"]); assertEquals(5000L, old["endUtcMs"])
+        assertEquals("service_owner_stopped", old["closeReason"])
+        journal.append(sync(12000))
+        journal.append(status(16000, "UNKNOWN").copy(kind = "PLAYBACK_PAUSED", collector = "legacy_audio_service", payloadJson = "{}"))
+        assertEquals(8000L, journal.listeningSnapshot(0, 100000, "UTC")["unverifiedMs"])
+        assertEquals(0L, journal.listeningSnapshot(0, 100000, "UTC")["confirmedMs"])
+    }
+
+    @Test fun retiredOwnerStopAndDuplicateStopCannotInvalidateNewOwnerOrInventMoreGaps() = run {
+        ready()
+        journal.append(status(2000, "STARTING", 2)); journal.append(status(2100, "HEALTHY", 2))
+        journal.append(status(2200, "UNKNOWN").copy(kind = "PLAYBACK_STARTED", collector = "legacy_audio_service", payloadJson = "{}"))
+        journal.append(status(2300, "STOPPED", 1, extra = mapOf("reason" to "observer_owner_stopped")))
+        var snapshot = journal.listeningSnapshot(0, 100000, "UTC")
+        assertEquals(true, ((snapshot["intervals"] as List<*>).single() as Map<*, *>)["open"])
+        assertEquals(0L, snapshot["gapCount"])
+        journal.append(status(2400, "STOPPED", 2, extra = mapOf("reason" to "observer_owner_stopped")))
+        journal.append(status(2450, "HEALTHY", 2))
+        journal.append(status(2500, "STOPPED", 2, extra = mapOf("reason" to "observer_owner_stopped")))
+        snapshot = journal.listeningSnapshot(0, 100000, "UTC")
+        assertEquals(false, ((snapshot["intervals"] as List<*>).single() as Map<*, *>)["open"])
+        assertEquals(1L, snapshot["gapCount"])
+    }
 }

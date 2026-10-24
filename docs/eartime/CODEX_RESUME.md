@@ -29,11 +29,12 @@ for routine phase approval. This is NOT RELEASE_READY.
 
 Physical G and the historical A/B splash regression mechanism are still
 UNPROVEN. The hook-only guard does not establish G for the changed application.
-No phone was attached, installed, cleared, commanded or physically tested.
+No app install, data clear, device command or physical test was performed in
+this continuation. Current hardware attachment status was not checked.
 
 ## Current Implementation
 
-Native journal schema **3**, listening projection version **2**:
+Native journal schema **3**, listening projection version **3**:
 
 - All service/BLE broker emissions enter bounded native ingress. A raw row and
   its incremental projection/cursor commit atomically before publication.
@@ -45,6 +46,12 @@ Native journal schema **3**, listening projection version **2**:
   rewrite. Unsupported future schema refuses access without deleting data.
 - Restart/overflow/invalid-input/commit-loss gaps close at last durable evidence.
   Clock discontinuity, lost attribution and changed identity cannot bridge time.
+- A valid current service-owner stop now closes routes at last durable evidence;
+  later SYNC cannot bridge known downtime. Retired/duplicate stops are fenced.
+  Projection v2 caches replay automatically to v3 without deleting raw rows,
+  source IDs or acknowledgments. Internal rebuild cancellation stops at 128-row
+  transaction boundaries; reads finish catch-up before returning complete totals.
+  See `HISTORY_REPLAY.md` for the pre-fix failures and 1200-session load evidence.
 - Global overlap union, per-device union, local calendar clipping, DST-aware
   day/hour buckets, longest/average continuous runs and bounded interval paging.
 - `readListeningProjection` is shared by Home, Timeline, Analytics, Devices,
@@ -82,6 +89,10 @@ Native journal schema **3**, listening projection version **2**:
   bound callback storms. Failure/denial retries back off 30s; rejected commits
   back off 10s and reinitialize with a new generation/epoch. Cleanup uncertainty
   prevents duplicate listener owners. Physical timing/energy behavior is pending.
+- Handler/owner creation occurs in `onLooperPrepared`, never via a main-thread
+  `getLooper` wait. Stop can return while worker initialization is blocked;
+  closed initialization cannot register callbacks. Four API 28/35 worker tests
+  cover blocked startup and exactly-once cleanup.
 
 ## Important Runtime Limits
 
@@ -129,16 +140,18 @@ flutter analyze --no-pub
   projection/settings/telemetry/layout cases. No skips/excluded test files.
 - Analyzer: **No issues found**, exit 0. All 21 inherited findings and final
   formatter-exposed block lints corrected without suppression.
-- Native: **162 passed**, 0 failures/errors/skips. Original 46 plus 116 new:
+- Native: **173 passed**, 0 failures/errors/skips. Original 46 plus 127 new:
   projection 48; preferences 12; widget 6; durable hint buffer 2; ingress 4 total;
-  health 16, synthetic output-policy 16, observer owner 10, Android adapter 3.
+  health 20, synthetic output-policy 16, observer owner 10, Android adapter 3,
+  history/load/cache upgrade 3, worker startup/close 4.
   Adapter API 24/28/35; SQLite/projection/preferences/widget/health API 28/35 models.
 - Kotlin debug/release compile and debug packaging: exit 0, BUILD SUCCESSFUL.
   Inherited Kotlin/Gradle/old BLE API deprecation warnings remain; service code
   was not edited to remove them.
 - Release signing check: expected exit 1, missing signing configuration. This
   validates a fail-closed gate, NOT a successful signed release build.
-- `git diff --check`: exit 0; only CRLF advisory warnings. Device inventory empty.
+- `git diff --check`: exit 0; only CRLF advisory warnings. Earlier device inventory
+  was empty; latest continuation performs no hardware interaction.
 - Readable test-fixture Home captures at 360/1200 pixels in `build/qa/`; five main
   view large-text layout cases passed at 360 pixels / 2x text. Captures were
   inspected with local Roboto/Material Icons. Not device/launcher screenshots.
@@ -147,7 +160,13 @@ Interim failures were fixed, not hidden: RPC deadline leaked after disposal;
 Windows native SQLite fixture paths exceeded practical path length; ingress
 close raced queued work; final formatting exposed missing block braces.
 
-Prior pagination debug artifact (not installed/released; historical hash):
+Latest local debug artifact (not installed/released/published):
+
+- `build/app/outputs/apk/debug/app-debug.apk` and
+  `build/app/outputs/flutter-apk/app-debug.apk`, each 158947452 bytes.
+- Both SHA-256: `28E80584E5D57B36AB901F6D68BB3628EEAE35A83E1F82F801FFB832D04529E7`.
+
+Prior pagination debug artifact (historical hash, not the current build):
 
 - `build/app/outputs/flutter-apk/app-debug.apk`, 158947452 bytes.
 - SHA-256 `1FB489CA9C3B2AB4C1C6B58002BA5EF2962ADB2B27DC89BA925A76BFD393F943`.
@@ -170,7 +189,9 @@ main update, force push or device mutation. See `PUBLIC_CHECKPOINT.md`.
 2. Finish evidence-backed identity/alias normalization and a permitted route
    collector. Generic global playback or a discovered UUID is not that proof.
 3. Add long-history load/cancellation/replay fairness tests, including device
-   paging under concurrent observations. Do not return partial aggregates as complete totals.
+   paging under concurrent observations. The 1200-session/2400-row model and
+   internal rebuild cancellation now pass; normal startup fairness, cross-layer
+   cancellation and larger/device profiles remain open. Never return partial totals.
 4. Implement versioned local export/backup/restore/deletion with explicit user
    confirmation for destructive actions, conflict-safe transactions and tests.
 5. Continue the remaining matrix: connected/idle partitions, richer analytics,

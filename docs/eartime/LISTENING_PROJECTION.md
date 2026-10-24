@@ -39,6 +39,9 @@ hint cache is capped at 256 and flushes 32 per turn; it is not canonical history
   before commit rolls back source and projection together. Reopen retains the
   checkpoint; a new process appends a gap before new collector publication.
 - Future DB versions fail closed without corruption deletion or raw-data loss.
+- Derived projection v2 caches replay as v3 to apply current-owner stop closure;
+  source schema remains 3. Internal rebuild cancellation preserves completed
+  128-row transactions and cannot return partial totals. See `HISTORY_REPLAY.md`.
 - Legacy Drift remains schema 1, untouched. It is not imported, upcast or added
   to confirmed totals. Product activation no longer writes it; Settings exposes
   paged read-only historical observations with an uncertainty label.
@@ -114,7 +117,7 @@ not a real FlutterEngine/device end-to-end test.
 
 Flutter projection/RPC/layout/paging/health suite: 20 cases. Device tests traverse 205
 synthetic identities, preserve totals/reopen results and reject invalid cursors.
-Full final gates: 129 Flutter, 162 native, zero failures/skips, analyzer clean,
+Full final gates: 129 Flutter, 173 native, zero failures/skips, analyzer clean,
 debug/release Kotlin compilation and debug APK packaging successful. Signing
 check correctly refuses missing keys. Strict four-hook collector guard verified;
 plain service equality is now FALSE. See `COLLECTOR_HEALTH.md` for necessity/checkpoint.

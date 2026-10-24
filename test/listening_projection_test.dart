@@ -112,6 +112,12 @@ void main() {
         'Audio inventory and activity observation available',
       );
       expect(ListeningSnapshot.fromMap(map).confirmed, Duration.zero);
+      expect(
+        ListeningSnapshot.fromMap(
+          fixture()..['projectionVersion'] = 3,
+        ).confirmed,
+        Duration.zero,
+      );
       (map['collectorHealth'] as Map)['liveListeningEligible'] = true;
       expect(() => ListeningSnapshot.fromMap(map), throwsFormatException);
       (map['collectorHealth'] as Map)['liveListeningEligible'] = false;

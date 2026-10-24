@@ -62,7 +62,10 @@ internal class AndroidAudioObservationBackend(
 }
 
 /** Service-owned lifecycle; all registration/sampling/cleanup is off the main thread. */
-class SupportedAudioObserver private constructor(context: Context) : AutoCloseable {
+class SupportedAudioObserver internal constructor(context: Context,
+    private val backendFactory: ((Handler, () -> Unit) -> AudioObservationBackend)? = null,
+    private val onStopped: () -> Unit = {},
+) : AutoCloseable {
     companion object {
         private val generations = AtomicLong()
         fun start(context: Context): SupportedAudioObserver? = try { SupportedAudioObserver(context.applicationContext) }
@@ -71,35 +74,50 @@ class SupportedAudioObserver private constructor(context: Context) : AutoCloseab
     private val closed = AtomicBoolean(false)
     val isClosed: Boolean get() = closed.get()
     private val sampleQueued = AtomicBoolean(false)
-    private val thread = HandlerThread("EarTimeAudioEvidence").apply { start() }
-    private val handler = Handler(thread.looper)
-    private val backend = object : AudioObservationBackend {
-        private var platform: AndroidAudioObservationBackend? = null
-        override fun register(): AutoCloseable {
-            val target = AndroidAudioObservationBackend(context, handler, ::requestSample)
-            platform = target
-            return target.register()
+    @Volatile private var handler: Handler? = null
+    private var owner: AudioObserverOwner? = null
+    private val thread = object : HandlerThread("EarTimeAudioEvidence") {
+        override fun onLooperPrepared() {
+            val target = Handler(checkNotNull(looper))
+            handler = target
+            if (closed.get()) { quitSafely(); return }
+            val backend = object : AudioObservationBackend {
+                private var platform: AudioObservationBackend? = null
+                override fun register(): AutoCloseable {
+                    val candidate = backendFactory?.invoke(target, ::requestSample)
+                        ?: AndroidAudioObservationBackend(context, target, ::requestSample)
+                    check(!closed.get()) { "Observer stopped during initialization" }
+                    platform = candidate
+                    return candidate.register()
+                }
+                override fun sample() = checkNotNull(platform).sample()
+            }
+            val session = AudioObserverOwner(backend,
+                { AudioSampleTime(System.currentTimeMillis(), SystemClock.elapsedRealtime()) }, generations::incrementAndGet,
+                { event, captured, completion -> NativeJournalRuntime.submitObserver(event, captured.elapsedMs) { accepted ->
+                    target.post { completion(accepted) }
+                } })
+            owner = session
+            if (closed.get()) { session.close(); quitSafely(); return }
+            session.start()
+            if (!closed.get()) target.postDelayed(poll, 10000)
         }
-        override fun sample() = checkNotNull(platform).sample()
+        override fun run() { try { super.run() } finally { onStopped() } }
     }
-    private val owner = AudioObserverOwner(backend,
-        { AudioSampleTime(System.currentTimeMillis(), SystemClock.elapsedRealtime()) }, generations::incrementAndGet,
-        { event, captured, completion -> NativeJournalRuntime.submitObserver(event, captured.elapsedMs) { accepted ->
-            handler.post { completion(accepted) }
-        } })
-    private val sample = Runnable { sampleQueued.set(false); if (!closed.get()) owner.sample() }
+    private val sample = Runnable { sampleQueued.set(false); if (!closed.get()) owner?.sample() }
     private val poll = object : Runnable {
         override fun run() {
-            if (!closed.get()) { owner.sample(); handler.postDelayed(this, 10000) }
+            if (!closed.get()) { owner?.sample(); handler?.postDelayed(this, 10000) }
         }
     }
-    init { handler.post { if (!closed.get()) { owner.start(); handler.postDelayed(poll, 10000) } } }
+    init { thread.start() }
     private fun requestSample() {
-        if (!closed.get() && sampleQueued.compareAndSet(false, true)) handler.postDelayed(sample, 250)
+        if (!closed.get() && sampleQueued.compareAndSet(false, true)) handler?.postDelayed(sample, 250)
     }
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        handler.removeCallbacks(sample); handler.removeCallbacks(poll)
-        handler.post { try { owner.close() } finally { thread.quitSafely() } }
+        val target = handler ?: return // onLooperPrepared observes closed; never wait for its Looper here.
+        target.removeCallbacks(sample); target.removeCallbacks(poll)
+        target.post { try { owner?.close() } finally { thread.quitSafely() } }
     }
 }
