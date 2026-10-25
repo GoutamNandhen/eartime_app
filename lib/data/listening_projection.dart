@@ -19,12 +19,14 @@ class ListeningWindow {
     this.offset = 0,
     this.deviceOffset = 0,
     this.deviceId,
+    this.sessionId,
   });
   final DateTime from;
   final DateTime until;
   final int offset;
   final int deviceOffset;
   final String? deviceId;
+  final String? sessionId;
 
   @override
   bool operator ==(Object other) =>
@@ -33,9 +35,11 @@ class ListeningWindow {
       until == other.until &&
       offset == other.offset &&
       deviceOffset == other.deviceOffset &&
-      deviceId == other.deviceId;
+      deviceId == other.deviceId &&
+      sessionId == other.sessionId;
   @override
-  int get hashCode => Object.hash(from, until, offset, deviceOffset, deviceId);
+  int get hashCode =>
+      Object.hash(from, until, offset, deviceOffset, deviceId, sessionId);
 }
 
 class ProjectedInterval {
@@ -48,7 +52,8 @@ class ProjectedInterval {
       duration = Duration(milliseconds: map['durationMs'] as int),
       open = map['open'] as bool,
       live = map['live'] as bool,
-      closeReason = map['closeReason'] as String? {
+      closeReason = map['closeReason'] as String?,
+      transition = map['transition'] as String? {
     if (end.isBefore(start) ||
         duration.isNegative ||
         duration > end.difference(start)) {
@@ -64,6 +69,64 @@ class ProjectedInterval {
   final bool open;
   final bool live;
   final String? closeReason;
+  final String? transition;
+}
+
+class ProjectedSession {
+  ProjectedSession(Map<dynamic, dynamic> map)
+    : id = map['id'] as String,
+      confirmed = map['attribution'] == 'CONFIRMED',
+      start = DateTime.fromMillisecondsSinceEpoch(map['startUtcMs'] as int),
+      end = DateTime.fromMillisecondsSinceEpoch(map['endUtcMs'] as int),
+      duration = Duration(milliseconds: map['durationMs'] as int),
+      segmentCount = map['segmentCount'] as int,
+      deviceCount = map['deviceCount'] as int,
+      incomplete = map['incomplete'] as bool,
+      clipped = map['clipped'] as bool {
+    if (id.isEmpty ||
+        id.length > 512 ||
+        end.isBefore(start) ||
+        duration.isNegative ||
+        duration != end.difference(start) ||
+        segmentCount < 1 ||
+        deviceCount < 0 ||
+        deviceCount > segmentCount ||
+        !const {'CONFIRMED', 'UNVERIFIED'}.contains(map['attribution'])) {
+      throw const FormatException('Invalid listening session');
+    }
+  }
+  final String id;
+  final bool confirmed;
+  final DateTime start;
+  final DateTime end;
+  final Duration duration;
+  final int segmentCount;
+  final int deviceCount;
+  final bool incomplete;
+  final bool clipped;
+}
+
+class ProjectedSessionDetail extends ProjectedSession {
+  ProjectedSessionDetail(super.map)
+    : offset = map['offset'] as int,
+      nextOffset = map['nextOffset'] as int,
+      hasMore = map['hasMore'] as bool,
+      intervals = List.unmodifiable(
+        (map['intervals'] as List).map((e) => ProjectedInterval(e as Map)),
+      ) {
+    if (offset < 0 ||
+        intervals.length > 100 ||
+        nextOffset != (offset + intervals.length).clamp(0, segmentCount) ||
+        hasMore != (nextOffset < segmentCount) ||
+        intervals.map((e) => e.id).toSet().length != intervals.length ||
+        intervals.any((e) => e.confirmed != confirmed)) {
+      throw const FormatException('Invalid session detail page');
+    }
+  }
+  final int offset;
+  final int nextOffset;
+  final bool hasMore;
+  final List<ProjectedInterval> intervals;
 }
 
 class ProjectedDevice {
@@ -219,7 +282,51 @@ class ListeningSnapshot {
       deviceOffset = map['deviceOffset'] as int? ?? 0,
       nextDeviceOffset =
           map['nextDeviceOffset'] as int? ?? (map['devices'] as List).length,
-      hasMoreDevices = map['hasMoreDevices'] as bool? ?? false {
+      hasMoreDevices = map['hasMoreDevices'] as bool? ?? false,
+      hasSessionContract = map['sessionContractVersion'] != null,
+      sessions = List.unmodifiable(
+        (map['sessions'] as List? ?? []).map((e) => ProjectedSession(e as Map)),
+      ),
+      sessionCount = map['sessionCount'] as int? ?? 0,
+      nextSessionOffset = map['nextSessionOffset'] as int? ?? 0,
+      hasMoreSessions = map['hasMoreSessions'] as bool? ?? false,
+      measuredSessionCount = map['measuredSessionCount'] as int? ?? 0,
+      longestSession = Duration(
+        milliseconds: map['longestSessionMs'] as int? ?? 0,
+      ),
+      averageSession = Duration(
+        milliseconds: map['averageSessionMs'] as int? ?? 0,
+      ),
+      sessionDetail = map['sessionDetail'] == null
+          ? null
+          : ProjectedSessionDetail(map['sessionDetail'] as Map) {
+    if (map['sessionContractVersion'] != null) {
+      if (map['sessionContractVersion'] != 1) {
+        throw const FormatException('Unsupported session contract');
+      }
+      if (map['sessions'] is! List ||
+          map['sessionCount'] is! int ||
+          map['nextSessionOffset'] is! int ||
+          map['hasMoreSessions'] is! bool ||
+          map['measuredSessionCount'] is! int ||
+          map['longestSessionMs'] is! int ||
+          map['averageSessionMs'] is! int ||
+          measuredSessionCount < 0 ||
+          measuredSessionCount > sessionCount ||
+          longestSession.isNegative ||
+          averageSession.isNegative ||
+          averageSession > longestSession ||
+          (measuredSessionCount == 0 && longestSession != Duration.zero) ||
+          sessions.length > 100 ||
+          sessionCount > intervalCount ||
+          sessionCount < sessions.length ||
+          nextSessionOffset < 0 ||
+          nextSessionOffset > sessionCount ||
+          hasMoreSessions != (nextSessionOffset < sessionCount) ||
+          sessions.map((e) => e.id).toSet().length != sessions.length) {
+        throw const FormatException('Inconsistent session page');
+      }
+    }
     if (![1, 2, 3, 4, 5].contains(map['projectionVersion']) ||
         sequence < 0 ||
         confirmed.isNegative ||
@@ -274,6 +381,15 @@ class ListeningSnapshot {
   final int deviceOffset;
   final int nextDeviceOffset;
   final bool hasMoreDevices;
+  final bool hasSessionContract;
+  final List<ProjectedSession> sessions;
+  final int sessionCount;
+  final int nextSessionOffset;
+  final bool hasMoreSessions;
+  final int measuredSessionCount;
+  final Duration longestSession;
+  final Duration averageSession;
+  final ProjectedSessionDetail? sessionDetail;
 
   bool get hasCollectionUncertainty =>
       gapCount > 0 || pendingCount > 0 || failedCount > 0 || lastError != null;
@@ -303,6 +419,8 @@ class ListeningProjectionClient {
         window.deviceOffset < 0 ||
         window.offset > 2147483547 ||
         window.deviceOffset > 2147483547 ||
+        (window.sessionId != null &&
+            (window.sessionId!.isEmpty || window.sessionId!.length > 512)) ||
         window.until.difference(window.from) > const Duration(days: 367)) {
       throw ArgumentError('Invalid listening window');
     }
@@ -330,6 +448,7 @@ class ListeningProjectionClient {
             'limit': 100,
             'deviceOffset': window.deviceOffset,
             if (window.deviceId != null) 'deviceId': window.deviceId,
+            if (window.sessionId != null) 'sessionId': window.sessionId,
           })
           .then(
             (value) {
@@ -357,6 +476,23 @@ class ListeningProjectionClient {
         snapshot.devices.length > 100 ||
         snapshot.deviceOffset != window.deviceOffset ||
         raw['filterDeviceId'] != window.deviceId ||
+        snapshot.sessions.any(
+          (session) =>
+              session.start.isBefore(window.from) ||
+              session.end.isAfter(window.until),
+        ) ||
+        (snapshot.sessionDetail != null &&
+            (snapshot.sessionDetail!.start.isBefore(window.from) ||
+                snapshot.sessionDetail!.end.isAfter(window.until))) ||
+        (raw['sessionContractVersion'] != null &&
+            snapshot.nextSessionOffset !=
+                (window.offset + snapshot.sessions.length).clamp(
+                  0,
+                  snapshot.sessionCount,
+                )) ||
+        (window.sessionId != null &&
+            (snapshot.sessionDetail?.id != window.sessionId ||
+                snapshot.sessionDetail?.offset != window.offset)) ||
         (window.deviceId != null &&
             (snapshot.intervals.any(
                   (item) => item.deviceId != window.deviceId,
@@ -364,7 +500,11 @@ class ListeningProjectionClient {
                 snapshot.devices.any((item) => item.id != window.deviceId) ||
                 snapshot.perDevice.any(
                   (item) => item.deviceId != window.deviceId,
-                )))) {
+                ) ||
+                (snapshot.sessionDetail?.intervals.any(
+                      (item) => item.deviceId != window.deviceId,
+                    ) ??
+                    false)))) {
       throw const FormatException('Listening window does not match request');
     }
     return snapshot;

@@ -7,6 +7,7 @@ import '../../providers/listening_projection_provider.dart';
 import '../../providers/listening_preferences_provider.dart';
 import '../devices/device_identity_screen.dart';
 import 'listening_dates_dialog.dart';
+import 'listening_session_screen.dart';
 
 enum ListeningView { home, timeline, analytics, devices, wellbeing }
 
@@ -248,13 +249,34 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                   ...intervalRows(snapshot, maximum: 5),
                 ],
                 if (widget.view == ListeningView.timeline) ...[
-                  const _Section('Intervals'),
-                  ...intervalRows(snapshot),
+                  _Section(
+                    snapshot.hasSessionContract ? 'Sessions' : 'Intervals',
+                  ),
+                  if (snapshot.hasSessionContract) ...[
+                    if (snapshot.sessions.isEmpty)
+                      const Text('No playback sessions in this period.'),
+                    for (final session in snapshot.sessions)
+                      ListeningSessionTile(
+                        key: ValueKey('session-${session.id}'),
+                        session: session,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => ListeningSessionScreen(
+                              window: query,
+                              sessionId: session.id,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ] else
+                    ...intervalRows(snapshot),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        tooltip: 'Previous intervals',
+                        tooltip: snapshot.hasSessionContract
+                            ? 'Previous sessions'
+                            : 'Previous intervals',
                         onPressed: _offset == 0
                             ? null
                             : () => setState(
@@ -266,14 +288,26 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                         icon: const Icon(Icons.chevron_left),
                       ),
                       Flexible(
-                        child: Text('${snapshot.intervalCount} intervals'),
+                        child: Text(
+                          snapshot.hasSessionContract
+                              ? '${snapshot.sessionCount} sessions'
+                              : '${snapshot.intervalCount} intervals',
+                        ),
                       ),
                       IconButton(
-                        tooltip: 'Next intervals',
-                        onPressed: !snapshot.hasMore
+                        tooltip: snapshot.hasSessionContract
+                            ? 'Next sessions'
+                            : 'Next intervals',
+                        onPressed:
+                            !(snapshot.hasSessionContract
+                                ? snapshot.hasMoreSessions
+                                : snapshot.hasMore)
                             ? null
-                            : () =>
-                                  setState(() => _offset = snapshot.nextOffset),
+                            : () => setState(
+                                () => _offset = snapshot.hasSessionContract
+                                    ? snapshot.nextSessionOffset
+                                    : snapshot.nextOffset,
+                              ),
                         icon: const Icon(Icons.chevron_right),
                       ),
                     ],
@@ -314,6 +348,22 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                     value: recordedDuration(snapshot.average),
                   ),
                   Text('${snapshot.listeningRuns} confirmed listening runs'),
+                  if (snapshot.hasSessionContract) ...[
+                    _Metric(
+                      label: 'Longest recorded session',
+                      value: recordedDuration(snapshot.longestSession),
+                    ),
+                    _Metric(
+                      label: 'Average recorded session',
+                      value: recordedDuration(snapshot.averageSession),
+                    ),
+                    Text(
+                      '${snapshot.measuredSessionCount} measured confirmed session(s)',
+                    ),
+                    const Text(
+                      'Sessions end at a pause or lost continuity. Overlapping sessions are unioned in period totals.',
+                    ),
+                  ],
                   const _Section('Daily listening'),
                   if (snapshot.confirmed == Duration.zero)
                     const Text('No confirmed listening in this period.'),

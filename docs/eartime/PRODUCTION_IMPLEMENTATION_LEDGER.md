@@ -4,9 +4,38 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: record-state consistency/average correction, 217 Flutter / 366 native
+Latest checkpoint: canonical Timeline sessions, 222 Flutter / 376 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Canonical Session Continuation (2026-10-25)
+
+- Revalidated clean 09a816e: 217 Flutter/366 native, analyzer, Kotlin variants,
+  debug APK and strict four-hook collector comparison. Existing work preserved.
+- Six RED API 28/35 executions proved absent sessions. Query-only overlap groups
+  use original interval IDs, captured clock/gap fences, exact clipped unions,
+  unmeasured/unverified separation and conservative uncertainty. Raw schema 3,
+  projection 5, observations and consumer cursors remain unchanged.
+- Existing RPC/worker/provider carries separate bounded session/contributor
+  pages; device scope is SQL-first. Actual Timeline details show dates, seconds,
+  UTC offsets, observed transitions and incompleteness at 1x/3x. Invalid pages,
+  missing IDs, confidence/metric/scope mismatches fail closed.
+- Native grouped longest/mean integrate into Analytics/Wellbeing. Period totals
+  and continuous-run metrics remain unchanged; sessions across uncertainty can
+  overlap and must not be added as a replacement period total.
+- Five native cases/10 executions: overlap, 105 sessions/105 contributors, gaps,
+  clock rollback, transitions, unknown points, scope/clipping/reopen/replay. Five
+  Flutter cases cover decoding and actual navigation/pages. Initial absent UI
+  was RED; fixture scrolling/lazy-list/parent-refresh corrections suppress no
+  production errors or duration assertions. One analyzer block corrected.
+- Full gates: 222 Flutter/376 native, 28 suites, zero errors/failures/skips,
+  analyzer clean, Kotlin variants/debug APK pass. Only four prior service hooks;
+  no physical G/output/telemetry claim. D1/D2/D3/E5/E6 software complete:
+  38 IMPLEMENTED/65 IN_PROGRESS/15 NOT_STARTED/1 platform-blocked=119.
+- All IDs/titles and remaining criteria retained. D5/D6/D11/H5 remain partial.
+  TIMELINE_SESSIONS.md; NOT RELEASE_READY. Continue full-app data controls next;
+  native-only archives still exclude legacy/settings. No deletion/signing/device
+  action was performed.
 
 ## E12 Recorded-State Consistency
 

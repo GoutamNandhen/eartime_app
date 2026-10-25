@@ -2,6 +2,16 @@
 
 Last verified implementation baseline: 2026-10-25.
 
+Canonical Timeline sessions: 222 Flutter / 376 native in 28 suites, zero failures,
+errors or skipped cases; analyzer clean; debug/release Kotlin and debug packaging
+pass. Starting 217/366 was rerun first. Five Flutter/10 native executions added,
+including six actual native RED results and absent-UI failures before integration.
+105-session/contributor paging, gap/clock/overlap/means, source-preserving replay/
+reopen, device scope, transitions and actual 1x/3x detail/back/pages pass. Strict
+four-hook service/version gates pass. B02, cache migration/rebuild, startup/owner
+and archive tests remain in the full suite. TIMELINE_SESSIONS.md records limits;
+no physical G or release evidence follows.
+
 E12 adds 31 Flutter cases and four native API 28/35 executions. Negative metadata,
 Home empty state, default retry ownership, 3x interval layout and daily numeric-zero
 inconsistency were actually reproduced. Existing zero assertion requires explicit

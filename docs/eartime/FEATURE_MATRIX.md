@@ -5,11 +5,11 @@ Updated 2026-10-25. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **33 IMPLEMENTED, 70 IN_PROGRESS, 15 NOT_STARTED,
+Implementation count: **38 IMPLEMENTED, 65 IN_PROGRESS, 15 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: D1/D2/D3/E5/E6, E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -78,6 +78,11 @@ Executable evidence keys:
 
 ## A: Core Listening
 
+Session evidence S2: `ListeningProjectionTest` adds five cases (10 API 28/35
+executions); `listening_sessions_test.dart` adds five Flutter cases. Native
+grouping, union/clock/gap/scope/replay, 105-session/contributor pages, transition
+details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
+
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
 | A1 | Actual playback duration | BLOCKED_BY_PLATFORM; P/U canonical accounting exists, but generic third-party actual output lacks a populated public configuration-route API; PLATFORM_ATTRIBUTION_LIMITS.md; narrower A2DP work remains A7, not full completion |
@@ -130,9 +135,9 @@ Executable evidence keys:
 
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
-| D1 | Chronological sessions | IN_PROGRESS; P/U sequence-ordered interval pages; richer grouped sessions OPEN |
-| D2 | Start/end timestamps | IN_PROGRESS; P/U durable timestamps and uncertainty labels; physical clock acceptance pending |
-| D3 | Session durations | IN_PROGRESS; P/U corrected canonical interval durations; grouped sessions/liveness OPEN |
+| D1 | Chronological sessions | IMPLEMENTED / AUTOMATED_PASS S2/P; native bounded overlap groups, source-order clock safety, pause/resume/gap boundaries and contributor drilldown; PHYSICAL_PENDING |
+| D2 | Start/end timestamps | IMPLEMENTED / AUTOMATED_PASS S2/P; original captured/clipped native bounds, full dates/seconds/local UTC offset and incomplete labels; physical clock acceptance pending |
+| D3 | Session durations | IMPLEMENTED / AUTOMATED_PASS S2/P; native clipped contributor union, no overlap addition, open points unknown and lost continuity ends at last evidence; live extrapolation remains gated, PHYSICAL_PENDING |
 | D4 | Pause/resume segments | IMPLEMENTED / AUTOMATED_PASS P/U; paused time excluded |
 | D5 | Connection/output transitions | IN_PROGRESS; connections only; route evidence OPEN |
 | D6 | Device details | IN_PROGRESS; Z persistent endpoint association/reset, names and device history UI; verified physical matching/telemetry OPEN |
@@ -150,8 +155,8 @@ Executable evidence keys:
 | E2 | Connected/listening/idle comparison | NOT_STARTED; projection tests OPEN |
 | E3 | Daily/hourly trends | IN_PROGRESS; P native DST-aware buckets and U presentation; full chart acceptance OPEN |
 | E4 | Per-device comparisons | IN_PROGRESS; P per-device union totals; actual identity attribution OPEN |
-| E5 | Longest session | IN_PROGRESS; P longest continuous union run; grouped-session semantics OPEN |
-| E6 | Average duration | IN_PROGRESS; P/R2 mean of measured continuous union runs; zero-duration observations retained but excluded from denominator after two RED proofs; grouped-session semantics OPEN |
+| E5 | Longest session | IMPLEMENTED / AUTOMATED_PASS S2/P; native longest measured confirmed grouped session integrated into Analytics/Wellbeing, separate from existing continuous-run metric; PHYSICAL_PENDING |
+| E6 | Average duration | IMPLEMENTED / AUTOMATED_PASS S2/P/R2; native mean of measured confirmed grouped sessions excludes zero-duration/unverified observations; continuous-run mean retained; PHYSICAL_PENDING |
 | E7 | Listening frequency | IN_PROGRESS; P confirmed run count; richer frequency metrics OPEN |
 | E8 | Breaks/break lengths | NOT_STARTED; gap-vs-break tests OPEN |
 | E9 | Wearing trends | NOT_STARTED; validated role data OPEN |
@@ -196,7 +201,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 217 Flutter/366 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 222 Flutter/376 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -207,7 +212,7 @@ Executable evidence keys:
 | H2 | Light/dark themes | IMPLEMENTED / AUTOMATED_PASS Q; native-backed system/light/dark, offline fonts; physical acceptance pending |
 | H3 | Responsive layouts | IN_PROGRESS; D journal large-text check; all-screen matrix OPEN |
 | H4 | Home | IN_PROGRESS; U canonical confirmed/unverified totals, goals and errors; live collector lease OPEN |
-| H5 | Timeline | IN_PROGRESS; P/U native interval pages/date windows/gaps; grouped sessions OPEN |
+| H5 | Timeline | IN_PROGRESS; S2/P/U native session/contributor pages, date/device windows, gaps and transitions integrated; connection-only history, physical device details and full performance acceptance OPEN |
 | H6 | Analytics | IN_PROGRESS; P/U native actual aggregates, no placeholder scores; full metrics OPEN |
 | H7 | Devices | IN_PROGRESS; U native known-device next/previous pages/details/name overrides; verified aliases/telemetry OPEN |
 | H8 | Wellbeing | IN_PROGRESS; Q/U persisted goals/native summaries; reminders OPEN |

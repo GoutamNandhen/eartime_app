@@ -222,17 +222,23 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
 
     /** Intervals are clipped once here for all consumers. Overlapping routes are unioned, not added. */
     fun snapshot(from: Long, until: Long, zoneId: String, now: ObservationTime?, offset: Int = 0, limit: Int = 100,
-        deviceOffset: Int = 0, healthTime: ObservationTime? = now, deviceId: String? = null): Map<String, Any?> {
+        deviceOffset: Int = 0, healthTime: ObservationTime? = now, deviceId: String? = null, sessionId: String? = null): Map<String, Any?> {
         require(until > from && until - from in 1L..(367L * 86400000) &&
             offset in 0..(Int.MAX_VALUE - 100) && deviceOffset in 0..(Int.MAX_VALUE - 100) && limit in 1..100)
         require(ListeningTimeZones.valid(zoneId)) { "Unknown calendar time zone" }
         require(deviceId == null || EndpointIdentity.validId(deviceId)) { "Invalid device history identity" }
+        require(sessionId == null || sessionId.length in 1..512) { "Invalid session identity" }
         val root = state()
         val routes = root.getJSONObject("routes")
         val segments = mutableListOf<Map<String, Any?>>()
-        val deviceClause = if (deviceId == null) "" else " AND device_id = ?"
+        val deviceClause = if (deviceId == null) "" else " AND i.device_id = ?"
         val intervalArgs = listOf(until.toString(), from.toString()) + listOfNotNull(deviceId)
-        db.rawQuery("SELECT * FROM listening_intervals WHERE start_utc_ms < ? AND (end_utc_ms >= ? OR open = 1)$deviceClause ORDER BY start_sequence DESC LIMIT 100001",
+        db.rawQuery("""SELECT i.*, s.collection_epoch AS session_epoch, s.boot_id AS session_boot,
+            s.wall_utc_ms - s.elapsed_ms AS session_anchor, e.kind AS end_kind, e.payload_json AS end_payload
+            FROM listening_intervals i JOIN observations s ON s.sequence = i.start_sequence
+            JOIN observations e ON e.sequence = i.end_sequence
+            WHERE i.start_utc_ms < ? AND (i.end_utc_ms >= ? OR i.open = 1)$deviceClause
+            ORDER BY i.start_sequence DESC LIMIT 100001""",
             intervalArgs.toTypedArray()).use { cursor ->
             var scanned = 0
             while (cursor.moveToNext()) {
@@ -248,12 +254,48 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 val clippedStart = maxOf(start, from)
                 val clippedEnd = minOf(end, until)
                 if (clippedEnd < clippedStart || end < from) continue
+                val transition = when {
+                    open -> "LAST_OBSERVED"
+                    text("close_reason") != "stopped" -> "CONTINUITY_LOST"
+                    text("end_kind") == "ROUTE_DISCONNECTED" -> "DISCONNECTED"
+                    text("end_kind") == "PLAYBACK_PAUSED" -> "PAUSED"
+                    text("end_kind") == "ROUTE_PLAYBACK" -> if (JSONObject(text("end_payload")!!).optBoolean("external")) "PAUSED" else "OUTPUT_CHANGED"
+                    else -> "STOPPED"
+                }
                 segments.add(mapOf("id" to text("interval_id"), "deviceId" to text("device_id"),
                     "attribution" to text("attribution"), "startUtcMs" to start, "endUtcMs" to end,
                     "clippedStartUtcMs" to clippedStart, "clippedEndUtcMs" to clippedEnd,
                     "durationMs" to (clippedEnd - clippedStart).coerceAtLeast(0), "open" to open, "live" to (liveDuration != null),
-                    "closeReason" to text("close_reason")))
+                    "closeReason" to text("close_reason"), "transition" to transition,
+                    "sessionEpoch" to text("session_epoch"), "sessionBoot" to text("session_boot"),
+                    "sessionAnchor" to if (cursor.isNull(cursor.getColumnIndexOrThrow("session_anchor"))) null else long("session_anchor"),
+                    "startSequence" to long("start_sequence"), "endSequence" to long("end_sequence")))
             }
+        }
+        val barriers = segments.filter { it["closeReason"] != null && it["closeReason"] != "stopped" }
+            .map { it["endSequence"] as Long }.toMutableSet()
+        if (segments.isNotEmpty()) {
+            db.rawQuery("""SELECT sequence FROM observations WHERE sequence BETWEEN ? AND ?
+                AND (kind = 'COLLECTION_GAP' OR payload_version <> 1) LIMIT 100001""",
+                arrayOf(segments.minOf { it["startSequence"] as Long }.toString(),
+                    segments.maxOf { it["endSequence"] as Long }.toString())).use { rows ->
+                var scanned = 0
+                while (rows.moveToNext()) {
+                    check(++scanned <= 100000) { "Session boundaries exceed work limit; select a shorter date range" }
+                    barriers.add(rows.getLong(0))
+                }
+            }
+        }
+        val sessions = ListeningSessions.group(segments, barriers.sorted())
+        val sessionSummaries = sessions.map { it.summary() }
+        val measuredSessions = sessionSummaries.filter { it["attribution"] == "CONFIRMED" && (it["durationMs"] as Long) > 0 }
+        val detail = sessionId?.let { id ->
+            val group = sessions.firstOrNull { it.id == id }
+                ?: error("Session changed or is outside this window; reopen the timeline")
+            val parts = group.segments.sortedBy { it["startSequence"] as Long }
+            group.summary() + mapOf("offset" to offset, "nextOffset" to minOf(offset + limit, parts.size),
+                "hasMore" to (offset + limit < parts.size),
+                "intervals" to parts.drop(offset).take(limit).map(ListeningSessions::publicInterval))
         }
         fun spans(attribution: String) = segments.filter { it["attribution"] == attribution }
             .map { (it["clippedStartUtcMs"] as Long) to (it["clippedEndUtcMs"] as Long) }
@@ -311,7 +353,13 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             "collectorHealth" to CollectorHealth.snapshot(root, healthTime),
             "deviceOffset" to deviceOffset, "nextDeviceOffset" to minOf(deviceOffset.toLong() + devices.size, deviceCount),
             "hasMoreDevices" to (deviceOffset.toLong() + devices.size < deviceCount),
-            "intervals" to segments.drop(offset).take(limit), "intervalCount" to segments.size,
+            "sessionContractVersion" to 1, "sessions" to sessionSummaries.drop(offset).take(limit),
+            "measuredSessionCount" to measuredSessions.size,
+            "longestSessionMs" to (measuredSessions.maxOfOrNull { it["durationMs"] as Long } ?: 0L),
+            "averageSessionMs" to if (measuredSessions.isEmpty()) 0L else measuredSessions.sumOf { it["durationMs"] as Long } / measuredSessions.size,
+            "sessionCount" to sessions.size, "nextSessionOffset" to minOf(offset + limit, sessions.size),
+            "hasMoreSessions" to (offset + limit < sessions.size), "sessionDetail" to detail,
+            "intervals" to segments.drop(offset).take(limit).map(ListeningSessions::publicInterval), "intervalCount" to segments.size,
             "openIntervalCount" to segments.count { it["open"] == true },
             "nextOffset" to minOf(offset + limit, segments.size), "hasMore" to (offset + limit < segments.size))
     }

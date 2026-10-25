@@ -218,10 +218,10 @@ class NativeObservationIngress(
     }
 
     fun readListening(from: Long, until: Long, zoneId: String, offset: Int, limit: Int,
-        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0, deviceId: String? = null) {
-        // A process clock is not a collector-liveness lease. The protected service has no durable
-        // destruction/health hook, so production reads never extend beyond durable evidence.
-        command({ ensureStarted().listeningSnapshot(from, until, zoneId, null, offset, limit, deviceOffset, now(), deviceId) + health() }, failure, success)
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0, deviceId: String? = null, sessionId: String? = null) {
+        // Inventory/activity health is not a route-specific lease. Production reads
+        // never extend listening beyond durable evidence.
+        command({ ensureStarted().listeningSnapshot(from, until, zoneId, null, offset, limit, deviceOffset, now(), deviceId, sessionId) + health() }, failure, success)
     }
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
@@ -383,10 +383,10 @@ object NativeJournalRuntime {
     }
 
     fun readListening(from: Long, until: Long, zoneId: String, offset: Int, limit: Int,
-        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0, deviceId: String? = null) {
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0, deviceId: String? = null, sessionId: String? = null) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized")
-        else target.readListening(from, until, zoneId, offset, limit, success, failure, deviceOffset, deviceId)
+        else target.readListening(from, until, zoneId, offset, limit, success, failure, deviceOffset, deviceId, sessionId)
     }
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {

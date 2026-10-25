@@ -227,7 +227,7 @@ class MainActivity : FlutterActivity() {
                     NativeJournalRuntime.readListening(from, until, zone, offset, limit,
                         { page -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(page) } } },
                         { message -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("PROJECTION_READ_FAILED", message, null) } } }, deviceOffset,
-                        call.argument<String>("deviceId"))
+                        call.argument<String>("deviceId"), call.argument<String>("sessionId"))
                 }
                 "readObservationJournal" -> {
                     val after = call.argument<Number>("after")?.toLong() ?: 0L

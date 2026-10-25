@@ -1,6 +1,23 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-25. Paths in this document are repository-relative.
+Latest Timeline continuation: query-contract-1 native overlap sessions, separate
+100-row contributor pages, pause/disconnect/output/gap evidence, full timestamps/
+UTC offsets and grouped longest/mean. No new writer, schema, confidence or
+collector edit. TIMELINE_SESSIONS.md records semantics and RED evidence.
+Full gates: 222 Flutter / 376 native (28 suites), no failures/errors/skips,
+analyzer clean, debug/release Kotlin/debug packaging pass; strict four-hook guard
+unchanged. Five Flutter/10 native executions added. Starting 09a816e revalidated.
+Counts: 38 IMPLEMENTED / 65 IN_PROGRESS / 15 NOT_STARTED / 1 BLOCKED_BY_PLATFORM
+=119 (31.9% software feature completion, not readiness). D1/D2/D3/E5/E6 complete;
+D5/D6/D11/H5 retain connection-only/identity/performance gates. Period totals
+remain the original global union; overlapping session cards must not be added.
+B02 and the prior unmeasured-open mean correction remain green.
+Next: full-app data controls, extending native-only archives to settings/goals/
+notifications and preserved legacy Drift, then all remaining exact matrix work.
+Output/physical G/telemetry, whole-app restore/deletion, privacy/performance and
+release gates remain open. No physical validation or release claim.
+
 Latest E12 checkpoint: strict snapshot/chart/interval validation, distinct empty/
 unverified/unknown/confirmed records, consistent missing-duration wording, lower-
 bound/incomplete notices and responsive interval/day details. Per-stream framework

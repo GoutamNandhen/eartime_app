@@ -43,6 +43,99 @@ class ListeningProjectionTest {
     private fun total() = snapshot()["confirmedMs"]
     @Suppress("UNCHECKED_CAST") private fun intervals() = snapshot()["intervals"] as List<Map<String, Any?>>
 
+    @Suppress("UNCHECKED_CAST")
+    @Test fun canonicalSessionsUnionOverlappingRoutesButPauseResumeStartsAnotherSession() = run {
+        journal.append(route(1000, route = "a")); journal.append(route(2000, route = "b", device = deviceB))
+        journal.append(route(5000, false, "a")); journal.append(route(6000, false, "b", deviceB))
+        journal.append(route(8000)); journal.append(route(9000, false))
+        val value = snapshot()
+        assertEquals(1, value["sessionContractVersion"])
+        val groups = value["sessions"] as List<Map<String, Any?>>
+        assertEquals(2, groups.size)
+        assertEquals(listOf(1000L, 5000L), groups.map { it["durationMs"] })
+        assertEquals(2, groups.last()["segmentCount"])
+        assertEquals(2, groups.last()["deviceCount"])
+        assertEquals(6000L, groups.sumOf { it["durationMs"] as Long })
+        assertEquals(6000L, value["confirmedMs"])
+        assertEquals(5000L, value["longestSessionMs"]); assertEquals(3000L, value["averageSessionMs"])
+        assertEquals(2, value["measuredSessionCount"])
+        val before = journal.readAfter(0)
+        journal.rebuildListeningProjection(); assertEquals(value, snapshot())
+        journal.close(); journal = ObservationJournal(context, name)
+        assertEquals(value, snapshot()); assertEquals(before, journal.readAfter(0))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test fun sessionsDoNotMergeTouchingObservationsAcrossExplicitGapOrClockRollback() = run {
+        journal.append(route(1000)); journal.append(route(5000, false))
+        journal.append(raw("COLLECTION_GAP", 5000))
+        journal.append(route(5000)); journal.append(route(7000, false))
+        journal.append(route(1000, elapsed = 8000)); journal.append(route(5000, false, elapsed = 12000))
+        val groups = snapshot()["sessions"] as List<Map<String, Any?>>
+        assertEquals(3, groups.size)
+        assertEquals(10000L, groups.sumOf { it["durationMs"] as Long })
+        assertEquals(6000L, total()) // Calendar union remains authoritative, even when clocks overlap.
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test fun unverifiedAndOpenUnknownSessionsCannotBecomeConfirmedOrAbsorbMeasuredSessions() = run {
+        journal.append(raw("PLAYBACK_STARTED", 1000)); journal.append(raw("PLAYBACK_PAUSED", 5000))
+        journal.append(route(1000)); journal.append(route(5000, false)); journal.append(route(8000))
+        val groups = snapshot()["sessions"] as List<Map<String, Any?>>
+        assertEquals(3, groups.size)
+        assertEquals(1, groups.count { it["attribution"] == "UNVERIFIED" })
+        assertEquals(1, groups.count { it["durationMs"] == 0L && it["incomplete"] == true })
+        assertEquals(4000L, total())
+        assertEquals(4000L, snapshot()["averageSessionMs"])
+        assertEquals(1, snapshot()["measuredSessionCount"])
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test fun sessionAndContributorPagingRemainBoundedScopedAndReplayable() = run {
+        repeat(105) { index -> journal.append(route(1000L + index, route = "r$index")) }
+        repeat(105) { index -> journal.append(route(10000L + index, false, "r$index")) }
+        repeat(104) { index ->
+            journal.append(route(20000L + index * 100, route = "later"))
+            journal.append(route(20050L + index * 100, false, "later"))
+        }
+        val page = journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceA)
+        val last = journal.listeningSnapshot(0, 100000, "UTC", offset = 100, deviceId = deviceA)
+        assertEquals(105, page["sessionCount"]); assertEquals(100, (page["sessions"] as List<*>).size)
+        assertEquals(5, (last["sessions"] as List<*>).size)
+        val group = (last["sessions"] as List<Map<String, Any?>>).last()
+        assertEquals(105, group["segmentCount"])
+        val id = group["id"] as String
+        fun detail(offset: Int) = journal.listeningSnapshot(0, 100000, "UTC", offset = offset,
+            deviceId = deviceA, sessionId = id)["sessionDetail"] as Map<String, Any?>
+        assertEquals(100, (detail(0)["intervals"] as List<*>).size)
+        assertEquals(5, (detail(100)["intervals"] as List<*>).size)
+        assertEquals(false, detail(100)["hasMore"])
+        assertEquals(9104L, detail(100)["durationMs"])
+        assertThrows(IllegalStateException::class.java) {
+            journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceB, sessionId = id)
+        }
+        val before = detail(100); journal.rebuildListeningProjection()
+        assertEquals(before, detail(100)); assertEquals(page["confirmedMs"], last["confirmedMs"])
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test fun sessionDetailsRetainDisconnectSpeakerAndUncertaintyRatherThanInventingBreaks() = run {
+        journal.append(route(1000)); journal.append(raw("ROUTE_DISCONNECTED", 3000,
+            payload = mapOf("routeId" to "r1", "physicalDeviceId" to deviceA), confidence = AttributionConfidence.CONFIRMED))
+        journal.append(route(4000)); journal.append(route(6000, external = false))
+        journal.append(route(7000)); journal.append(route(8000)); journal.append(raw("COLLECTION_GAP", 20000))
+        val value = snapshot()
+        val transitions = (value["intervals"] as List<Map<String, Any?>>).map { it["transition"] }
+        assertEquals(listOf("CONTINUITY_LOST", "OUTPUT_CHANGED", "DISCONNECTED"), transitions)
+        assertEquals(5000L, value["confirmedMs"])
+        val group = (value["sessions"] as List<Map<String, Any?>>).first()
+        assertEquals(true, group["incomplete"]); assertEquals(8000L, group["endUtcMs"])
+        val clipped = journal.listeningSnapshot(2000, 2500, "UTC")
+        val selected = (clipped["sessions"] as List<Map<String, Any?>>).single()
+        assertEquals(true, selected["clipped"]); assertEquals(500L, selected["durationMs"])
+        assertEquals(500L, clipped["confirmedMs"])
+    }
+
     @Test fun deviceDrilldownReusesCanonicalUnionAndExcludesOtherDevicesAndLegacyActivity() = run {
         journal.append(raw("PLAYBACK_STARTED", 500))
         journal.append(route(1000, route = "a", device = deviceA))
