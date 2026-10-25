@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/listening_projection.dart';
+import '../../data/listening_calendar.dart';
+export '../../data/listening_calendar.dart' show ListeningRange;
 import '../../providers/listening_projection_provider.dart';
 import '../../providers/listening_preferences_provider.dart';
 import '../devices/device_identity_screen.dart';
+import 'listening_dates_dialog.dart';
 
 enum ListeningView { home, timeline, analytics, devices, wellbeing }
 
-enum ListeningRange { today, week, month, year, custom }
+final listeningCalendarNowProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
 
 class ListeningWorkspace extends ConsumerStatefulWidget {
   const ListeningWorkspace({super.key, required this.view, this.deviceId});
@@ -24,26 +29,10 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
   int _deviceOffset = 0;
 
   ListeningWindow window() {
-    final now = DateTime.now();
-    final day = DateTime(now.year, now.month, now.day);
-    final until = DateTime(day.year, day.month, day.day + 1);
-    final from = switch (_range) {
-      ListeningRange.today => day,
-      ListeningRange.week => DateTime(
-        day.year,
-        day.month,
-        day.day - day.weekday + 1,
-      ),
-      ListeningRange.month => DateTime(day.year, day.month),
-      ListeningRange.year => DateTime(day.year),
-      ListeningRange.custom => _custom?.start ?? day,
-    };
-    final end = _range == ListeningRange.custom && _custom != null
-        ? DateTime(_custom!.end.year, _custom!.end.month, _custom!.end.day + 1)
-        : until;
-    return ListeningWindow(
-      from,
-      end,
+    return ListeningCalendar.window(
+      _range,
+      ref.read(listeningCalendarNowProvider)(),
+      custom: _custom,
       offset: _offset,
       deviceOffset: _deviceOffset,
       deviceId: widget.deviceId,
@@ -51,34 +40,30 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
   }
 
   Future<void> selectDates() async {
-    final now = DateTime.now();
-    final value = await showDateRangePicker(
+    final now = ref.read(listeningCalendarNowProvider)();
+    final value = await showDialog<DateTimeRange>(
       context: context,
-      firstDate: now.subtract(const Duration(days: 3650)),
-      lastDate: now,
-      initialDateRange: _custom,
+      builder: (_) => ListeningDatesDialog(
+        now: now,
+        initial: ListeningCalendar.pickerInitial(_custom, now),
+      ),
     );
     if (value == null || !mounted) return;
-    final calendarDays =
-        DateTime.utc(value.end.year, value.end.month, value.end.day)
-            .difference(
-              DateTime.utc(
-                value.start.year,
-                value.start.month,
-                value.start.day,
-              ),
-            )
-            .inDays;
-    if (calendarDays > 365) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Choose up to one year.')));
+    if (!ListeningCalendar.validCustom(value, now)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Choose at most 366 calendar days, ending no later than today.',
+          ),
+        ),
+      );
       return;
     }
     setState(() {
       _custom = value;
       _range = ListeningRange.custom;
       _offset = 0;
+      _deviceOffset = 0;
     });
   }
 
@@ -140,6 +125,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                         setState(() {
                           _range = value;
                           _offset = 0;
+                          _deviceOffset = 0;
                         });
                       }
                     },
@@ -157,6 +143,13 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                   icon: const Icon(Icons.refresh),
                 ),
               ],
+            ),
+          if (widget.view != ListeningView.devices)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
+              child: Text(
+                '${MaterialLocalizations.of(context).formatShortDate(query.from)} to ${MaterialLocalizations.of(context).formatShortDate(DateTime(query.until.year, query.until.month, query.until.day - 1))}',
+              ),
             ),
           data.when(
             loading: () => const Padding(

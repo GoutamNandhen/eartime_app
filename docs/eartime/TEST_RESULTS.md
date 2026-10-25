@@ -1,6 +1,13 @@
 # Automated Results
 
-Last verified implementation baseline: 2026-10-24.
+Last verified implementation baseline: 2026-10-25.
+
+D7/E1 adds 13 Flutter cases and four native API 28/35 executions. Calendar custom
+entry/preset controls, 100-row paging, device scope, cancellation/invalid/oversized
+input and backward-clock editor initialization pass at 1x/2x/3x. Actual stock
+date-header overflow fixed, assertions retained. SQLite day/week/month/year/custom
+union/buckets reconcile across leap day, overlap, reopen and replay with raw/cursor
+retention. Invalid queries cannot fall back to global history. CALENDAR_FILTERS.md.
 
 H28 adds 4 native API 28/35 permission/backup configuration executions and six
 Flutter cases. Original permission page overflowed 1084px at 2x and 3032px at 3x;
@@ -52,9 +59,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 173 passed, 0 failures |
+| Flutter full suite | 186 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 358 passed in 28 suites, 0 failures/errors/skips |
+| Android native suite | 362 passed in 28 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

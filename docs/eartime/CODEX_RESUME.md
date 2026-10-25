@@ -1,6 +1,24 @@
 # EarTime Resume Checkpoint
 
-Updated 2026-10-24. Paths in this document are repository-relative.
+Updated 2026-10-25. Paths in this document are repository-relative.
+Latest resumed D7/E1 checkpoint: preserved all five unfinished calendar files;
+credits-blocked formatting/tests completed. Shared local-calendar bounds and
+scrollable localized date entry fix reproduced stock-header overflow. Validation,
+cancel/rollback, paging/scope, old history, inclusive end and year labels tested.
+Full executed gates: 186 Flutter / 362 native in 28 suites, zero failures/errors/
+skips; analyzer clean; both Kotlin variants/debug APK/version/protected guard pass.
+Counts: 32 IMPLEMENTED / 71 IN_PROGRESS / 15 NOT_STARTED / 1 BLOCKED_BY_PLATFORM.
+13 Flutter/four native new cases. Source schema 3/projection 5, four prior service
+hooks unchanged. Prior 9df34d4003a3e9c79d1fdb3653ba4b2380c1e5e7 was pushed and
+remote-verified. Main remains 13ae6609d22cb2a0daf8890fca081fb97c93b36b.
+See CALENDAR_FILTERS.md. No physical/route/G/release claim. Next independent phase:
+E12 product-state consistency for empty, unverified-only, incomplete and failed
+history, then canonical grouped sessions and remaining exact matrix/data controls.
+Latest ignored debug APK SHA-256:
+`2B308D7D67E3AE097C3882AC19D21726436A883AF7586E02C1C9059EE5A62F5D`.
+
+## Privacy Checkpoint
+
 Latest H28 checkpoint: offline privacy/permission disclosures reachable before
 grant and from Settings. Two existing large-font overflows reproduced and fixed
 without clamping or startup ownership changes. Six Flutter/four native new cases.

@@ -6,6 +6,11 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Calendar filters share local-date window construction and localized validated
+entry; selected end days become exclusive next-midnight native bounds. Calendar
+clock injection is selection-only, not a duration reducer/lease. CALENDAR_FILTERS.md
+records tested UI/pagination/SQLite reconciliation and physical limitations.
+
 About reads installed PackageManager metadata only on explicit navigation via
 the bounded worker and owner-fenced channel. Tracked version/Gradle preBuild
 consistency and Git comparison gates are documented in VERSIONING.md; no

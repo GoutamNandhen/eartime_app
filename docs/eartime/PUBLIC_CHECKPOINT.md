@@ -7,6 +7,11 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+2026-10-25 D7/E1 gates: 186 Flutter / 362 native (28 suites), clean analyzer,
+both Kotlin variants/debug APK/version/protected guard pass. Calendar UI and native
+totals acceptance, raw/replay/cursor retention and 1x/2x/3x tests. Count 32/71/15/1.
+CALENDAR_FILTERS.md; no physical attribution/G/release claim or collector edit.
+
 H28 gates: 173 Flutter / 358 native (28 suites), analyzer/Kotlin/debug packaging/
 protected guard pass. Offline disclosures and 2x/3x startup overflow correction
 are tested; count 30/73/15/1. Full privacy audit/data deletion/backup remain open,

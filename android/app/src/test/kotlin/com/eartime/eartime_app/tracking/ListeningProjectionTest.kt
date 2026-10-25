@@ -118,6 +118,39 @@ class ListeningProjectionTest {
         assertEquals(0L, total()) // A global flag is not evidence of external listening.
     }
 
+    @Test fun calendarAndCustomQueriesReconcileClippedUnionAcrossLeapDayReopenAndReplay() = run {
+        fun day(month: Int, date: Int) = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+            clear(); set(2024, month - 1, date)
+        }.timeInMillis
+        val midnight = day(3, 1); val noon = midnight + 12 * 3600000L
+        journal.append(route(midnight - 1000)); journal.append(route(midnight + 1000, false))
+        journal.append(route(noon)); journal.append(route(noon + 3000, route = "other", device = deviceB))
+        journal.append(route(noon + 5000, false)); journal.append(route(noon + 6000, false, "other", deviceB))
+        val raw = journal.readAfter(0); journal.acknowledge("calendar-acceptance", 6)
+        val windows = listOf(Triple(day(2, 29), midnight, 1000L), Triple(midnight, day(3, 2), 7000L),
+            Triple(day(2, 26), day(3, 2), 8000L), Triple(day(1, 1), day(3, 2), 8000L),
+            Triple(day(2, 29), day(3, 2), 8000L))
+        fun verify() {
+            for ((from, until, expected) in windows) {
+                val value = journal.listeningSnapshot(from, until, "UTC")
+                assertEquals(expected, value["confirmedMs"])
+                assertEquals(expected, (value["days"] as List<*>).sumOf { (it as Map<*, *>)["confirmedMs"] as Long })
+                assertEquals(expected, (value["hourly"] as List<*>).sumOf { (it as Map<*, *>)["durationMs"] as Long })
+                assertEquals(value["confirmedMs"], journal.listeningSnapshot(from, until, "UTC", offset = 100)["confirmedMs"])
+            }
+        }
+        verify(); journal.close(); journal = ObservationJournal(context, name); verify()
+        journal.rebuildListeningProjection(); verify(); assertEquals(raw, journal.readAfter(0)); assertEquals(6L, journal.cursor("calendar-acceptance"))
+    }
+
+    @Test fun invalidCalendarQueryCannotMutateJournalOrFallBackToAllHistory() = run {
+        journal.append(route(1000)); journal.append(route(5000, false)); val before = journal.readAfter(0)
+        assertThrows(IllegalArgumentException::class.java) { journal.listeningSnapshot(10000, 5000, "UTC") }
+        assertThrows(IllegalArgumentException::class.java) { journal.listeningSnapshot(0, 400L * 86400000, "UTC") }
+        assertThrows(IllegalArgumentException::class.java) { journal.listeningSnapshot(0, 10000, "not-a-timezone") }
+        assertEquals(before, journal.readAfter(0)); assertEquals(4000L, total())
+    }
+
     @Test fun generatedReportUsesPersistedGoalAndCanonicalTotalsAfterReopenAndReplay() = run {
         ListeningPreferences(context).update(mapOf("dailyGoalMinutes" to 1))
         try {

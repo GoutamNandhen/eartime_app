@@ -4,9 +4,29 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: privacy disclosures/permission layout, 173 Flutter / 358 native
+Latest checkpoint: calendar filter/totals acceptance, 186 Flutter / 362 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## D7/E1 Calendar Filters And Totals
+
+2026-10-25 resumed from 9df34d4003a3e9c79d1fdb3653ba4b2380c1e5e7 and preserved
+all five interrupted files. The prior auto-review usage-limit rejection executed
+no formatting/test command; no permission bypass attempted. Credits restoration
+allowed those commands normally. Calendar/date work now passes all actual gates.
+Shared local-calendar bounds retain canonical native accounting. Inclusive custom
+dates, 366-day limits, 1970+ preserved history, cancellation, clock rollback and
+year-bearing labels work in the real UI. Both offsets reset defensively; device
+UUID remains scoped. Stock header overflow was actually reproduced at 360px;
+localized scrollable Flutter date fields replace it, without font clamping.
+13 Flutter new tests include 100-row pages and 1x/2x/3x controls. Four API 28/35
+native executions verify actual SQLite calendar union/buckets, overlap, invalid
+query refusal, reopen/replay/raw/cursor retention. Full gates: 186 Flutter / 362
+native in 28 suites, zero failures/errors/skips, clean analyzer, debug/release
+Kotlin and debug packaging. Version/diff/protected-four-hook checks pass.
+D7/E1 software-complete; count 32/71/15/1 = 119, no source/projection schema change,
+collector edit, physical G, real route or release claim. Next E12 product-state
+consistency, grouped sessions and remaining approved data/product/reliability work.
 
 ## H28 Disclosures And Permission Layout
 

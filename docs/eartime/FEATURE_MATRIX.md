@@ -1,15 +1,15 @@
 # Approved Feature Matrix
 
-Updated 2026-10-24. Each row is an implementation task, not a claim of completion.
+Updated 2026-10-25. Each row is an implementation task, not a claim of completion.
 `IN_PROGRESS` includes inherited partial behavior. `NOT_STARTED` means the
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **30 IMPLEMENTED, 73 IN_PROGRESS, 15 NOT_STARTED,
+Implementation count: **32 IMPLEMENTED, 71 IN_PROGRESS, 15 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -19,7 +19,7 @@ Executable evidence keys:
 - D: `flutter test --no-pub test/observation_journal_test.dart`.
 - J: `android/gradlew.bat :app:testDebugUnitTest --tests '*ObservationJournalTest' --tests '*NativeObservationIngressTest'` (run from `android` as `.\gradlew.bat`).
 - R: same Gradle task with `--tests '*TrackingContractTest' --tests '*BoundedIngressQueueTest'`.
-- P: `ListeningProjectionTest` (50 API 28/35 cases), including shared JSON fixture,
+- P: `ListeningProjectionTest` (62 API 28/35 cases), including shared JSON fixture,
   B02, atomic rollback, replay/rebuild, v1/v2 migrations, DST and aggregate parity.
 - U: `flutter test --no-pub test/listening_projection_test.dart` (20 cases).
 - C: `CollectorHealthTest` (20 API 28/35 cases) and `OutputAttributionTest`
@@ -68,6 +68,9 @@ Executable evidence keys:
 - O2: `PrivacyConfigurationTest` (4 API 28/35 executions) and six Flutter
   `privacy_permissions_test.dart` cases; offline disclosure navigation and
   original 2x/3x permission overflow RED-to-GREEN. PRIVACY_DISCLOSURES.md.
+- C2: `listening_calendar_test.dart` (13 Flutter cases), four further P native
+  executions; actual picker/form, pagination/scope and SQLite date-union/replay
+  acceptance at 1x/2x/3x. CALENDAR_FILTERS.md; no new duration reducer or timer.
 
 ## A: Core Listening
 
@@ -129,7 +132,7 @@ Executable evidence keys:
 | D4 | Pause/resume segments | IMPLEMENTED / AUTOMATED_PASS P/U; paused time excluded |
 | D5 | Connection/output transitions | IN_PROGRESS; connections only; route evidence OPEN |
 | D6 | Device details | IN_PROGRESS; Z persistent endpoint association/reset, names and device history UI; verified physical matching/telemetry OPEN |
-| D7 | Date filters | IN_PROGRESS; U native query windows/date picker; exhaustive picker interaction acceptance OPEN |
+| D7 | Date filters | IMPLEMENTED / AUTOMATED_PASS C2; shared calendar windows, localized scrollable date entry, inclusive bounds, validation/cancel/clock rollback, reset paging and retained device scope; physical clock acceptance pending |
 | D8 | Incomplete/uncertain labels | IMPLEMENTED / AUTOMATED_PASS P/U; gaps/lost continuity/unverified attribution visible |
 | D9 | Restart-correct durations | IMPLEMENTED / AUTOMATED_PASS P/J; close at last evidence, never bridge process gap; OS death pending |
 | D10 | Timeline/analytics reconciliation | IMPLEMENTED / AUTOMATED_PASS P/U; native shared clipping/union, no Flutter reducer |
@@ -139,7 +142,7 @@ Executable evidence keys:
 
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
-| E1 | Calendar/custom totals | IN_PROGRESS; P/U native day/week/month/year/custom windows; exhaustive UI acceptance OPEN |
+| E1 | Calendar/custom totals | IMPLEMENTED / AUTOMATED_PASS P/C2; actual day/week/month/year/custom control-to-query acceptance and canonical clipped union/bucket reconciliation across reopen/replay; physical date/timezone acceptance pending |
 | E2 | Connected/listening/idle comparison | NOT_STARTED; projection tests OPEN |
 | E3 | Daily/hourly trends | IN_PROGRESS; P native DST-aware buckets and U presentation; full chart acceptance OPEN |
 | E4 | Per-device comparisons | IN_PROGRESS; P per-device union totals; actual identity attribution OPEN |
@@ -189,7 +192,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 173 Flutter/358 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 186 Flutter/362 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
