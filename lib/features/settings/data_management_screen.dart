@@ -7,8 +7,13 @@ class DataManagementScreen extends StatefulWidget {
   const DataManagementScreen({
     super.key,
     this.client = const JournalTransferClient(),
+    this.runApplicationRestore,
   });
   final JournalTransferClient client;
+  final Future<Map<dynamic, dynamic>> Function(
+    Future<Map<dynamic, dynamic>> Function() operation,
+  )?
+  runApplicationRestore;
   @override
   State<DataManagementScreen> createState() => _DataManagementScreenState();
 }
@@ -48,6 +53,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   Future<void> transfer(String operation, {String? id}) async {
     if (_busy) return;
     final applicationExport = operation == 'exportApplicationData';
+    final applicationRestore = operation.startsWith('restoreApplication');
     final restore = !{
       'exportNativeJournal',
       'exportApplicationData',
@@ -57,15 +63,19 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       builder: (context) => AlertDialog(
         scrollable: true,
         title: Text(
-          applicationExport
+          applicationRestore
+              ? 'Replace application data?'
+              : applicationExport
               ? 'Export private application data?'
               : restore
               ? 'Replace native history?'
               : 'Export private observations?',
         ),
         content: Text(
-          applicationExport
-              ? 'This unencrypted export contains native observations and device associations, settings, names, goals, notification preferences, preserved legacy history and journal recovery metadata. Choose a private local destination. Android document providers may store files remotely. The file is integrity-checked, not password protected. Whole-app restore is not yet available; native-only restore does not accept this format.'
+          applicationRestore
+              ? 'This replaces native history, device associations, settings, names, goals, notification preferences and preserved legacy records with the selected application archive. Matching newer native observations are retained. A verified private recovery archive is saved first. Export a backup before continuing. Listening never continues across restore. Summary delivery attempts already made on this device are not repeated. Damaged or conflicting input is rejected. Recovery may require free storage and reopening the app.'
+              : applicationExport
+              ? 'This unencrypted export contains native observations and device associations, settings, names, goals, notification preferences, preserved legacy history and journal recovery metadata. Choose a private local destination. Android document providers may store files remotely. The file is integrity-checked, not password protected. Native-only restore does not accept this format.'
               : restore
               ? 'The selected archive will replace native observation history. A local recovery archive is retained first. Legacy history and preferences are not changed. Corrupt or conflicting archives are rejected. Restored open intervals do not continue across the restore.'
               : 'This unencrypted file contains observation timestamps, device identifiers and payloads. Choose a private local destination. It includes native observations only, not legacy history or preferences. It is not a full-app backup.',
@@ -77,7 +87,13 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(restore ? 'Replace history' : 'Choose destination'),
+            child: Text(
+              applicationRestore
+                  ? 'Replace application data'
+                  : restore
+                  ? 'Replace history'
+                  : 'Choose destination',
+            ),
           ),
         ],
       ),
@@ -88,15 +104,21 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       _status = null;
     });
     try {
-      final result = await widget.client.transfer(operation, recoveryId: id);
+      Future<Map<dynamic, dynamic>> perform() =>
+          widget.client.transfer(operation, recoveryId: id);
+      final result = applicationRestore && widget.runApplicationRestore != null
+          ? await widget.runApplicationRestore!(perform)
+          : await perform();
       if (mounted) {
         setState(
           () => _status = result['cancelled'] == true
               ? 'Transfer canceled.'
               : result['unchanged'] == true
               ? 'This history is already present. Nothing changed.'
+              : applicationRestore
+              ? 'Application data restored: ${result['count']} observations, ${result['legacyCount']} preserved legacy rows. A private recovery archive was retained.'
               : applicationExport
-              ? 'Application export saved: ${result['count']} observations, ${result['legacyCount']} preserved legacy rows. Whole-app restore is not yet available.'
+              ? 'Application export saved: ${result['count']} observations, ${result['legacyCount']} preserved legacy rows.'
               : restore
               ? '${result['count']} archived observations restored. A recovery archive was retained.'
               : '${result['count']} observations exported with an integrity checksum.',
@@ -139,7 +161,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Android will erase all EarTime private data: native and legacy history, device names and associations, settings, goals, notification preferences, diagnostics and private recovery archives. Collection and transfers will stop, permissions will be revoked and the app may close. The installed app and exported documents outside its private storage remain. This cannot be undone or canceled after the request is sent. Whole-app restore is not yet available.',
+                'Android will erase all EarTime private data: native and legacy history, device names and associations, settings, goals, notification preferences, diagnostics and private recovery archives. Collection and transfers will stop, permissions will be revoked and the app may close. The installed app and exported documents outside its private storage remain. This cannot be undone or canceled after the request is sent.',
               ),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
@@ -211,13 +233,19 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const Text(
-          'Application exports include settings and preserved history. Whole-app restore is not available yet.',
+          'Application archives contain private settings and preserved history. Keep backups in a private location.',
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.archive_outlined),
           title: const Text('Export application data'),
           onTap: _busy ? null : () => transfer('exportApplicationData'),
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.settings_backup_restore),
+          title: const Text('Restore application data'),
+          onTap: _busy ? null : () => transfer('restoreApplicationData'),
         ),
         const Divider(),
         const Text(
@@ -300,14 +328,18 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                 (raw as Map)['createdUtcMs'] as int,
               ).toLocal().toString(),
             ),
-            subtitle: Text('${raw['bytes']} bytes, native observations'),
+            subtitle: Text(
+              '${raw['bytes']} bytes, ${raw['scope'] == 'application_data' ? 'application data' : 'native observations'}',
+            ),
             trailing: IconButton(
               tooltip: 'Restore recovery archive',
               icon: const Icon(Icons.history),
               onPressed: _busy
                   ? null
                   : () => transfer(
-                      'restoreJournalRecovery',
+                      raw['scope'] == 'application_data'
+                          ? 'restoreApplicationRecovery'
+                          : 'restoreJournalRecovery',
                       id: raw['id'] as String,
                     ),
             ),

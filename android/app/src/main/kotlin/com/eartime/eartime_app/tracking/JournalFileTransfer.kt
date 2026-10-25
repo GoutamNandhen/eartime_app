@@ -22,32 +22,31 @@ class JournalFileTransfer(private val activity: Activity) : AutoCloseable {
     }
 
     fun select(mode: String, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
-        require(mode == "export" || mode == "exportApp" || mode == "restore")
+        require(mode in setOf("export", "exportApp", "restore", "restoreApp"))
         if (closed || pending != null) { failure("A journal transfer is already active"); return }
         val request = Request(mode, success, failure).also { pending = it }
         try {
-            activity.startActivityForResult(Intent(if (mode != "restore") Intent.ACTION_CREATE_DOCUMENT else Intent.ACTION_OPEN_DOCUMENT).apply {
+            activity.startActivityForResult(Intent(if (mode.startsWith("export")) Intent.ACTION_CREATE_DOCUMENT else Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "application/octet-stream"
-                if (mode != "restore") putExtra(Intent.EXTRA_TITLE, if (mode == "exportApp") "EarTime-application.eartimeapp" else "EarTime-history.eartime")
+                if (mode.startsWith("export")) putExtra(Intent.EXTRA_TITLE, if (mode == "exportApp") "EarTime-application.eartimeapp" else "EarTime-history.eartime")
             }, REQUEST_CODE)
         } catch (_: Exception) { finish(request, null, "Document picker unavailable") }
     }
 
-    fun restoreRecovery(id: String, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+    fun restoreRecovery(id: String, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, application: Boolean = false) {
         if (closed || pending != null) { failure("A journal transfer is already active"); return }
         require(UUID.fromString(id).toString() == id)
-        val request = Request("restore", success, failure).also { it.selectionHandled = true; pending = it }
+        val request = Request(if (application) "restoreApp" else "restore", success, failure).also { it.selectionHandled = true; pending = it }
         executor.execute {
             try {
-                val directory = File(activity.filesDir, "journal_recovery").canonicalFile
-                val file = File(directory, "$id.eartime").canonicalFile
-                require(file.parentFile == directory && file.isFile) { "Recovery archive unavailable" }
-                file.inputStream().use { JournalArchive.read(it, request.cancelled::get) }
+                val file = ApplicationRecoveryCatalog.file(activity,
+                    if (application) "application_data" else "native_observations_only", id)
+                file.inputStream().use { if (application) ApplicationArchive.read(it, request.cancelled::get) else JournalArchive.read(it, request.cancelled::get) }
                 finish(request, restore(file, request), null)
             } catch (error: Exception) { finish(request,
-                if (request.cancelled.get()) mapOf("cancelled" to true) else null,
-                if (request.cancelled.get()) null else failureMessage(error)) }
+                if (cancellation(request, error)) mapOf("cancelled" to true) else null,
+                if (cancellation(request, error)) null else failureMessage(error)) }
         }
     }
 
@@ -96,29 +95,35 @@ class JournalFileTransfer(private val activity: Activity) : AutoCloseable {
                             val count = input.read(buffer)
                             if (count < 0) break
                             bytes += count
-                            require(bytes <= JournalArchive.MAX_BYTES) { "Archive exceeds size limit" }
+                            require(bytes <= if (request.mode == "restoreApp") ApplicationArchive.MAX_BYTES else JournalArchive.MAX_BYTES) { "Archive exceeds size limit" }
                             output.write(buffer, 0, count)
                         }
                     } }
-                    file.inputStream().use { JournalArchive.read(it, request.cancelled::get) }
+                    file.inputStream().use { if (request.mode == "restoreApp") ApplicationArchive.read(it, request.cancelled::get) else JournalArchive.read(it, request.cancelled::get) }
                     restore(file, request)
                 }
                 finish(request, result, null)
             } catch (error: Exception) {
-                finish(request, if (request.cancelled.get()) mapOf("cancelled" to true) else null,
-                    if (request.cancelled.get()) null else failureMessage(error))
+                finish(request, if (cancellation(request, error)) mapOf("cancelled" to true) else null,
+                    if (cancellation(request, error)) null else failureMessage(error))
             } finally { staged?.delete() }
         }
         return true
     }
 
     private fun restore(file: File, request: Request): Map<String, Any?> = await { ok, fail ->
-        NativeJournalRuntime.restoreArchive(file, request.cancelled::get, ok, fail)
+        if (request.mode == "restoreApp") NativeJournalRuntime.restoreApplication(file, request.cancelled::get, ok, fail)
+        else NativeJournalRuntime.restoreArchive(file, request.cancelled::get, ok, fail)
     }
+
+    private fun cancellation(request: Request, error: Exception): Boolean = request.cancelled.get() &&
+        generateSequence<Throwable>(error) { it.cause }.take(8).none { it is ApplicationRecoveryRequired || it.message?.contains("ApplicationRecoveryRequired") == true }
 
     private fun failureMessage(error: Exception): String {
         val messages = generateSequence<Throwable>(error) { it.cause }.take(8).mapNotNull { it.message }.toList()
         return when {
+            messages.any { it.contains("ApplicationRecoveryRequired") || it.contains("Application recovery required") } ->
+                "Application recovery is required. Prior data and the private recovery archive are retained. Do not delete app data. Retry recovery after checking available storage."
             messages.any { it.contains("Application archive limit") || it.contains("Application metadata exceeds") || it.contains("Application record exceeds") } ->
                 "Application export limit exceeded (256 MiB total, 128 MiB per component, 200000 rows per history). Source data was not changed."
             messages.any { it.contains("preserved legacy") || it.contains("Unrecognized legacy") || it.contains("Preserved legacy corruption") } ->

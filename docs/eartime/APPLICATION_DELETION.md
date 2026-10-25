@@ -12,7 +12,9 @@ Delete permanently becomes available. Cancel/back before submission sends no
 command. The dialog names native/legacy history, names/associations, preferences,
 goals, notification settings, diagnostics and private recovery archives. It warns
 that collection/transfers stop, permissions are revoked, the app may close and
-there is no undo/cancel after sending. Whole-app restore remains unavailable.
+there is no undo/cancel after sending. Subsequent application archive restore is
+documented in APPLICATION_RESTORE_CONTRACT.md; it cannot recover data without a
+previously exported external archive after Android removes private recovery copies.
 
 The scoped method requires confirmation in both Dart and native code and accepts
 only `all_app_private_data`. Existing engine/navigation ownership is checked at

@@ -5,14 +5,22 @@ Updated 2026-10-25. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **40 IMPLEMENTED, 64 IN_PROGRESS, 14 NOT_STARTED,
+Implementation count: **42 IMPLEMENTED, 62 IN_PROGRESS, 14 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: H19/H17, D1/D2/D3/E5/E6, E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: H14/H18, H19/H17, D1/D2/D3/E5/E6, E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
+
+- X4: ApplicationRestoreCoordinatorTest (20 API 28/35 executions), eight added
+  archive staging/preferences executions, two real helper/provider restore executions,
+  eight TEST-ONLY ATTACH research executions, seven Flutter restore/access cases.
+  Actual native commit-last/compensation/restart, WAL flags, fault/cursor handling,
+  duplicate/cancel, typed settings, Drift gate/provider invalidation and 1x/3x
+  destructive consent. Windows directory syscalls are explicitly modeled with
+  failure injection, not physical fsync proof. APPLICATION_RESTORE_CONTRACT.md.
 
 - S: `flutter test --no-pub test/phase2cb1_rapid_reopen_test.dart test/phase2cb_startup_test.dart`.
 - L: `flutter test --no-pub test/phase2_device_scope_test.dart test/phase2b_stale_attribution_test.dart`.
@@ -230,11 +238,11 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | H11 | Android widgets | IN_PROGRESS; W multi-device dark two-column native provider; unknown battery honest; physical launcher/freshness pending |
 | H12 | Foreground notification/controls | IN_PROGRESS; inherited notification; control/status tests OPEN |
 | H13 | Goals/reminders/preferences | IN_PROGRESS; Q/M native goals/themes/names, summary categories/time and quiet hours; live-dependent F2/F3 OPEN |
-| H14 | Data-management settings | IN_PROGRESS; X/X2/X3 application-state export, explicit full deletion and native-only confirmed restore/recovery UI; whole-app restore OPEN |
+| H14 | Data-management settings | IMPLEMENTED / AUTOMATED_PASS X/X2/X3/X4; integrated consent-bound native/application export, restore, scoped recovery catalog and explicit Android-managed deletion; legacy access serialized through native recovery barrier, operation-owned invalidation; physical provider/storage/erasure acceptance PHYSICAL_PENDING |
 | H15 | Local-first privacy | IN_PROGRESS; OS cloud/transfer backup excluded; O automatic BLE and vendor writes removed, explicit ephemeral consent; protected collector logs/full privacy audit OPEN |
 | H16 | Offline functionality | IN_PROGRESS; native/local queries and system fonts; full offline acceptance OPEN |
-| H17 | Export | IMPLEMENTED / AUTOMATED_PASS X/X2; integrated versioned application-state export includes native/identity rows, typed preferences/notification state, legacy history and cursor/conflict metadata with bounded integrity validation, consent/cancel and actual synthetic document-provider path; caches/logs/older recovery copies excluded, whole-app restore H18 still OPEN; PHYSICAL_PENDING |
-| H18 | Backup/restore | IN_PROGRESS; X explicit transactional native restore, synced recovery, idempotence/conflict/crash/cancel/reopen and 1500-session tests; full legacy/preferences backup OPEN |
+| H17 | Export | IMPLEMENTED / AUTOMATED_PASS X/X2; integrated versioned application-state export includes native/identity rows, typed preferences/notification state, legacy history and cursor/conflict metadata with bounded integrity validation, consent/cancel and actual synthetic document-provider path; caches/logs/older recovery copies excluded; PHYSICAL_PENDING |
+| H18 | Backup/restore | IMPLEMENTED / AUTOMATED_PASS X/X2/X4; native plus legacy/typed-preference restore uses verified private recovery, bounded durable intent and final native commit marker with restart compensation before publication; source-prefix/conflict/duplicate/cancel policy, WAL preservation, diagnostic fault union and no imported cursor skipping; cooperative provider cancellation only, physical OS/power-loss durability PHYSICAL_PENDING |
 | H19 | User deletion | IMPLEMENTED / AUTOMATED_PASS X3; explicit checkbox/dialog and native scope/owner fences invoke Android's public self-data clear on the serialized worker; accepted requests are not completion receipts, no reversible/forensic-wipe claim; actual OS erasure/termination PHYSICAL_PENDING |
 | H20 | Accessibility | IN_PROGRESS; D large-text test; all-screen semantics OPEN |
 | H21 | Localization readiness | NOT_STARTED; string extraction/locale tests OPEN |

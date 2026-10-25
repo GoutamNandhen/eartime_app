@@ -30,11 +30,11 @@ class PrivacyScreen extends StatelessWidget {
     ),
     (
       'Export and restore limits',
-      'Application exports include native observations and device associations, settings, goals, notification preferences, preserved legacy history and journal recovery metadata. They are unencrypted and integrity-checked, not password protected. Whole-app restore is not yet available. The separate native-only archive excludes settings and legacy history; confirmed native restore retains a private recovery copy and does not accept application exports. Archives can contain private device identifiers and usage habits, so their destination and sharing require care.',
+      'Application archives include native observations and device associations, settings, goals, notification preferences, preserved legacy history and journal recovery metadata. They are unencrypted and integrity-checked, not password protected. Explicit application restore replaces those records after retaining a verified private recovery archive; matching newer native observations are retained. Listening never continues across restore, and delivery attempts already made on this device are not repeated. The separate native-only format excludes settings and legacy history. Recovery can require free storage and reopening the app. Archives can contain private device identifiers and usage habits, so their destination and sharing require care.',
     ),
     (
       'Retention and deletion',
-      'EarTime does not automatically delete uncertain legacy records. Local data settings offer explicitly confirmed Android-managed deletion of all app-private data, including native and legacy history, preferences and private recovery archives. Deletion cannot be undone after its request; Android may close the app and revokes runtime permissions. An accepted request is not a completion receipt. Exported documents outside private app storage remain. Whole-app restore is not yet available. Android cloud-backup and device-transfer exclusions are configured; no automatic recovery is promised.',
+      'EarTime does not automatically delete uncertain legacy records. Local data settings offer explicitly confirmed Android-managed deletion of all app-private data, including native and legacy history, preferences and private recovery archives. Deletion cannot be undone after its request; Android may close the app and revokes runtime permissions. An accepted request is not a completion receipt. Exported documents outside private app storage remain. Export a private application archive before deleting data if you intend to restore it later. Android cloud-backup and device-transfer exclusions are configured; no automatic recovery is promised.',
     ),
     (
       'Diagnostic logs',

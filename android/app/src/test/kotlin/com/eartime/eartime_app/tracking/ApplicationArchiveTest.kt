@@ -151,6 +151,73 @@ class ApplicationArchiveTest {
         assertThrows(IllegalArgumentException::class.java) { ApplicationArchive.read(ByteArrayInputStream(bytes.toByteArray())) }
         Unit
     }
+    @Test fun validatedStagingRetainsExactComponentBytesAndOwnsOnlyItsGeneratedFiles() = run {
+        journal.append(input()); val archive = export(); val before = journal.readAfter(0)
+        val sibling = File(context.cacheDir, "synthetic-existing-evidence").apply { writeText("synthetic") }.also { files.add(it) }
+        val expected = parts(archive)
+        val componentFiles = mutableListOf<File>()
+        ApplicationArchive.stage(context, archive).use { staged ->
+            assertEquals(1L, staged.summary.observations)
+            for ((name, bytes) in expected) {
+                val file = staged.component(name); componentFiles.add(file); assertArrayEquals(bytes, file.readBytes())
+            }
+            assertThrows(IllegalArgumentException::class.java) { staged.component("../synthetic-existing-evidence") }
+            staged.verify()
+            staged.component("legacy.jsonl").appendText("synthetic mutation")
+            assertThrows(IllegalArgumentException::class.java) { staged.verify() }
+        }
+        assertTrue(componentFiles.none { it.exists() }); assertTrue(sibling.exists())
+        assertEquals(before, journal.readAfter(0))
+    }
+    @Test fun lateCorruptionOrCancellationCannotExposeAnUnverifiedStagedArchive() = run {
+        val archive = export(); val before = archive.readBytes()
+        val damaged = file().apply { writeBytes(before.copyOf().also { it[it.lastIndex] = (it.last().toInt() xor 1).toByte() }) }
+        assertThrows(IllegalArgumentException::class.java) { ApplicationArchive.stage(context, damaged) }
+        var checks = 0
+        assertThrows(ArchiveCancelled::class.java) { ApplicationArchive.stage(context, archive) { ++checks > 3 } }
+        assertFalse(context.cacheDir.listFiles()!!.any { it.name.startsWith("application-restore-") })
+        assertArrayEquals(before, archive.readBytes())
+    }
+    @Test fun typedPreferencesRestorePreservesTypesAndRejectsInvalidActiveSettingsBeforeMutation() = run {
+        val prefs = context.getSharedPreferences("eartime_preferences_v1", 0)
+        prefs.edit().putString("themeMode", "dark").putInt("dailyGoalMinutes", 45)
+            .putLong("synthetic_long", 1L).putFloat("synthetic_float", 0.5f)
+            .putStringSet("synthetic_set", setOf("a", "b")).commit()
+        val expected = prefs.all
+        ApplicationArchive.stage(context, export()).use { stage ->
+            val restored = ApplicationRestorePreferences.read(stage.component("preferences.json"), true)
+            prefs.edit().clear().putString("themeMode", "light").commit()
+            restored.apply(context); assertEquals(expected, prefs.all)
+        }
+        prefs.edit().putInt("dailyGoalMinutes", -1).commit()
+        val invalid = export()
+        prefs.edit().putInt("dailyGoalMinutes", 15).commit()
+        val before = prefs.all
+        ApplicationArchive.stage(context, invalid).use { stage ->
+            assertThrows(IllegalArgumentException::class.java) { ApplicationRestorePreferences.read(stage.component("preferences.json"), true) }
+        }
+        assertEquals(before, prefs.all)
+    }
+    @Test fun independentPreferenceCommitsProveWhyDurableRecoveryMustPrecedeMutation() = run {
+        val prefs = context.getSharedPreferences("eartime_preferences_v1", 0)
+        val receipts = context.getSharedPreferences("eartime_summary_delivery_v1", 0)
+        prefs.edit().putString("themeMode", "dark").commit(); receipts.edit().putLong("last_day_daily", 100).commit()
+        val incoming = export()
+        prefs.edit().putString("themeMode", "light").commit(); receipts.edit().putLong("last_day_daily", 200).commit()
+        val oldPrefs = prefs.all; val oldReceipts = receipts.all
+        val recovery = export()
+        ApplicationArchive.stage(context, incoming).use { stage ->
+            val values = ApplicationRestorePreferences.read(stage.component("preferences.json"), true)
+            assertThrows(IllegalStateException::class.java) { values.apply(context) { name ->
+                if (name == "eartime_summary_delivery_v1") error("synthetic second-store failure")
+            } }
+        }
+        assertEquals("dark", prefs.getString("themeMode", null)); assertEquals(200L, receipts.getLong("last_day_daily", 0))
+        ApplicationArchive.stage(context, recovery).use { stage ->
+            ApplicationRestorePreferences.read(stage.component("preferences.json"), false).apply(context)
+        }
+        assertEquals(oldPrefs, prefs.all); assertEquals(oldReceipts, receipts.all)
+    }
     @Test fun exportRunsThroughTheActualSerializedNativeIngressOwner() {
         val database = "own-${UUID.randomUUID().toString().take(6)}.db"
         val ingress = NativeObservationIngress(context, {}, {}, database)

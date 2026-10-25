@@ -2,6 +2,23 @@
 
 Last verified implementation baseline: 2026-10-25.
 
+Application restore: 236 Flutter / 458 native in 32 suites, zero failures/errors/
+skips. Analyzer clean, debug/release Kotlin/debug APK pass; strict four-hook guard,
+version gate and 17 version self-tests pass. Seven Flutter/38 native executions
+added since b149a6b. The native additions include eight ATTACH research cases,
+not production ATTACH restore. Production recovery commits native LAST after
+legacy/preferences, resolves prepared intent before reads and preserves WAL.
+Actual Drift/provider locking/invalidation, helper/runtime/content-provider restore,
+restart before/after commit, mixed-store rollback, duplicate/conflict, receipt/cursor
+policy and fsync refusal pass. Nullable legacy conversion and read-write WAL flags
+had real failing tests before correction. An unsupported O_DIRECTORY constant was
+replaced with public read-only directory open. Windows ShadowLinux EIO and shared-
+sandbox shadow switching were resolved with one consistent test-only directory
+syscall model; all original assertions/tests remain. These models do NOT establish
+real Android fsync, physical process death, G or provider cancellation timing.
+APPLICATION_RESTORE_CONTRACT.md records exact limits. H14/H18 software complete;
+42 IMPLEMENTED / 62 IN_PROGRESS / 14 NOT_STARTED / 1 BLOCKED_BY_PLATFORM =119.
+
 Explicit deletion: 229 Flutter / 420 native in 30 suites, no failures/errors/skips,
 analyzer clean, debug/release Kotlin/debug APK and strict four-hook/version guards
 pass. Four Flutter/19 native API 24/28/35 executions cover consent/cancel, real

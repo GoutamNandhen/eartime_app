@@ -22,8 +22,8 @@ internal object ApplicationArchive {
     private const val MAX_COMPONENT = 128L * 1024 * 1024
     private val magic = "EARTIME_APPLICATION_ARCHIVE_1\n".toByteArray(Charsets.US_ASCII)
     private val names = listOf("manifest.json", "native.jsonl", "preferences.json", "legacy.jsonl", "journal_state.jsonl")
-    private val stores = listOf("eartime_preferences_v1", "eartime_summary_delivery_v1")
-    private val legacyColumns = listOf("id", "canonical_device_id", "device_name", "connection_type", "event_type", "playback_state", "timestamp")
+    internal val stores = listOf("eartime_preferences_v1", "eartime_summary_delivery_v1")
+    internal val legacyColumns = listOf("id", "canonical_device_id", "device_name", "connection_type", "event_type", "playback_state", "timestamp")
     private fun digest() = MessageDigest.getInstance("SHA-256")
     private fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it) }
     private fun integer(value: JSONObject, key: String): Long {
@@ -157,7 +157,41 @@ internal object ApplicationArchive {
         finally { files.values.forEach { it.delete() }; directory.delete() }
     }
 
-    fun read(input: InputStream, cancelled: () -> Boolean = { false }): ApplicationArchiveSummary {
+    class Staged internal constructor(private val directory: File, val summary: ApplicationArchiveSummary,
+        private val checksums: Map<String, ByteArray>) : AutoCloseable {
+        fun component(name: String): File { require(name in names); return File(directory, name) }
+        fun verify(cancelled: () -> Boolean = { false }) {
+            names.forEach { name ->
+                val sha = digest()
+                component(name).inputStream().use { input ->
+                    val buffer = ByteArray(16384)
+                    var bytes = 0L
+                    while (true) { if (cancelled()) throw ArchiveCancelled(); val count = input.read(buffer); if (count < 0) break
+                        bytes += count; require(bytes <= MAX_COMPONENT); sha.update(buffer, 0, count) }
+                }
+                require(MessageDigest.isEqual(checksums.getValue(name), sha.digest())) { "Staged application component changed" }
+            }
+        }
+        override fun close() { names.forEach { File(directory, it).delete() }; directory.delete() }
+    }
+
+    fun stage(context: Context, archive: File, cancelled: () -> Boolean = { false }): Staged {
+        val directory = File(context.cacheDir, "application-restore-${UUID.randomUUID()}")
+        check(directory.mkdir())
+        try {
+            val checksums = mutableMapOf<String, ByteArray>()
+            val summary = archive.inputStream().use { readComponents(it, cancelled, directory, checksums) }
+            return Staged(directory, summary, checksums.toMap())
+        } catch (error: Throwable) {
+            names.forEach { File(directory, it).delete() }; directory.delete()
+            throw error
+        }
+    }
+
+    fun read(input: InputStream, cancelled: () -> Boolean = { false }): ApplicationArchiveSummary =
+        readComponents(input, cancelled, null)
+
+    private fun readComponents(input: InputStream, cancelled: () -> Boolean, directory: File?, checksums: MutableMap<String, ByteArray>? = null): ApplicationArchiveSummary {
         val checksum = digest()
         val hashed = DigestInputStream(input, checksum)
         val stream = DataInputStream(hashed)
@@ -175,9 +209,17 @@ internal object ApplicationArchive {
             bytes += 2 + name.length + 8 + 32 + length
             require(length in 1..MAX_COMPONENT && bytes + 32 <= MAX_BYTES) { "Application archive limit exceeded" }
             val expected = ByteArray(32); stream.readFully(expected)
+            checksums?.put(name, expected.copyOf())
             val part = PartInput(stream, length)
             val partHash = digest()
-            val content = DigestInputStream(part, partHash)
+            val hashedPart = DigestInputStream(part, partHash)
+            val sink = directory?.let { FileOutputStream(File(it, name)) }
+            val content = if (sink == null) hashedPart else object : InputStream() {
+                override fun read(): Int = hashedPart.read().also { if (it >= 0) sink.write(it) }
+                override fun read(buffer: ByteArray, offset: Int, length: Int): Int =
+                    hashedPart.read(buffer, offset, length).also { if (it > 0) sink.write(buffer, offset, it) }
+            }
+            try {
             when (name) {
                 "manifest.json" -> {
                     require(length <= 4096)
@@ -264,6 +306,8 @@ internal object ApplicationArchive {
                 }
             }
             require(part.remaining == 0L && MessageDigest.isEqual(expected, partHash.digest())) { "Application component integrity failure" }
+            sink?.fd?.sync()
+            } finally { sink?.close() }
         }
         val hash = checksum.digest()
         hashed.on(false)

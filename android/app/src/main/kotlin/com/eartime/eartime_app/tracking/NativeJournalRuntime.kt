@@ -47,6 +47,10 @@ class NativeObservationIngress(
 
     private fun ensureStarted(): ObservationJournal {
         val store = journal ?: ObservationJournal(context, databaseName).also { journal = it }
+        if (ApplicationRestoreCoordinator(context, store).recover()) {
+            started = false
+            restoreFenceElapsed = SystemClock.elapsedRealtime()
+        }
         if (!started) {
             bootId = if (Build.VERSION.SDK_INT >= 24) try {
                 Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT)
@@ -226,7 +230,7 @@ class NativeObservationIngress(
     }
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
-        command({ ListeningPreferences(context).let {
+        command({ ensureStarted(); ListeningPreferences(context).let {
             (if (values == null) it.snapshot() else it.update(values).also {
                 com.eartime.eartime_app.widgets.ListeningWidgets.observationCommitted(context)
             }).also { WellbeingSummaries.refresh(context) }
@@ -234,7 +238,7 @@ class NativeObservationIngress(
     }
 
     internal fun refreshWellbeing(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
-        command({ WellbeingSummaries.refresh(context) }, failure, success)
+        command({ ensureStarted(); WellbeingSummaries.refresh(context) }, failure, success)
     }
 
     internal fun buildInformation(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
@@ -246,7 +250,7 @@ class NativeObservationIngress(
     }
 
     internal fun wellbeingFailure(reason: String) {
-        command({ WellbeingSummaries.failure(context, reason) }, {})
+        command({ ensureStarted(); WellbeingSummaries.failure(context, reason) }, {})
     }
 
     internal fun archivePage(after: Long, success: (List<JournalObservation>) -> Unit, failure: (String) -> Unit) {
@@ -256,6 +260,34 @@ class NativeObservationIngress(
     internal fun exportApplication(file: java.io.File, cancelled: () -> Boolean,
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         command({ ensureStarted().writeApplicationArchive(file, cancelled) }, failure, success)
+    }
+
+    internal fun restoreApplication(file: java.io.File, cancelled: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({
+            val store = ensureStarted()
+            try {
+                ApplicationRestoreCoordinator(context, store).restore(file, now(), processGeneration, cancelled).also { result ->
+                    if (result["unchanged"] == false) {
+                        restoreFenceElapsed = SystemClock.elapsedRealtime()
+                        store.lastObservation()?.let { committed ->
+                            try { publish(mapOf("type" to "COLLECTION_GAP", "timestamp" to committed.input.time.wallUtcMs,
+                                "journal" to committed.metadata())) }
+                            catch (_: Exception) { report("Application restored; refresh delivery failed") }
+                        }
+                        try {
+                            com.eartime.eartime_app.widgets.ListeningWidgets.observationCommitted(context)
+                            WellbeingSummaries.refresh(context)
+                        } catch (_: Exception) { report("Application restored; ancillary refresh unavailable") }
+                    }
+                }
+            } catch (error: Exception) {
+                // Even a compensated restore interrupted collection. The next read/append must close the gap.
+                started = false
+                restoreFenceElapsed = SystemClock.elapsedRealtime()
+                throw error
+            }
+        }, failure, success)
     }
 
     internal fun deleteApplicationData(confirmed: Boolean, scope: String, ownerActive: () -> Boolean,
@@ -291,7 +323,11 @@ class NativeObservationIngress(
     }
 
     internal fun recoveryArchives(offset: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
-        command({ ensureStarted().recoveryArchives(offset) }, failure, success)
+        command({ ApplicationRecoveryCatalog.page(context, offset) }, failure, success)
+    }
+
+    internal fun dataReady(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({ ensureStarted(); mapOf("ready" to true) }, failure, success)
     }
 
     internal fun restoreArchive(file: java.io.File, cancelled: () -> Boolean,
@@ -471,5 +507,16 @@ object NativeJournalRuntime {
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized") else target.restoreArchive(file, cancelled, success, failure)
+    }
+
+    internal fun restoreApplication(file: java.io.File, cancelled: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.restoreApplication(file, cancelled, success, failure)
+    }
+
+    internal fun dataReady(success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.dataReady(success, failure)
     }
 }

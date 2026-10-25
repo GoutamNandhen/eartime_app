@@ -3,20 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show OrderingTerm, OrderingMode;
 import '../../providers/data_providers.dart';
 import '../../data/database/database.dart';
+import '../../data/application_data_access.dart';
 
 final legacyHistoryPageProvider = FutureProvider.autoDispose
     .family<List<EarTimeEventEntity>, int>((ref, offset) {
       final db = ref.watch(databaseProvider);
-      return (db.select(db.earTimeEvents)
-            ..orderBy([
-              (row) => OrderingTerm(
-                expression: row.timestamp,
-                mode: OrderingMode.desc,
-              ),
-              (row) => OrderingTerm(expression: row.id),
-            ])
-            ..limit(100, offset: offset))
-          .get();
+      return applicationDataAccess.run(
+        () =>
+            (db.select(db.earTimeEvents)
+                  ..orderBy([
+                    (row) => OrderingTerm(
+                      expression: row.timestamp,
+                      mode: OrderingMode.desc,
+                    ),
+                    (row) => OrderingTerm(expression: row.id),
+                  ])
+                  ..limit(100, offset: offset))
+                .get(),
+      );
     });
 
 class LegacyHistoryScreen extends ConsumerStatefulWidget {

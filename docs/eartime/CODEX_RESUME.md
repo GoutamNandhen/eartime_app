@@ -1,6 +1,33 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-25. Paths in this document are repository-relative.
+Latest application-restore continuation after remote-verified
+b149a6b37fcc0d58ac5821da5d4a54d2ba3ebfb1: H14/H18 now have integrated application
+document restore, native/application recovery catalog, explicit destructive consent,
+existing-Drift schema preparation and serialized legacy reads/provider invalidation.
+ApplicationRestoreCoordinator commits native LAST after legacy/typed-preference
+commits; a synced bounded intent and verified prior application archive permit
+startup/worker compensation before publication. No ATTACH/WAL cross-file atomicity
+assumption, database-file replacement, source migration or collector edit.
+Matching native prefixes retain newer source, fault evidence is preserved, imported
+cursors never skip local replay, summary attempt high-water cannot regress, and
+imported delivery results never establish local delivery. Real OS sync failures
+refuse mutation. TEST-ONLY ATTACH research and Windows directory syscall model are
+explicitly not production or physical durability proof. Nullable legacy JSON and
+WAL-open flag regressions were reproduced and corrected; full-run-only Linux-shadow
+cast failure fixed by consistent test configuration without weakening assertions.
+Full actual gates: 236 Flutter / 458 native in 32 suites, zero failures/errors/
+skips; analyzer clean, both Kotlin variants/debug APK pass. Strict four-hook guard,
+version gate and 17 version self-tests pass. Counts: 42 IMPLEMENTED / 62 IN_PROGRESS
+/ 14 NOT_STARTED / 1 BLOCKED_BY_PLATFORM =119 (35.3%, NOT release readiness).
+APPLICATION_RESTORE_CONTRACT.md records commit/recovery protocol and limitations.
+Next: public-safe commit/push/remote verification, then immediately continue remaining
+analytics/observed breaks/state partitions/product scope. No consolidated hardware
+testing request or all-feature completion claim is justified. Preserve all119 IDs.
+Ignored debug APK 1.1.0-dev.1+2 SHA-256:
+`DD5A1812E4AAF4630E6C2D3720CB851276FE46C9A23D933F711214265734B48D`.
+No real OS erasure, physical G, actual route producer, telemetry or release proof.
+
 Latest H19 continuation: explicitly confirmed Android-managed full private-data
 deletion, lazy worker-owned helper, native scope/retired-owner fences and honest
 request-not-completion UI. No manual partial table deletion, automatic migration,

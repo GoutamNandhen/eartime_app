@@ -21,10 +21,18 @@ cannot be added as a replacement. TIMELINE_SESSIONS.md; no source/cache migratio
 Application exports capture native source/identity rows, typed settings/delivery
 state, preserved legacy rows and cursor/conflict evidence. The fixed-component,
 bounded format is integrity-validated before separate-worker provider copying.
-Legacy access is read-only/non-deleting; unsupported schema/table content refuses
-export. This does not implement multi-store restore, mutate preferences/legacy,
-copy live SQLite files or change attribution. APPLICATION_EXPORTS.md documents
-format, exclusions and the still-open recovery/deletion contracts.
+Export legacy access is read-only/non-deleting; unsupported schema/table content
+refuses export. Explicit application restore uses verified private recovery and
+a bounded synced prepared intent. Native source/projection and an operation
+marker commit LAST, after legacy and preference commits; a missing marker causes
+compensation before worker startup/query/publication. No ATTACH/WAL cross-file
+atomicity assumption, live SQLite file replacement or confidence promotion.
+The existing Drift owner prepares schema; a per-engine access queue plus native
+barrier prevents direct legacy reads during mixed prepared state. Provider-owned
+invalidation outlives Settings navigation. The filesystem-only recovery catalog
+and lazy explicit deletion remain accessible without a healthy journal.
+APPLICATION_EXPORTS.md / APPLICATION_RESTORE_CONTRACT.md record limits and
+synthetic-versus-physical evidence. Native source/cache versions remain 3/5.
 
 Record-state UI classifies native metadata without calculating time. Errors stay
 unavailable; missing duration is None recorded, and totals are explicit lower

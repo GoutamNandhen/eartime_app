@@ -4,9 +4,42 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: explicit Android-managed full-data deletion, 229 Flutter / 420 native
+Latest checkpoint: recoverable application restore, 236 Flutter / 458 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Recoverable Whole-App Restore (2026-10-25)
+
+- Resumed every unfinished modification after remote-verified b149a6b, without
+  reset/discard. Added validated component staging, typed preferences and an
+  integrated native commit-last coordinator, not a competing listening source.
+- Before replacement, persist/read-back a bounded operation intent tied to a
+  verified private application archive. Native transaction commits its operation
+  marker LAST after separate legacy/preferences commits. Failure/restart without
+  that marker compensates legacy/preferences before any normal native read or
+  publication. Committed marker keeps new state. Recovery copies are retained.
+- Public file/directory synchronization is fail-closed. No live database-file
+  replacement, schema migration, storage-mode switch or collector-file change.
+  Same-source matching prefixes preserve newer observations; conflicts reject.
+  Fault evidence is unioned, imported cursors never skip replay, notification
+  attempt high-water never regresses and foreign delivery results are not proof.
+- Actual Settings destructive consent -> document transfer -> serialized native
+  worker path exists. Existing Drift initializes schema and direct legacy reads
+  share a recovery-gated operation queue. The operation owner outlives Settings
+  navigation and invalidates cached views. Native/application recovery catalog
+  reads need no healthy journal; explicit deletion also remains independent.
+- Tests proved/fixed nullable legacy JSON and legacy WAL-open flag defects. The
+  ATTACH guard remains research-only because WAL is not cross-file atomic.
+  Windows directory open returns EIO in default ShadowLinux; a test-only syscall
+  model records sync ordering/failure. Suite-wide consistent configuration fixes
+  a full-run-only shadow cast defect, without skipped or weakened assertions.
+- Actual gates: 236 Flutter / 458 native across 32 suites, no failures/errors/
+  skips, analyzer clean, both Kotlin variants/debug APK and strict four-hook/
+  version gates pass. Seven Flutter/38 native executions added. Counts now
+  42 IMPLEMENTED / 62 IN_PROGRESS / 14 NOT_STARTED / 1 BLOCKED_BY_PLATFORM.
+- H14/H18 software complete, not physical storage/process-death/provider-stall,
+  G, telemetry or release certification. Native schema/cache remain 3/5. Next:
+  remaining analytics/break/partition/product scope; preserve every exact ID.
 
 ## Confirmed Full-Data Deletion (2026-10-25)
 

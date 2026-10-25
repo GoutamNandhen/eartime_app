@@ -55,6 +55,7 @@ data class JournalObservation(
 
 class ObservationConflict(val observationId: String) : IllegalStateException("Conflicting observation ID: $observationId")
 class ProjectionReplayCancelled : IllegalStateException("Listening replay canceled; source observations retained")
+internal data class NativeArchiveInspection(val summary: JournalArchiveSummary, val unchanged: Boolean)
 
 /** The only owner of eartime_observations.sqlite; all calls run on the ingress worker. */
 class ObservationJournal(
@@ -114,6 +115,8 @@ class ObservationJournal(
         check(Looper.myLooper() != Looper.getMainLooper()) { "Journal access on Android main thread" }
         return helper.writableDatabase
     }
+
+    internal fun applicationDatabase(): SQLiteDatabase = database()
 
     private fun sourceId(db: SQLiteDatabase): String = db.rawQuery(
         "SELECT value FROM journal_metadata WHERE key = 'source_id'", null,
@@ -240,9 +243,7 @@ class ObservationJournal(
             ?: throw IllegalArgumentException("Recovery archive unavailable")
     }
 
-    /** Explicit user-confirmed replacement, with a synced local recovery archive before any mutation. */
-    fun restoreArchive(file: File, time: ObservationTime, processGeneration: String,
-        cancelled: () -> Boolean = { false }, beforeCommit: (() -> Unit)? = null): Map<String, Any?> {
+    internal fun inspectArchive(file: File, cancelled: () -> Boolean = { false }): NativeArchiveInspection {
         val db = database()
         ListeningProjection(db).requiresUpgrade()
         val currentSource = sourceId(db)
@@ -262,8 +263,18 @@ class ObservationJournal(
             val expected = db.rawQuery("SELECT COUNT(*) FROM observations WHERE sequence <= ?",
                 arrayOf(minOf(currentLast, summary.lastSequence).toString())).use { it.moveToFirst(); it.getLong(0) }
             require(matched == expected) { "Archive omits committed observations" }
-            if (summary.lastSequence <= currentLast) return summary.toWire() + ("unchanged" to true)
+            if (summary.lastSequence <= currentLast) return NativeArchiveInspection(summary, true)
         }
+        return NativeArchiveInspection(summary, false)
+    }
+
+    /** Explicit user-confirmed replacement, with a synced local recovery archive before any mutation. */
+    fun restoreArchive(file: File, time: ObservationTime, processGeneration: String,
+        cancelled: () -> Boolean = { false }, beforeCommit: (() -> Unit)? = null): Map<String, Any?> {
+        val db = database()
+        val inspected = inspectArchive(file, cancelled)
+        val summary = inspected.summary
+        if (inspected.unchanged) return summary.toWire() + ("unchanged" to true)
         if (cancelled()) throw ArchiveCancelled()
         val directory = File(appContext.filesDir, "journal_recovery").apply { check(isDirectory || mkdirs()) }
         val id = UUID.randomUUID().toString()

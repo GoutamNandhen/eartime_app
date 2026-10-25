@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/listening_preferences_provider.dart';
+import '../../providers/data_providers.dart';
+import '../../providers/listening_projection_provider.dart';
+import '../../data/application_data_access.dart';
 import 'audio_diagnostics_screen.dart';
 import 'developer_diagnostics_screen.dart';
 import 'observation_journal_screen.dart';
@@ -17,6 +20,25 @@ final themeModeProvider = Provider<ThemeMode>((ref) {
     (value) => value.name == mode,
     orElse: () => ThemeMode.system,
   );
+});
+
+final applicationRestoreOperationProvider = Provider((ref) {
+  return (
+    Future<Map<dynamic, dynamic>> Function() operation,
+  ) => applicationDataAccess.run(() async {
+    final database = ref.read(databaseProvider);
+    await database.customSelect('SELECT 1 FROM ear_time_events LIMIT 1').get();
+    try {
+      return await operation();
+    } finally {
+      // The operation owner outlives Settings navigation, but not its engine.
+      if (ref.mounted) {
+        ref.invalidate(listeningPreferencesProvider);
+        ref.invalidate(listeningProjectionProvider);
+        ref.invalidate(legacyHistoryPageProvider);
+      }
+    }
+  });
 });
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -142,7 +164,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _link(
             'Local data',
             Icons.folder_outlined,
-            const DataManagementScreen(),
+            DataManagementScreen(
+              runApplicationRestore: ref.read(
+                applicationRestoreOperationProvider,
+              ),
+            ),
           ),
           _link(
             'Observation Journal',

@@ -14,6 +14,8 @@ class JournalTransferClient {
       'exportApplicationData',
       'restoreNativeJournal',
       'restoreJournalRecovery',
+      'restoreApplicationData',
+      'restoreApplicationRecovery',
     }.contains(operation)) {
       throw ArgumentError.value(operation);
     }
@@ -25,7 +27,8 @@ class JournalTransferClient {
     if (result == null ||
         result['version'] != 1 ||
         result['scope'] !=
-            (operation == 'exportApplicationData'
+            (operation == 'exportApplicationData' ||
+                    operation.startsWith('restoreApplication')
                 ? 'application_data'
                 : 'native_observations_only') ||
         result['count'] is! int ||
@@ -34,7 +37,8 @@ class JournalTransferClient {
         !RegExp(r'^[0-9a-f]{64}$').hasMatch(result['sha256'] as String)) {
       throw const FormatException('Invalid journal transfer result');
     }
-    if (operation == 'exportApplicationData' &&
+    if ((operation == 'exportApplicationData' ||
+            operation.startsWith('restoreApplication')) &&
         (result['componentCount'] != 5 ||
             result['legacyCount'] is! int ||
             (result['legacyCount'] as int) < 0 ||
@@ -71,6 +75,13 @@ class JournalTransferClient {
           item['bytes'] is! int ||
           (item['bytes'] as int) < 0) {
         throw const FormatException('Invalid recovery archive metadata');
+      }
+      if (item['scope'] != null &&
+          !{
+            'native_observations_only',
+            'application_data',
+          }.contains(item['scope'])) {
+        throw const FormatException('Invalid recovery scope');
       }
     }
     return result;

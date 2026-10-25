@@ -6,7 +6,9 @@ performed by export. No hardware, physical durability or release claim follows.
 
 Subsequent H19 continuation implements explicitly confirmed Android-managed full
 private-data deletion (APPLICATION_DELETION.md), with actual OS erasure pending.
-The export-checkpoint evidence below is historical; whole-app restore stays open.
+The export-checkpoint evidence below is historical. Subsequent H14/H18 continuation
+adds application restore/recovery: APPLICATION_RESTORE_CONTRACT.md. Current full
+gates are 236 Flutter/458 native, not physical storage/durability certification.
 
 ## Production Path
 

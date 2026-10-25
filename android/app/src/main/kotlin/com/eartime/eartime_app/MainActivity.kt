@@ -191,7 +191,10 @@ class MainActivity : FlutterActivity() {
                         { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
                         { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("DELETION_REQUEST_FAILED", "Android data deletion was not confirmed. No completion is assumed.", null) } } })
                 }
-                "exportNativeJournal", "exportApplicationData", "restoreNativeJournal", "restoreJournalRecovery" -> {
+                "awaitApplicationDataReady" -> NativeJournalRuntime.dataReady(
+                    { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
+                    { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("APPLICATION_RECOVERY_REQUIRED", "Application recovery could not complete. Data is retained; check storage and retry.", null) } } })
+                "exportNativeJournal", "exportApplicationData", "restoreNativeJournal", "restoreJournalRecovery", "restoreApplicationData", "restoreApplicationRecovery" -> {
                     if (!owner.isActive || navigationOwner != owner.token) {
                         result.error("ENGINE_RETIRED", "This engine no longer owns commands", null)
                     } else if (call.method != "exportNativeJournal" && call.argument<Boolean>("confirmed") != true) {
@@ -200,10 +203,12 @@ class MainActivity : FlutterActivity() {
                         val success: (Map<String, Any?>) -> Unit = { value -> owner.runIfActive { result.success(value) }; Unit }
                         val failure: (String) -> Unit = { message -> owner.runIfActive { result.error("JOURNAL_TRANSFER_FAILED", message, null) }; Unit }
                         try {
-                            if (call.method == "restoreJournalRecovery") journalTransfer.restoreRecovery(call.argument<String>("id") ?: "", success, failure)
+                            if (call.method == "restoreJournalRecovery" || call.method == "restoreApplicationRecovery")
+                                journalTransfer.restoreRecovery(call.argument<String>("id") ?: "", success, failure, call.method == "restoreApplicationRecovery")
                             else journalTransfer.select(when (call.method) {
                                 "exportApplicationData" -> "exportApp"
                                 "exportNativeJournal" -> "export"
+                                "restoreApplicationData" -> "restoreApp"
                                 else -> "restore"
                             }, success, failure)
                         } catch (_: Exception) { failure("Invalid journal transfer request") }
