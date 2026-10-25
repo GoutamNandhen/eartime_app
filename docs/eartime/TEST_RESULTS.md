@@ -1,6 +1,18 @@
 # Automated Results
 
-Last verified implementation baseline: 2026-10-25.
+Last verified WIP implementation gates: 2026-10-26; shutdown pause, not release.
+
+Frequency WIP: full Flutter 247 passed; flutter analyze --no-pub clean. Native
+:app:testDebugUnitTest --rerun, :app:compileDebugKotlin,
+:app:compileReleaseKotlin and :app:assembleDebug --offline --no-daemon passed.
+32 native suites /468 tests /0 failures /0 errors /0 skipped. The final run
+compiled the final SYNC regression assertion; it was not inferred from stale
+bytecode. Focused frequency Flutter: three passed. Five new native methods run
+on API 28/35 (ten executions). Strict prior-four-hook collector guard passes;
+all original 0a8be43 collector lines match, not source byte equality. No physical
+G/output/telemetry validation. E7 acceptance review remains WIP at shutdown.
+
+Earlier published checkpoint evidence:
 
 Daily/hourly trends: 244 Flutter / 458 native across 32 suites, zero failures/
 errors/skips. Analyzer clean, both Kotlin variants/debug APK pass. Native test task

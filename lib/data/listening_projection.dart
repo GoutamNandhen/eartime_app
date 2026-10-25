@@ -161,7 +161,8 @@ class ProjectedDay {
   ProjectedDay(Map<dynamic, dynamic> map)
     : start = DateTime.fromMillisecondsSinceEpoch(map['startUtcMs'] as int),
       confirmed = Duration(milliseconds: map['confirmedMs'] as int),
-      unverified = Duration(milliseconds: map['unverifiedMs'] as int) {
+      unverified = Duration(milliseconds: map['unverifiedMs'] as int),
+      measuredSessionStarts = map['measuredSessionStarts'] as int? {
     if (confirmed.isNegative || unverified.isNegative) {
       throw const FormatException('Invalid day totals');
     }
@@ -169,18 +170,21 @@ class ProjectedDay {
   final DateTime start;
   final Duration confirmed;
   final Duration unverified;
+  final int? measuredSessionStarts;
 }
 
 class ProjectedHour {
   ProjectedHour(Map<dynamic, dynamic> map)
     : hour = map['hour'] as int,
-      duration = Duration(milliseconds: map['durationMs'] as int) {
+      duration = Duration(milliseconds: map['durationMs'] as int),
+      measuredSessionStarts = map['measuredSessionStarts'] as int? {
     if (hour < 0 || hour > 23 || duration.isNegative) {
       throw const FormatException('Invalid hourly totals');
     }
   }
   final int hour;
   final Duration duration;
+  final int? measuredSessionStarts;
 }
 
 class ProjectedDeviceTotal {
@@ -241,6 +245,7 @@ enum ListeningRecordState { empty, unverified, durationUnknown, confirmed }
 class ListeningSnapshot {
   ListeningSnapshot.fromMap(Map<dynamic, dynamic> map)
     : sourceId = map['sourceId'] as String,
+      measuredSessionStarts = map['measuredSessionStarts'] as int?,
       sequence = map['sequence'] as int,
       confirmed = Duration(milliseconds: map['confirmedMs'] as int),
       unverified = Duration(milliseconds: map['unverifiedMs'] as int),
@@ -300,6 +305,41 @@ class ListeningSnapshot {
       sessionDetail = map['sessionDetail'] == null
           ? null
           : ProjectedSessionDetail(map['sessionDetail'] as Map) {
+    if (map.containsKey('frequencyContractVersion')) {
+      final count = measuredSessionStarts;
+      if (map['frequencyContractVersion'] != 1 ||
+          count == null ||
+          count < 0 ||
+          count > intervalCount ||
+          !hasSessionContract ||
+          count > measuredSessionCount ||
+          days.any(
+            (day) =>
+                day.measuredSessionStarts == null ||
+                day.measuredSessionStarts! < 0,
+          ) ||
+          hourly.length != 24 ||
+          hourly.any(
+            (hour) =>
+                hour.measuredSessionStarts == null ||
+                hour.measuredSessionStarts! < 0,
+          ) ||
+          days.fold<int>(0, (sum, day) => sum + day.measuredSessionStarts!) !=
+              count ||
+          hourly.fold<int>(
+                0,
+                (sum, hour) => sum + hour.measuredSessionStarts!,
+              ) !=
+              count) {
+        throw const FormatException(
+          'Inconsistent measured-start frequency contract',
+        );
+      }
+    } else if (measuredSessionStarts != null ||
+        days.any((day) => day.measuredSessionStarts != null) ||
+        hourly.any((hour) => hour.measuredSessionStarts != null)) {
+      throw const FormatException('Missing measured-start frequency contract');
+    }
     if (map.containsKey('hourly') &&
         (hourly.length != 24 ||
             hourly.asMap().entries.any(
@@ -369,6 +409,7 @@ class ListeningSnapshot {
     }
   }
   final String sourceId;
+  final int? measuredSessionStarts;
   final int sequence;
   final Duration confirmed;
   final Duration unverified;

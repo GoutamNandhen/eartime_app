@@ -1,6 +1,56 @@
 # EarTime Resume Checkpoint
 
-Updated 2026-10-25. Paths in this document are repository-relative.
+Updated 2026-10-26. Paths in this document are repository-relative.
+
+## PAUSED - WIP Shutdown Save
+
+The user explicitly paused implementation for PC shutdown. Do not continue until
+the user resumes. This WIP save retains every unfinished frequency change after
+published 7e33297cc7c5a7f69b638bf42848cd812dcd3d75 on
+codex/production-checkpoint-20261024. Resolve this save's SHA with git rev-parse
+HEAD; publication verification is recorded in the shutdown response/local manifest.
+
+Actual latest gates: 247 Flutter tests passed; analyzer clean; 468 native tests in
+32 suites, zero failures/errors/skips; debug/release Kotlin and debug APK passed.
+The final native rerun compiled the final SYNC_STATE regression assertion. Strict
+collector guard passes with exactly the four prior observer lifecycle additions,
+not byte equality to 0a8be43. No new collector changes or physical validation.
+
+WIP production/tests: ListeningProjection.kt, ListeningProjectionTest.kt,
+lib/data/listening_projection.dart, lib/features/listening/listening_trends.dart,
+lib/features/listening/listening_workspace.dart, test/listening_frequency_test.dart.
+Contract/evidence: LISTENING_FREQUENCY.md. No journal schema/cache migration or
+independent timer was added. E7 remains IN_PROGRESS pending final acceptance and
+review; counts stay 44 IMPLEMENTED /60 IN_PROGRESS /14 NOT_STARTED /1
+BLOCKED_BY_PLATFORM =119, approximately 37/100, not production readiness.
+
+Exact next action after user resumes: inspect this WIP commit and clean status,
+review E7 frequency acceptance against the saved contract and tests, finalize its
+feature evidence/status only when justified, then continue the existing matrix.
+Do not repeat the completed Timeline/export/deletion/restore/trends work. Review
+G9's stale restore wording against c38470e without automatically promoting it.
+No hardware, release, cross-app route confirmation or all-119 completion claim.
+Ignored private evidence/build artifacts remain local and must not be staged.
+
+## Frequency Implementation Context
+
+Frequency continuation after remote-verified
+7e33297cc7c5a7f69b638bf42848cd812dcd3d75 (main unchanged): five new native
+ListeningProjectionTest methods cover original T1 vs clipped/later start,
+duplicate/pause/unverified/speaker/zero-duration behavior, canonical multi-device
+groups, gap/clock starts, midnight/repeated DST hour and paging independence.
+All ten native RED executions and three Flutter RED cases were observed before
+implementation. Query-only frequency contract 1 now counts original measured
+confirmed group starts in the window, with day/hour counts and no page dependence.
+Native day assignment is a sorted one-pass cursor, not N-times-day rescanning.
+Flutter validates group/count/bucket consistency, displays native counts in
+Analytics/Wellbeing and trend rows, and leaves legacy frequency unavailable.
+Focused ListeningProjectionTest run passes (all methods, not just frequency),
+and focused Flutter frequency/trend cases pass. Full gates subsequently passed as
+recorded above. Feature acceptance remains WIP at the user's shutdown pause.
+
+## Earlier Checkpoint History
+
 Latest analytics continuation: E3/E13 production daily/hourly trend modes,
 14-bucket pages, localized labels, explicit zero/unverified/missing records and
 semantic duration rows. Strict hourly payload ordering/uniqueness/period parity

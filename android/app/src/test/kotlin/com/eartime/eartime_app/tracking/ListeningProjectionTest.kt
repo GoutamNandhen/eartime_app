@@ -44,6 +44,74 @@ class ListeningProjectionTest {
     @Suppress("UNCHECKED_CAST") private fun intervals() = snapshot()["intervals"] as List<Map<String, Any?>>
 
     @Suppress("UNCHECKED_CAST")
+    @Test fun measuredFrequencyUsesOriginalOpeningNotLaterSyncOrClippedWindowBoundary() = run {
+        val first = route(1000)
+        journal.append(first); journal.append(first); journal.append(route(5000))
+        journal.append(raw("SYNC_STATE", 7000, payload = mapOf("connectedDevices" to emptyList<Any>(), "isPlaying" to true)))
+        journal.append(route(9000, false))
+        val full = snapshot()
+        assertEquals(1, full["frequencyContractVersion"]); assertEquals(1, full["measuredSessionStarts"])
+        assertEquals(1, (full["days"] as List<Map<String, Any?>>).sumOf { it["measuredSessionStarts"] as Int })
+        assertEquals(1, (full["hourly"] as List<Map<String, Any?>>).sumOf { it["measuredSessionStarts"] as Int })
+        val clipped = snapshot(6000, 10000)
+        assertEquals(3000L, clipped["confirmedMs"]); assertEquals(1, clipped["measuredSessionCount"])
+        assertEquals(0, clipped["measuredSessionStarts"])
+        journal.rebuildListeningProjection(); assertEquals(full, snapshot())
+        journal.close(); journal = ObservationJournal(context, name); assertEquals(full, snapshot())
+    }
+
+    @Test fun frequencyNeverCountsUnverifiedZeroDurationOrSpeakerActivityAsMeasuredListening() = run {
+        journal.append(raw("PLAYBACK_STARTED", 1000)); journal.append(raw("SYNC_STATE", 4000,
+            payload = mapOf("connectedDevices" to emptyList<Any>(), "isPlaying" to true)))
+        journal.append(raw("PLAYBACK_PAUSED", 5000))
+        journal.append(route(6000)); journal.append(route(6000, false))
+        journal.append(route(7000, external = false)); journal.append(route(9000, false, external = false))
+        assertEquals(0, snapshot()["measuredSessionStarts"])
+        journal.append(route(10000)); journal.append(route(11000, false))
+        assertEquals(1, snapshot()["measuredSessionStarts"])
+    }
+
+    @Test fun frequencyCountsCanonicalOverlapGroupsNotPerDeviceSumAndRetainsGapClockStarts() = run {
+        journal.append(route(1000, route = "a")); journal.append(route(2000, route = "b", device = deviceB))
+        journal.append(route(5000, false, "a")); journal.append(route(6000, false, "b", deviceB))
+        journal.append(route(8000)); journal.append(route(9000, false))
+        assertEquals(2, snapshot()["measuredSessionStarts"])
+        assertEquals(2, journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceA)["measuredSessionStarts"])
+        assertEquals(1, journal.listeningSnapshot(0, 100000, "UTC", deviceId = deviceB)["measuredSessionStarts"])
+        journal.append(raw("COLLECTION_GAP", 9000))
+        journal.append(route(1000, elapsed = 10000)); journal.append(route(5000, false, elapsed = 14000))
+        assertEquals(3, snapshot()["measuredSessionStarts"])
+        assertEquals(6000L, snapshot()["confirmedMs"])
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test fun frequencyAssignsMidnightAndRepeatedDstHourByCapturedOriginalStart() = run {
+        val midnight = 1730606400000L // 2024-11-03 00:00 America/New_York, a 25-hour day.
+        journal.append(route(midnight - 1000)); journal.append(route(midnight + 1000, false))
+        val firstOneThirty = midnight + 90 * 60000L
+        val secondOneThirty = firstOneThirty + 3600000L
+        journal.append(route(firstOneThirty)); journal.append(route(firstOneThirty + 1000, false))
+        journal.append(route(secondOneThirty)); journal.append(route(secondOneThirty + 1000, false))
+        val full = journal.listeningSnapshot(midnight - 1000, midnight + 25 * 3600000, "America/New_York")
+        val hours = full["hourly"] as List<Map<String, Any?>>
+        assertEquals(2, hours.single { it["hour"] == 1 }["measuredSessionStarts"])
+        assertEquals(3, full["measuredSessionStarts"])
+        val today = journal.listeningSnapshot(midnight, midnight + 25 * 3600000, "America/New_York")
+        assertEquals(2, today["measuredSessionStarts"]); assertEquals(3000L, today["confirmedMs"])
+        assertEquals(2, (today["days"] as List<Map<String, Any?>>).single()["measuredSessionStarts"])
+    }
+
+    @Test fun frequencyTotalsDoNotDependOnTheVisibleSessionPage() = run {
+        repeat(21) { index ->
+            journal.append(route(1000L + index * 2000)); journal.append(route(2000L + index * 2000, false))
+        }
+        val full = snapshot()
+        val last = journal.listeningSnapshot(0, 100000, "UTC", offset = 20, limit = 10)
+        assertEquals(21, full["measuredSessionStarts"]); assertEquals(21, last["measuredSessionStarts"])
+        assertEquals(1, (last["sessions"] as List<*>).size)
+    }
+
+    @Suppress("UNCHECKED_CAST")
     @Test fun canonicalSessionsUnionOverlappingRoutesButPauseResumeStartsAnotherSession() = run {
         journal.append(route(1000, route = "a")); journal.append(route(2000, route = "b", device = deviceB))
         journal.append(route(5000, false, "a")); journal.append(route(6000, false, "b", deviceB))

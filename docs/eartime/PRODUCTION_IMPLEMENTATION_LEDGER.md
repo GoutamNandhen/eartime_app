@@ -1,12 +1,37 @@
 # EarTime Production Implementation Ledger
 
-Date: 2026-10-24. User authorization: master autonomous implementation request
-and subsequent resume instruction. Historical STOP entries are superseded for
-implementation; their unresolved physical findings remain valid.
+Updated: 2026-10-26. The latest user instruction PAUSES implementation for shutdown.
+Earlier autonomous authorization does not override this pause. Historical
+unresolved physical findings remain valid.
 
-Latest checkpoint: accessible daily/hourly trends, 244 Flutter / 458 native
-passing tests, analyzer clean. The recovery baseline below is historical.
+Latest save: WIP recorded frequency, 247 Flutter /468 native passing tests,
+analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## WIP Shutdown Preservation (2026-10-26)
+
+- User explicitly requested save-first and stop. No new feature is started after
+  this request. Prior remote checkpoint: 7e33297cc7c5a7f69b638bf42848cd812dcd3d75.
+- Preserve query-only original measured canonical session-start frequency,
+  day/hour counts, strict Dart contract validation and actual Analytics/Wellbeing
+  presentation. No new timer, collector edits, journal writer or migration.
+- Five added native methods execute ten API 28/35 cases; three Flutter cases cover
+  malformed contracts and real presentation. Original T1/later SYNC, clipping,
+  duplicates, unknown/speaker, overlap, gaps/clocks, DST, paging/replay retained.
+- Actual final gates: 247 full Flutter tests; analyzer clean; 468 native tests in
+  32 suites, zero failures/errors/skips. Debug/release Kotlin/debug APK pass.
+  Final native rerun compiled the final SYNC assertion. Strict four-hook guard
+  passes: original collector lines match 0a8be43, not byte-identical source.
+- E7 stays WIP/IN_PROGRESS pending final feature acceptance review. Counts remain
+  44 IMPLEMENTED /60 IN_PROGRESS /14 NOT_STARTED /1 BLOCKED_BY_PLATFORM =119.
+  No physical G/output/telemetry, durability-on-hardware or release claim.
+- Save all reviewed source/tests/docs in a WIP commit on the existing branch;
+  retain an ignored local baseline archive, binary patch and source overlay.
+  Public audit and remote SHA verification must precede shutdown confirmation.
+  Private logs/research/databases/APKs remain excluded and untouched locally.
+- Resume only after the user returns: inspect saved commit, review E7 contract
+  acceptance and update evidence/status if justified, then continue the matrix.
+  Earlier completed Timeline/data controls/trends must not be repeated.
 
 ## Accessible Recorded Trends (2026-10-25)
 

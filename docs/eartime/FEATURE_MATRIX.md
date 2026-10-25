@@ -1,6 +1,9 @@
 # Approved Feature Matrix
 
-Updated 2026-10-25. Each row is an implementation task, not a claim of completion.
+Updated 2026-10-26. Each row is an implementation task, not a claim of completion.
+User-requested shutdown pause: frequency work is saved as WIP, not promoted to
+completion. Latest gates: 247 Flutter /468 native, analyzer clean, debug/release
+Kotlin/debug APK pass. Resume E7 acceptance review from CODEX_RESUME.md.
 `IN_PROGRESS` includes inherited partial behavior. `NOT_STARTED` means the
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
@@ -180,7 +183,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | E4 | Per-device comparisons | IN_PROGRESS; P per-device union totals; actual identity attribution OPEN |
 | E5 | Longest session | IMPLEMENTED / AUTOMATED_PASS S2/P; native longest measured confirmed grouped session integrated into Analytics/Wellbeing, separate from existing continuous-run metric; PHYSICAL_PENDING |
 | E6 | Average duration | IMPLEMENTED / AUTOMATED_PASS S2/P/R2; native mean of measured confirmed grouped sessions excludes zero-duration/unverified observations; continuous-run mean retained; PHYSICAL_PENDING |
-| E7 | Listening frequency | IN_PROGRESS; P confirmed run count; richer frequency metrics OPEN |
+| E7 | Listening frequency | IN_PROGRESS; WIP native original-start frequency contract/day/hour counts and integrated Analytics/Wellbeing; five native methods (10 executions) /three Flutter cases pass; final acceptance review pending; LISTENING_FREQUENCY.md |
 | E8 | Breaks/break lengths | NOT_STARTED; gap-vs-break tests OPEN |
 | E9 | Wearing trends | NOT_STARTED; validated role data OPEN |
 | E10 | Goals/streaks | IMPLEMENTED / AUTOMATED_PASS N; native recorded goal days/window streaks, partial-day and DST tests; lower bounds, not all-time/completeness claims |
@@ -224,7 +227,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 229 Flutter/420 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 247 Flutter/468 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

@@ -349,6 +349,13 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                     value: recordedDuration(snapshot.average),
                   ),
                   Text('${snapshot.listeningRuns} confirmed listening runs'),
+                  if (snapshot.measuredSessionStarts case final starts?) ...[
+                    Text('$starts measured session starts in this period'),
+                    const Text(
+                      'Sessions that started before this window are not counted again. Unverified and unmeasured activity is excluded.',
+                    ),
+                  ] else
+                    const Text('Session-start frequency unavailable.'),
                   if (snapshot.hasSessionContract) ...[
                     _Metric(
                       label: 'Longest recorded session',

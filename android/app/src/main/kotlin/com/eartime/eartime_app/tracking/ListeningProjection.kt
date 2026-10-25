@@ -289,6 +289,13 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
         val sessions = ListeningSessions.group(segments, barriers.sorted())
         val sessionSummaries = sessions.map { it.summary() }
         val measuredSessions = sessionSummaries.filter { it["attribution"] == "CONFIRMED" && (it["durationMs"] as Long) > 0 }
+        // A clipped summary is not a new opening. Count only measured groups whose ORIGINAL start is in the window.
+        val measuredStarts = sessions.filter { it.first["attribution"] == "CONFIRMED" && it.end > it.start }
+            .map { group -> group.segments.minOf { it["startUtcMs"] as Long } }
+            .filter { it >= from && it < until }.sorted()
+        val hourlyStarts = IntArray(24)
+        val startCalendar = Calendar.getInstance(TimeZone.getTimeZone(zoneId))
+        measuredStarts.forEach { start -> startCalendar.timeInMillis = start; hourlyStarts[startCalendar.get(Calendar.HOUR_OF_DAY)]++ }
         val detail = sessionId?.let { id ->
             val group = sessions.firstOrNull { it.id == id }
                 ?: error("Session changed or is outside this window; reopen the timeline")
@@ -323,6 +330,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 }), from, until))
             }
         val days = mutableListOf<Map<String, Any?>>()
+        var startCursor = 0
         val calendar = Calendar.getInstance(TimeZone.getTimeZone(zoneId)).apply {
             timeInMillis = from; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
@@ -331,8 +339,11 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             val start = calendar.timeInMillis
             calendar.add(Calendar.DAY_OF_MONTH, 1)
             val end = calendar.timeInMillis
+            val firstStart = startCursor
+            while (startCursor < measuredStarts.size && measuredStarts[startCursor] < end) startCursor++
             days.add(mapOf("startUtcMs" to start, "endUtcMs" to end,
-                "confirmedMs" to duration(confirmed, start, end), "unverifiedMs" to duration(unverified, start, end)))
+                "confirmedMs" to duration(confirmed, start, end), "unverifiedMs" to duration(unverified, start, end),
+                "measuredSessionStarts" to (startCursor - firstStart)))
         }
         val deviceWhere = if (deviceId == null) "" else " WHERE device_id = ?"
         val devices = db.rawQuery("SELECT device_json FROM listening_devices$deviceWhere ORDER BY connected DESC, last_seen_utc_ms DESC, device_id LIMIT 100 OFFSET ?",
@@ -347,7 +358,9 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             "longestMs" to (confirmed.maxOfOrNull { it.second - it.first } ?: 0),
             "averageMs" to if (confirmed.isEmpty()) 0L else confirmedTotal / confirmed.size,
             "listeningRuns" to confirmed.count { it.second > it.first }, "perDevice" to perDevice,
-            "hourly" to hourly.mapIndexed { hour, value -> mapOf("hour" to hour, "durationMs" to value) },
+            "hourly" to hourly.mapIndexed { hour, value -> mapOf("hour" to hour, "durationMs" to value,
+                "measuredSessionStarts" to hourlyStarts[hour]) },
+            "frequencyContractVersion" to 1, "measuredSessionStarts" to measuredStarts.size,
             "gapCount" to root.optLong("gapCount"), "days" to days,
             "devices" to devices, "deviceCount" to deviceCount,
             "collectorHealth" to CollectorHealth.snapshot(root, healthTime),

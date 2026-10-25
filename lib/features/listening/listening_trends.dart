@@ -27,6 +27,7 @@ class _ListeningTrendsState extends State<ListeningTrends> {
                   label: localizations.formatFullDate(day.start),
                   confirmed: day.confirmed,
                   unverified: day.unverified,
+                  starts: day.measuredSessionStarts,
                 ),
               )
               .toList()
@@ -41,6 +42,7 @@ class _ListeningTrendsState extends State<ListeningTrends> {
                   ),
                   confirmed: hour.duration,
                   unverified: null as Duration?,
+                  starts: hour.measuredSessionStarts,
                 ),
               )
               .toList();
@@ -117,7 +119,7 @@ class _ListeningTrendsState extends State<ListeningTrends> {
             container: true,
             label: bucket.label,
             value:
-                'Confirmed: ${recorded(bucket.confirmed)}${bucket.unverified == null ? '' : '. Unverified: ${recorded(bucket.unverified!)}'}',
+                'Confirmed: ${recorded(bucket.confirmed)}${bucket.unverified == null ? '' : '. Unverified: ${recorded(bucket.unverified!)}'}${bucket.starts == null ? '' : '. Measured starts: ${bucket.starts}'}',
             child: ExcludeSemantics(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -132,6 +134,8 @@ class _ListeningTrendsState extends State<ListeningTrends> {
                     Text('Confirmed: ${recorded(bucket.confirmed)}'),
                     if (bucket.unverified case final duration?)
                       Text('Unverified: ${recorded(duration)}'),
+                    if (bucket.starts case final starts?)
+                      Text('Measured starts: $starts'),
                     const SizedBox(height: 6),
                     LinearProgressIndicator(
                       value: maximum == 0
