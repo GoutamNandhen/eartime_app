@@ -6,6 +6,11 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Analytics daily/hourly trends consume only native calendar buckets. Presentation
+has bounded pages and semantic duration rows; no Flutter accounting/timer. Explicit
+hourly data must reconcile as 24 ordered unique buckets; missing legacy metadata
+is unavailable, not synthesized zeros. ANALYTICS_TRENDS.md documents tests/limits.
+
 Explicit full-data deletion delegates to Android's public self-data API only after
 separate checkbox confirmation and native scope/worker-owner fences. It is lazy,
 not a startup path or manual partial-table wipe. Request acknowledgment never

@@ -4,9 +4,30 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: recoverable application restore, 236 Flutter / 458 native
+Latest checkpoint: accessible daily/hourly trends, 244 Flutter / 458 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Accessible Recorded Trends (2026-10-25)
+
+- c38470ee39fac08333525283a947a725e40d44dd normally pushed/remote-verified,
+  main unchanged. Continued into E3/E13 rather than stopping at data controls.
+- Actual Analytics now uses one bounded daily/hour-of-day native-bucket view;
+  empty records remain visible, absent legacy hourly metadata stays unavailable.
+  No source/cache version, collector, native reducer or timer changes.
+- Explicit hourly payloads require 24 ordered unique hours reconciling with the
+  authoritative total. Presentation-only max scaling is stable across pages.
+  Semantic rows expose dates/hours and durations; decorative bars do not announce
+  arbitrary or invalid progress. Real selected-mode contrast is fixed locally.
+- Eight Flutter cases pass actual Analytics, 30-day paging, zero/unverified data,
+  legacy absence/malformed metadata, semantics, keyboard and target/contrast
+  guidelines in both real themes at 1x/3x. RED evidence retained in trend doc.
+- Full actual gates: 244 Flutter /458 native (32 suites, explicit native rerun),
+  zero failures/errors/skips, analyzer clean, both Kotlin variants/debug APK pass.
+  Counts: 44 IMPLEMENTED /60 IN_PROGRESS /14 NOT_STARTED /1 platform-blocked.
+  Physical TalkBack/fonts/OS/G and all release gates remain pending. Next: native
+  measured session-start frequency without treating a clipped window as a new
+  opening; preserve B02 T1, union, pause/gap and unknown-duration semantics.
 
 ## Recoverable Whole-App Restore (2026-10-25)
 

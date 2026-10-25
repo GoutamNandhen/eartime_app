@@ -8,6 +8,7 @@ import '../../providers/listening_preferences_provider.dart';
 import '../devices/device_identity_screen.dart';
 import 'listening_dates_dialog.dart';
 import 'listening_session_screen.dart';
+import 'listening_trends.dart';
 
 enum ListeningView { home, timeline, analytics, devices, wellbeing }
 
@@ -364,61 +365,41 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                       'Sessions end at a pause or lost continuity. Overlapping sessions are unioned in period totals.',
                     ),
                   ],
-                  const _Section('Daily listening'),
-                  if (snapshot.confirmed == Duration.zero)
-                    const Text('No confirmed listening in this period.'),
-                  ...snapshot.days.reversed
-                      .where(
-                        (d) =>
-                            d.confirmed > Duration.zero ||
-                            d.unverified > Duration.zero,
-                      )
-                      .map(
-                        (day) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(date(day.start)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Confirmed: ${recordedDuration(day.confirmed)}',
-                              ),
-                              Text(
-                                'Unverified: ${recordedDuration(day.unverified)}',
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  if (widget.view == ListeningView.analytics) ...[
-                    const _Section('By hour'),
-                    ...snapshot.hourly
-                        .where((hour) => hour.duration > Duration.zero)
+                  if (widget.view != ListeningView.analytics) ...[
+                    const _Section('Daily listening'),
+                    if (snapshot.confirmed == Duration.zero)
+                      const Text('No confirmed listening in this period.'),
+                    ...snapshot.days.reversed
+                        .where(
+                          (d) =>
+                              d.confirmed > Duration.zero ||
+                              d.unverified > Duration.zero,
+                        )
                         .map(
-                          (hour) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Column(
+                          (day) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(date(day.start)),
+                            subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${hour.hour.toString().padLeft(2, '0')}:00  ${formatListeningDuration(hour.duration)}',
+                                  'Confirmed: ${recordedDuration(day.confirmed)}',
                                 ),
-                                const SizedBox(height: 6),
-                                LinearProgressIndicator(
-                                  value: snapshot.confirmed == Duration.zero
-                                      ? 0
-                                      : hour.duration.inMilliseconds /
-                                            snapshot.confirmed.inMilliseconds,
-                                  semanticsLabel:
-                                      '${hour.hour}:00 confirmed listening',
-                                  semanticsValue: formatListeningDuration(
-                                    hour.duration,
-                                  ),
+                                Text(
+                                  'Unverified: ${recordedDuration(day.unverified)}',
                                 ),
                               ],
                             ),
                           ),
                         ),
+                  ],
+                  if (widget.view == ListeningView.analytics) ...[
+                    ListeningTrends(
+                      key: ValueKey(
+                        '${snapshot.sourceId}:${query.from.millisecondsSinceEpoch}:${query.until.millisecondsSinceEpoch}',
+                      ),
+                      snapshot: snapshot,
+                    ),
                     const _Section('By device'),
                     if (snapshot.perDevice.isEmpty)
                       const Text('No verified device totals.'),

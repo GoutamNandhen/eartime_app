@@ -5,14 +5,20 @@ Updated 2026-10-25. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **42 IMPLEMENTED, 62 IN_PROGRESS, 14 NOT_STARTED,
+Implementation count: **44 IMPLEMENTED, 60 IN_PROGRESS, 14 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: H14/H18, H19/H17, D1/D2/D3/E5/E6, E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: E3/E13, H14/H18, H19/H17, D1/D2/D3/E5/E6, E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
+
+- C3: eight Flutter trend cases: actual Analytics at 1x/3x, 14-row pages, exact
+  semantic durations, zero/unknown separation, malformed hourly contracts,
+  keyboard activation, both app themes, labeled/minimum-size targets and contrast.
+  Existing P/C2 native calendar/DST/union/replay acceptance retained.
+  ANALYTICS_TRENDS.md; physical assistive-technology/font/OS acceptance pending.
 
 - X4: ApplicationRestoreCoordinatorTest (20 API 28/35 executions), eight added
   archive staging/preferences executions, two real helper/provider restore executions,
@@ -170,7 +176,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | --- | --- | --- |
 | E1 | Calendar/custom totals | IMPLEMENTED / AUTOMATED_PASS P/C2; actual day/week/month/year/custom control-to-query acceptance and canonical clipped union/bucket reconciliation across reopen/replay; physical date/timezone acceptance pending |
 | E2 | Connected/listening/idle comparison | NOT_STARTED; projection tests OPEN |
-| E3 | Daily/hourly trends | IN_PROGRESS; P native DST-aware buckets and U presentation; full chart acceptance OPEN |
+| E3 | Daily/hourly trends | IMPLEMENTED / AUTOMATED_PASS P/C2/C3; canonical native daily and local-hour buckets, bounded mode/page controls, localized labels, zero/unknown/unverified separation and strict hourly reconciliation; no Flutter accounting, PHYSICAL_PENDING |
 | E4 | Per-device comparisons | IN_PROGRESS; P per-device union totals; actual identity attribution OPEN |
 | E5 | Longest session | IMPLEMENTED / AUTOMATED_PASS S2/P; native longest measured confirmed grouped session integrated into Analytics/Wellbeing, separate from existing continuous-run metric; PHYSICAL_PENDING |
 | E6 | Average duration | IMPLEMENTED / AUTOMATED_PASS S2/P/R2; native mean of measured confirmed grouped sessions excludes zero-duration/unverified observations; continuous-run mean retained; PHYSICAL_PENDING |
@@ -180,7 +186,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | E10 | Goals/streaks | IMPLEMENTED / AUTOMATED_PASS N; native recorded goal days/window streaks, partial-day and DST tests; lower bounds, not all-time/completeness claims |
 | E11 | Calendar/date boundaries | IMPLEMENTED / AUTOMATED_PASS P; midnight and spring/autumn DST reconciliation |
 | E12 | Empty/zero/partial/uncertain data | IMPLEMENTED / AUTOMATED_PASS R2; distinct empty/unverified/unknown/confirmed records, missing-duration wording in totals/detail rows, lower-bound/incomplete notices, malformed metadata unavailable, real retry/foreground/disposal tests; physical coverage remains unverified |
-| E13 | Accessible charts | IN_PROGRESS; hourly progress semantics and large-text U; full assistive-technology audit OPEN |
+| E13 | Accessible charts | IMPLEMENTED / AUTOMATED_PASS C3; one date/hour-and-duration semantic row per native bucket, labeled mode/page controls, keyboard activation, minimum target/contrast checks in both app themes at 1x/3x; duration-as-progress and selected contrast defects corrected, actual assistive-technology acceptance PHYSICAL_PENDING |
 | E14 | Efficient projections | IN_PROGRESS; P/V incremental/cache upgrade/bounded rebuild cancellation/1200 sessions; runtime fairness/device profiles OPEN |
 
 ## F: Wellbeing

@@ -2,6 +2,19 @@
 
 Last verified implementation baseline: 2026-10-25.
 
+Daily/hourly trends: 244 Flutter / 458 native across 32 suites, zero failures/
+errors/skips. Analyzer clean, both Kotlin variants/debug APK pass. Native test task
+was explicitly re-executed with --rerun, not inferred from cached XML alone.
+Eight Flutter cases added: actual Analytics 1x/3x, bounded daily/hour pages, zero/
+unverified/unknown states, malformed hourly cardinality/order/duplicates/sums,
+exact semantic values, keyboard activation, both real app themes, labeled/minimum
+targets and contrast. Real RED evidence: duration-valued progress semantics,
+missing mode control, accepted malformed hourly payload and selected light-mode
+contrast 3.08 <4.5. Fixed in production. Tooltip finder/semantics lifetime fixture
+corrections weaken no assertion. ANALYTICS_TRENDS.md. E3/E13 software complete;
+44 IMPLEMENTED /60 IN_PROGRESS /14 NOT_STARTED /1 BLOCKED_BY_PLATFORM =119.
+Physical assistive technology, G, output attribution and release remain pending.
+
 Application restore: 236 Flutter / 458 native in 32 suites, zero failures/errors/
 skips. Analyzer clean, debug/release Kotlin/debug APK pass; strict four-hook guard,
 version gate and 17 version self-tests pass. Seven Flutter/38 native executions

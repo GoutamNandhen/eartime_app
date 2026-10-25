@@ -3,7 +3,7 @@
 Updated 2026-10-25. Verdict: NOT RELEASE_READY.
 Feature-level implementation and acceptance gaps are in `FEATURE_MATRIX.md`.
 
-Latest application-restore gates: 236 Flutter / 458 native, analyzer clean, both
+Latest analytics gates: 244 Flutter / 458 native, analyzer clean, both
 Kotlin variants/debug APK pass. Native-only export/confirmed restore/recovery are
 integrated. H17 application-state export now includes legacy/preferences and
 integrity validation; APPLICATION_EXPORTS.md. H19's confirmed self-data-clear path
@@ -23,7 +23,7 @@ No new hardware or release evidence.
 | Memory/history size | Bounded results, 1200-session/2400-row model, internal rebuild cancellation, live paging insertion tests | Realistic phone/storage/energy profiling, normal startup fairness, cross-layer cancellation and frozen multi-page consistency |
 | Telemetry/privacy | Automatic GATT/vendor CCCD writes removed; explicit one-shot bounded read-only catalog, own-source durability tested | Actual standard/vendor values/roles/freshness; protected collector log audit, offline/backup/privacy review |
 | Missing product scope | Most remaining analytics, wellbeing, widgets and data-control features are incomplete | Implement/test the remaining approved feature matrix |
-| Static/test integration | Analyzer clean, 236 Flutter / 458 native pass; 15 placeholders replaced | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix; Windows directory syscalls explicitly modeled, not physical evidence |
+| Static/test integration | Analyzer clean, 244 Flutter / 458 native pass; chart semantics/contrast/target/keyboard checks pass in both themes at 1x/3x | Actual FlutterEngine/OS fault tests, broader performance/accessibility/locale matrix; Windows directory syscalls explicitly modeled, not physical evidence |
 | Release/signing | Version 1.1.0-dev.1+2 metadata inspected; monotonic/source consistency gates; debug APK/debug+release Kotlin pass; signing rejects missing keys, no debug fallback | Authorized keys, signed release packaging, hashes and final release/privacy gates |
 | Physical integration | No hardware actions performed; current attachment availability not checked | Final background/process/restart/routing/widget/battery/deletion acceptance on supported devices |
 

@@ -300,6 +300,18 @@ class ListeningSnapshot {
       sessionDetail = map['sessionDetail'] == null
           ? null
           : ProjectedSessionDetail(map['sessionDetail'] as Map) {
+    if (map.containsKey('hourly') &&
+        (hourly.length != 24 ||
+            hourly.asMap().entries.any(
+              (entry) => entry.key != entry.value.hour,
+            ) ||
+            hourly.fold<Duration>(
+                  Duration.zero,
+                  (sum, bucket) => sum + bucket.duration,
+                ) !=
+                confirmed)) {
+      throw const FormatException('Inconsistent hourly bucket contract');
+    }
     if (map['sessionContractVersion'] != null) {
       if (map['sessionContractVersion'] != 1) {
         throw const FormatException('Unsupported session contract');

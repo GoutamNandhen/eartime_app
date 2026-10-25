@@ -1,6 +1,26 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-25. Paths in this document are repository-relative.
+Latest analytics continuation: E3/E13 production daily/hourly trend modes,
+14-bucket pages, localized labels, explicit zero/unverified/missing records and
+semantic duration rows. Strict hourly payload ordering/uniqueness/period parity
+rejects malformed data. Initial actual Analytics tests reproduced duration-string
+progress semantics failures; selected light-theme mode failed contrast (3.08/4.5).
+Both fixed without assertion suppression or global theme churn. Eight new Flutter
+cases include keyboard activation and target/contrast checks in both real themes
+at 1x/3x. Full actual gates: 244 Flutter / 458 native (32 suites), no failures/
+errors/skips; analyzer clean, debug/release Kotlin and debug APK pass. Strict
+four-hook guard and version guards retained. Counts: 44 IMPLEMENTED /60 IN_PROGRESS
+/14 NOT_STARTED /1 BLOCKED_BY_PLATFORM =119 (37.0%, NOT readiness).
+Prior application checkpoint c38470ee39fac08333525283a947a725e40d44dd was normally
+pushed and remote-verified; main stays 13ae6609d22cb2a0daf8890fca081fb97c93b36b.
+Next: audit/commit/push/verify analytics, then native recorded listening-frequency
+metrics over the existing grouped sessions; original vs clipped session openings
+must differ, with no false new start at a window boundary or later SYNC timestamp.
+Continue exact remaining scope. No physical G/output/telemetry/release claim.
+Ignored debug APK SHA-256:
+`CD355655B7D096B54C8B134C787877B8E72DB2B8E1A6555270117E12F1338C72`.
+
 Latest application-restore continuation after remote-verified
 b149a6b37fcc0d58ac5821da5d4a54d2ba3ebfb1: H14/H18 now have integrated application
 document restore, native/application recovery catalog, explicit destructive consent,
