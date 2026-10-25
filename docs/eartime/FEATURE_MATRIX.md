@@ -5,11 +5,11 @@ Updated 2026-10-25. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **32 IMPLEMENTED, 71 IN_PROGRESS, 15 NOT_STARTED,
+Implementation count: **33 IMPLEMENTED, 70 IN_PROGRESS, 15 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -19,7 +19,7 @@ Executable evidence keys:
 - D: `flutter test --no-pub test/observation_journal_test.dart`.
 - J: `android/gradlew.bat :app:testDebugUnitTest --tests '*ObservationJournalTest' --tests '*NativeObservationIngressTest'` (run from `android` as `.\gradlew.bat`).
 - R: same Gradle task with `--tests '*TrackingContractTest' --tests '*BoundedIngressQueueTest'`.
-- P: `ListeningProjectionTest` (62 API 28/35 cases), including shared JSON fixture,
+- P: `ListeningProjectionTest` (66 API 28/35 cases), including shared JSON fixture,
   B02, atomic rollback, replay/rebuild, v1/v2 migrations, DST and aggregate parity.
 - U: `flutter test --no-pub test/listening_projection_test.dart` (20 cases).
 - C: `CollectorHealthTest` (20 API 28/35 cases) and `OutputAttributionTest`
@@ -71,6 +71,10 @@ Executable evidence keys:
 - C2: `listening_calendar_test.dart` (13 Flutter cases), four further P native
   executions; actual picker/form, pagination/scope and SQLite date-union/replay
   acceptance at 1x/2x/3x. CALENDAR_FILTERS.md; no new duration reducer or timer.
+- R2: `listening_record_states_test.dart` (31 Flutter cases), four further P
+  native executions; strict loss/chart/interval validation, actual record/error/
+  retry states at 3x, foreground ownership/disposal and positive-run average
+  correction with RED evidence. RECORD_STATES.md; recorded totals stay native.
 
 ## A: Core Listening
 
@@ -147,13 +151,13 @@ Executable evidence keys:
 | E3 | Daily/hourly trends | IN_PROGRESS; P native DST-aware buckets and U presentation; full chart acceptance OPEN |
 | E4 | Per-device comparisons | IN_PROGRESS; P per-device union totals; actual identity attribution OPEN |
 | E5 | Longest session | IN_PROGRESS; P longest continuous union run; grouped-session semantics OPEN |
-| E6 | Average duration | IN_PROGRESS; P average continuous union run; grouped-session semantics OPEN |
+| E6 | Average duration | IN_PROGRESS; P/R2 mean of measured continuous union runs; zero-duration observations retained but excluded from denominator after two RED proofs; grouped-session semantics OPEN |
 | E7 | Listening frequency | IN_PROGRESS; P confirmed run count; richer frequency metrics OPEN |
 | E8 | Breaks/break lengths | NOT_STARTED; gap-vs-break tests OPEN |
 | E9 | Wearing trends | NOT_STARTED; validated role data OPEN |
 | E10 | Goals/streaks | IMPLEMENTED / AUTOMATED_PASS N; native recorded goal days/window streaks, partial-day and DST tests; lower bounds, not all-time/completeness claims |
 | E11 | Calendar/date boundaries | IMPLEMENTED / AUTOMATED_PASS P; midnight and spring/autumn DST reconciliation |
-| E12 | Empty/zero/partial/uncertain data | IN_PROGRESS; U truthful empty/error/zero states, no divide-by-zero; full acceptance pending |
+| E12 | Empty/zero/partial/uncertain data | IMPLEMENTED / AUTOMATED_PASS R2; distinct empty/unverified/unknown/confirmed records, missing-duration wording in totals/detail rows, lower-bound/incomplete notices, malformed metadata unavailable, real retry/foreground/disposal tests; physical coverage remains unverified |
 | E13 | Accessible charts | IN_PROGRESS; hourly progress semantics and large-text U; full assistive-technology audit OPEN |
 | E14 | Efficient projections | IN_PROGRESS; P/V incremental/cache upgrade/bounded rebuild cancellation/1200 sessions; runtime fairness/device profiles OPEN |
 
@@ -192,7 +196,7 @@ Executable evidence keys:
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 186 Flutter/362 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 217 Flutter/366 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release

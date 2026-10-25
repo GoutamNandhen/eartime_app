@@ -358,7 +358,7 @@ void main() {
         await tester.pump();
         expect(client.calls, 1);
         if (view != ListeningView.devices) {
-          expect(find.text('0:00:00'), findsWidgets);
+          expect(find.text('None recorded'), findsWidgets);
           expect(find.text('0:00:08'), findsWidgets);
           expect(find.text('Confirmed external listening'), findsOneWidget);
         }

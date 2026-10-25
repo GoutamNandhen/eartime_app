@@ -151,6 +151,35 @@ class ListeningProjectionTest {
         assertEquals(before, journal.readAfter(0)); assertEquals(4000L, total())
     }
 
+    @Test fun emptyUnverifiedAndGapStatesRemainDistinctWithoutNegativeOrConfirmedSubstitution() = run {
+        fun verify(expectedUnverified: Long, expectedCount: Int, expectedGap: Long) {
+            val value = snapshot()
+            assertEquals(0L, value["confirmedMs"]); assertEquals(expectedUnverified, value["unverifiedMs"])
+            assertEquals(expectedCount, value["intervalCount"]); assertEquals(expectedGap, value["gapCount"])
+            for (field in listOf("longestMs", "averageMs")) assertEquals(0L, value[field])
+            assertEquals(0, value["listeningRuns"])
+            assertTrue((value["hourly"] as List<*>).all { ((it as Map<*, *>)["durationMs"] as Long) == 0L })
+        }
+        verify(0, 0, 0)
+        journal.append(raw("PLAYBACK_STARTED", 1000)); verify(0, 1, 0)
+        journal.append(raw("SYNC_STATE", 5000, payload = mapOf("connectedDevices" to emptyList<Any>(), "isPlaying" to true)))
+        journal.append(raw("PLAYBACK_PAUSED", 9000)); verify(8000, 1, 0)
+        journal.append(raw("COLLECTION_GAP", 10000)); verify(8000, 1, 1)
+        journal.close(); journal = ObservationJournal(context, name); journal.rebuildListeningProjection(); verify(8000, 1, 1)
+    }
+
+    @Test fun unmeasuredOpenObservationsCannotDiluteTheAverageOfMeasuredRuns() = run {
+        journal.append(route(1000)); journal.append(route(5000, false))
+        journal.append(route(9000))
+        val value = snapshot()
+        assertEquals(4000L, value["confirmedMs"]); assertEquals(1, value["listeningRuns"])
+        assertEquals(4000L, value["longestMs"]); assertEquals(4000L, value["averageMs"])
+        assertEquals(2, value["intervalCount"]); assertEquals(1, value["openIntervalCount"])
+        journal.close(); journal = ObservationJournal(context, name); journal.rebuildListeningProjection()
+        assertEquals(4000L, snapshot()["averageMs"])
+        assertEquals(1, snapshot()["openIntervalCount"])
+    }
+
     @Test fun generatedReportUsesPersistedGoalAndCanonicalTotalsAfterReopenAndReplay() = run {
         ListeningPreferences(context).update(mapOf("dailyGoalMinutes" to 1))
         try {

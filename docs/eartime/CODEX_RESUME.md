@@ -1,6 +1,30 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-25. Paths in this document are repository-relative.
+Latest E12 checkpoint: strict snapshot/chart/interval validation, distinct empty/
+unverified/unknown/confirmed records, consistent missing-duration wording, lower-
+bound/incomplete notices and responsive interval/day details. Per-stream framework
+retry is disabled because the existing bounded foreground refresh owns recovery.
+Actual RED evidence includes negative gap acceptance, absent Home record state,
+duplicate provider retry/disposal, trailing-label overflow, daily numeric-zero
+inconsistency and a native average denominator error. RECORD_STATES.md.
+31 new Flutter/four native executions; full gates: 217 Flutter / 366 native in
+28 suites, zero failures/errors/skips; analyzer clean; debug/release Kotlin and
+debug packaging pass. Source schema 3/projection 5 and protected four hooks stay
+unchanged. Zero-duration intervals remain visible; no confidence/live promotion.
+Counts: 33 IMPLEMENTED / 70 IN_PROGRESS / 15 NOT_STARTED / 1 BLOCKED_BY_PLATFORM
+= 119 (27.7% feature completion, not readiness). Previous 248c1d6f876614a355ae41c45594372c52a726a4
+was pushed/remote-verified; main remains 13ae6609d22cb2a0daf8890fca081fb97c93b36b.
+Next safe phase: canonical bounded Timeline grouping using existing native
+intervals, explicit session/paused/gap semantics and reconciliation tests. Do not
+infer a break across missing data, add a Dart accounting clock or change collector
+callbacks. Continue remaining exact data/product/reliability matrix. Hardware,
+generic output attribution, whole-app backup/deletion and signing remain open.
+Final ignored/unpublished debug APK 1.1.0-dev.1/build 2 SHA-256:
+`F86B5E2A67DAF192384F8183278D3480B3E90A5E50A91533DACF33C62DB2F479`.
+
+## Calendar Checkpoint
+
 Latest resumed D7/E1 checkpoint: preserved all five unfinished calendar files;
 credits-blocked formatting/tests completed. Shared local-calendar bounds and
 scrollable localized date entry fix reproduced stock-header overflow. Validation,

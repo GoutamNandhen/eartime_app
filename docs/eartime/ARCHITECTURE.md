@@ -6,6 +6,12 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Record-state UI classifies native metadata without calculating time. Errors stay
+unavailable; missing duration is None recorded, and totals are explicit lower
+bounds. The owned foreground refresh is the sole stream recovery mechanism, not
+a second framework retry owner. Zero-length interval rows remain available but
+cannot dilute positive-run means. RECORD_STATES.md records RED/GREEN evidence.
+
 Calendar filters share local-date window construction and localized validated
 entry; selected end days become exclusive next-midnight native bounds. Calendar
 clock injection is selection-only, not a duration reducer/lease. CALENDAR_FILTERS.md

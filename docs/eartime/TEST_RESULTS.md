@@ -2,6 +2,15 @@
 
 Last verified implementation baseline: 2026-10-25.
 
+E12 adds 31 Flutter cases and four native API 28/35 executions. Negative metadata,
+Home empty state, default retry ownership, 3x interval layout and daily numeric-zero
+inconsistency were actually reproduced. Existing zero assertion requires explicit
+None recorded rather than implying measured zero; positive totals still asserted.
+Two additional native RED failures proved a 4000ms run averaging 2000ms when an
+unmeasured open point existed. Query-only zero-span exclusion corrects the mean
+while preserving interval/source/replay evidence. All same assertions pass. See
+RECORD_STATES.md for precise semantics, fixture corrections and hardware limits.
+
 D7/E1 adds 13 Flutter cases and four native API 28/35 executions. Calendar custom
 entry/preset controls, 100-row paging, device scope, cancellation/invalid/oversized
 input and backward-clock editor initialization pass at 1x/2x/3x. Actual stock
@@ -59,9 +68,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 186 passed, 0 failures |
+| Flutter full suite | 217 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 362 passed in 28 suites, 0 failures/errors/skips |
+| Android native suite | 366 passed in 28 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

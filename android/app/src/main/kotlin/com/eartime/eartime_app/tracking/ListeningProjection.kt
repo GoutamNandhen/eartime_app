@@ -257,7 +257,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
         }
         fun spans(attribution: String) = segments.filter { it["attribution"] == attribution }
             .map { (it["clippedStartUtcMs"] as Long) to (it["clippedEndUtcMs"] as Long) }
-        val confirmed = union(spans("CONFIRMED"))
+        val confirmed = union(spans("CONFIRMED")).filter { it.second > it.first }
         val unverified = union(spans("UNVERIFIED"))
         val confirmedTotal = duration(confirmed, from, until)
         val hourly = LongArray(24)

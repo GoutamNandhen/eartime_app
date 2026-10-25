@@ -4,9 +4,37 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: calendar filter/totals acceptance, 186 Flutter / 362 native
+Latest checkpoint: record-state consistency/average correction, 217 Flutter / 366 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## E12 Recorded-State Consistency
+
+2026-10-25 continued from remote-verified 248c1d6f876614a355ae41c45594372c52a726a4.
+Actual RED cases exposed accepted negative metadata and missing Home empty-state
+semantics. Native read errors also reproduced default Riverpod backoff replacing
+the already-owned refresh stream and leaving timers. Only this provider's duplicate
+framework retries are disabled; bounded foreground refresh, errors, manual retry,
+event hints and cancellation are retained. A lifecycle fixture was corrected to
+valid intermediate states, not by changing production lifecycle assertions.
+3x tests caught a trailing-label layout failure; the failing render storm was
+interrupted and the same assertions rerun after duration moved below details.
+Real-shaped daily buckets then caught another numeric-zero cell: consistent
+recorded-only wording and naturally flowing daily/device details fix it.
+31 new Flutter tests cover malformed data, all seven states across four views,
+retry, paused inactivity and disposal. Existing shared-view zero assertion now
+requires None recorded, while its positive-duration/source assertions remain.
+Native review found averageMs included zero-length spans in its denominator while
+listeningRuns excluded them. Two API 28/35 RED tests proved expected 4000ms versus
+actual 2000ms. The one-line query filter now excludes zero spans only from aggregate
+confirmed runs; raw observations and both interval rows/open count survive replay.
+No schema/cache migration, writer, attribution promotion or protected-service edit.
+Four new native executions; final full gates: 217 Flutter / 366 native, 28 suites,
+zero failures/errors/skips; analyzer clean; both Kotlin variants/debug APK pass.
+Four style findings fixed without suppression. E12 software complete; count
+33/70/15/1 = 119. E6 remains partial pending grouped-session semantics. Next bounded
+canonical Timeline grouping, then remaining approved data/product/reliability work.
+No physical output/G, whole-app data-control completion or release-ready claim.
 
 ## D7/E1 Calendar Filters And Totals
 

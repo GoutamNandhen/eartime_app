@@ -49,7 +49,9 @@ class ProjectedInterval {
       open = map['open'] as bool,
       live = map['live'] as bool,
       closeReason = map['closeReason'] as String? {
-    if (end.isBefore(start) || duration.isNegative) {
+    if (end.isBefore(start) ||
+        duration.isNegative ||
+        duration > end.difference(start)) {
       throw const FormatException('Invalid listening interval');
     }
   }
@@ -96,7 +98,11 @@ class ProjectedDay {
   ProjectedDay(Map<dynamic, dynamic> map)
     : start = DateTime.fromMillisecondsSinceEpoch(map['startUtcMs'] as int),
       confirmed = Duration(milliseconds: map['confirmedMs'] as int),
-      unverified = Duration(milliseconds: map['unverifiedMs'] as int);
+      unverified = Duration(milliseconds: map['unverifiedMs'] as int) {
+    if (confirmed.isNegative || unverified.isNegative) {
+      throw const FormatException('Invalid day totals');
+    }
+  }
   final DateTime start;
   final Duration confirmed;
   final Duration unverified;
@@ -105,7 +111,11 @@ class ProjectedDay {
 class ProjectedHour {
   ProjectedHour(Map<dynamic, dynamic> map)
     : hour = map['hour'] as int,
-      duration = Duration(milliseconds: map['durationMs'] as int);
+      duration = Duration(milliseconds: map['durationMs'] as int) {
+    if (hour < 0 || hour > 23 || duration.isNegative) {
+      throw const FormatException('Invalid hourly totals');
+    }
+  }
   final int hour;
   final Duration duration;
 }
@@ -113,7 +123,11 @@ class ProjectedHour {
 class ProjectedDeviceTotal {
   ProjectedDeviceTotal(Map<dynamic, dynamic> map)
     : deviceId = map['deviceId'] as String,
-      duration = Duration(milliseconds: map['durationMs'] as int);
+      duration = Duration(milliseconds: map['durationMs'] as int) {
+    if (duration.isNegative) {
+      throw const FormatException('Invalid device total');
+    }
+  }
   final String deviceId;
   final Duration duration;
 }
@@ -158,6 +172,8 @@ class ProjectedCollectorHealth {
     _ => 'Audio observation health unknown',
   };
 }
+
+enum ListeningRecordState { empty, unverified, durationUnknown, confirmed }
 
 class ListeningSnapshot {
   ListeningSnapshot.fromMap(Map<dynamic, dynamic> map)
@@ -208,6 +224,12 @@ class ListeningSnapshot {
         sequence < 0 ||
         confirmed.isNegative ||
         unverified.isNegative ||
+        gapCount < 0 ||
+        pendingCount < 0 ||
+        failedCount < 0 ||
+        longest.isNegative ||
+        average.isNegative ||
+        listeningRuns < 0 ||
         intervalCount < intervals.length ||
         nextOffset < 0 ||
         nextOffset > intervalCount ||
@@ -252,6 +274,16 @@ class ListeningSnapshot {
   final int deviceOffset;
   final int nextDeviceOffset;
   final bool hasMoreDevices;
+
+  bool get hasCollectionUncertainty =>
+      gapCount > 0 || pendingCount > 0 || failedCount > 0 || lastError != null;
+  ListeningRecordState get recordState => confirmed > Duration.zero
+      ? ListeningRecordState.confirmed
+      : unverified > Duration.zero
+      ? ListeningRecordState.unverified
+      : intervalCount > 0
+      ? ListeningRecordState.durationUnknown
+      : ListeningRecordState.empty;
 }
 
 class ListeningProjectionClient {

@@ -17,6 +17,7 @@ final trackingProjectionActivationProvider = Provider<void>((ref) {
 });
 
 /// Flutter holds no interval reducer or durable cursor. Events are only invalidation hints.
+/// This stream owns foreground retry; framework retries must not replace its owner.
 final listeningProjectionProvider = StreamProvider.autoDispose
     .family<ListeningSnapshot, ListeningWindow>((ref, window) {
       final controller = StreamController<ListeningSnapshot>();
@@ -77,4 +78,4 @@ final listeningProjectionProvider = StreamProvider.autoDispose
         unawaited(controller.close());
       });
       return controller.stream;
-    });
+    }, retry: (_, _) => null);

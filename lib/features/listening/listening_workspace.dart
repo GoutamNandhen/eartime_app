@@ -179,6 +179,27 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                     'Unattributed playback and other recorded device identities are excluded.',
                     Icons.filter_alt_outlined,
                   ),
+                if (widget.view != ListeningView.devices) ...[
+                  Semantics(
+                    liveRegion: true,
+                    child: _Notice(switch (snapshot.recordState) {
+                      ListeningRecordState.empty =>
+                        'No playback records in this period.',
+                      ListeningRecordState.unverified =>
+                        'Only unverified playback recorded.',
+                      ListeningRecordState.durationUnknown =>
+                        'Playback observed; duration unknown.',
+                      ListeningRecordState.confirmed =>
+                        'Confirmed listening recorded.',
+                    }, Icons.info_outline),
+                  ),
+                  _Notice(
+                    snapshot.hasCollectionUncertainty
+                        ? 'History coverage is incomplete. Recorded totals are lower bounds.'
+                        : 'Recorded durations are lower bounds. Unknown time is excluded.',
+                    Icons.history_toggle_off,
+                  ),
+                ],
                 _Notice(snapshot.collectorHealth.label, Icons.sensors),
                 if (snapshot.lastError != null || snapshot.failedCount > 0)
                   const _Notice(
@@ -198,12 +219,12 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                 if (widget.view != ListeningView.devices) ...[
                   _Metric(
                     label: 'Confirmed external listening',
-                    value: formatListeningDuration(snapshot.confirmed),
+                    value: recordedDuration(snapshot.confirmed),
                     primary: true,
                   ),
                   _Metric(
                     label: 'Unverified playback activity',
-                    value: formatListeningDuration(snapshot.unverified),
+                    value: recordedDuration(snapshot.unverified),
                   ),
                   const _Notice(
                     'The current collector cannot verify the playing output. Unverified activity is not included in listening totals.',
@@ -286,11 +307,11 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                   ],
                   _Metric(
                     label: 'Longest continuous listening',
-                    value: formatListeningDuration(snapshot.longest),
+                    value: recordedDuration(snapshot.longest),
                   ),
                   _Metric(
                     label: 'Average continuous listening',
-                    value: formatListeningDuration(snapshot.average),
+                    value: recordedDuration(snapshot.average),
                   ),
                   Text('${snapshot.listeningRuns} confirmed listening runs'),
                   const _Section('Daily listening'),
@@ -306,11 +327,16 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                         (day) => ListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(date(day.start)),
-                          subtitle: Text(
-                            'Unverified ${formatListeningDuration(day.unverified)}',
-                          ),
-                          trailing: Text(
-                            formatListeningDuration(day.confirmed),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Confirmed: ${recordedDuration(day.confirmed)}',
+                              ),
+                              Text(
+                                'Unverified: ${recordedDuration(day.unverified)}',
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -358,7 +384,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                                   ?.name ??
                               'Audio device',
                         ),
-                        subtitle: Text(formatListeningDuration(total.duration)),
+                        subtitle: Text(recordedDuration(total.duration)),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => openDeviceHistory(
                           total.deviceId,
@@ -607,12 +633,18 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
             title: Text(
               '${clock(interval.start)} - ${interval.live ? 'Now' : clock(interval.end)}',
             ),
-            subtitle: Text(
-              '${date(interval.start)}\n${interval.confirmed ? 'Confirmed output' : 'Unverified output'}'
-              '${interval.closeReason == 'collection_gap' || interval.closeReason == 'continuity_unproven' ? '\nContinuity unknown after last observation' : ''}',
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${date(interval.start)}\n${interval.confirmed ? 'Confirmed output' : 'Unverified output'}'
+                  '${interval.closeReason == 'collection_gap' || interval.closeReason == 'continuity_unproven' ? '\nContinuity unknown after last observation' : ''}',
+                ),
+                Text(
+                  'Recorded duration: ${recordedDuration(interval.duration)}',
+                ),
+              ],
             ),
-            trailing: Text(formatListeningDuration(interval.duration)),
-            isThreeLine: true,
           ),
         )
         .toList();
@@ -620,6 +652,9 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
 
   String date(DateTime date) =>
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  String recordedDuration(Duration duration) => duration == Duration.zero
+      ? 'None recorded'
+      : formatListeningDuration(duration);
   String clock(DateTime date) =>
       '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
 }

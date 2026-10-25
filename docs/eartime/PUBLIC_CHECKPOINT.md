@@ -7,6 +7,11 @@ hardware telemetry implementation.
 
 ## Publication Boundaries
 
+2026-10-25 E12 gates: 217 Flutter / 366 native (28 suites), analyzer/Kotlin/debug
+packaging/protected guard pass. Record-state/error/unknown consistency and proven
+positive-run average correction retain raw/open intervals. Count 33/70/15/1.
+RECORD_STATES.md; no physical G/output, full backup/deletion or release claim.
+
 2026-10-25 D7/E1 gates: 186 Flutter / 362 native (28 suites), clean analyzer,
 both Kotlin variants/debug APK/version/protected guard pass. Calendar UI and native
 totals acceptance, raw/replay/cursor retention and 1x/2x/3x tests. Count 32/71/15/1.
