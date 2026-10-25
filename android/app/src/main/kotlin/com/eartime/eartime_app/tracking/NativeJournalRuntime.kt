@@ -252,6 +252,11 @@ class NativeObservationIngress(
         command({ ensureStarted().readAfter(after, 128) }, failure, success)
     }
 
+    internal fun exportApplication(file: java.io.File, cancelled: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({ ensureStarted().writeApplicationArchive(file, cancelled) }, failure, success)
+    }
+
     fun deviceIdentity(deviceId: String, aliasOffset: Int, candidateOffset: Int,
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         command({ ensureStarted().deviceIdentity(deviceId, aliasOffset, candidateOffset) }, failure, success)
@@ -415,6 +420,12 @@ object NativeJournalRuntime {
     fun recoveryArchives(offset: Int, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized") else target.recoveryArchives(offset, success, failure)
+    }
+
+    internal fun exportApplication(file: java.io.File, cancelled: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized") else target.exportApplication(file, cancelled, success, failure)
     }
 
     internal fun diagnosticEndpoint(source: String, aliasId: String, revision: Long,

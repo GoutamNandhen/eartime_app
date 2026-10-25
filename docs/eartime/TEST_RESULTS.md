@@ -2,6 +2,16 @@
 
 Last verified implementation baseline: 2026-10-25.
 
+Application export: 225 Flutter / 401 native in 29 suites, zero failures/errors/
+skips; analyzer clean, Kotlin debug/release/debug APK pass. Three Flutter/25 native
+executions added. Real helper/native runtime/serialized journal/provider output,
+source/preference/legacy preservation, typed settings, malformed/canceled/future
+schema cases, Unicode IDs and 1001/1203-row capture pass. Two RED cases proved a
+SQL LIKE table-omission bug before literal-prefix correction; assertions retained.
+APPLICATION_EXPORTS.md records scope/exclusions and fixture-only corrections.
+Strict four-hook guard, version gate and 17 self-tests pass. Whole-app restore/
+deletion, physical G and hardware/OS durability are not claimed.
+
 Canonical Timeline sessions: 222 Flutter / 376 native in 28 suites, zero failures,
 errors or skipped cases; analyzer clean; debug/release Kotlin and debug packaging
 pass. Starting 217/366 was rerun first. Five Flutter/10 native executions added,
@@ -78,9 +88,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 217 passed, 0 failures |
+| Flutter full suite | 225 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 366 passed in 28 suites, 0 failures/errors/skips |
+| Android native suite | 401 passed in 29 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

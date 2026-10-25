@@ -3,6 +3,12 @@
 2026-10-24. H28 is the integrated disclosure path, not a completed security audit
 or store-policy certification. H15/H17/H18/H19/H20/H21 retain their own gates.
 
+2026-10-25 continuation: application-state export is now distinct from the old
+native-only archive and includes settings/legacy data; the disclosure names both
+formats and explicitly retains the whole-app restore/deletion limitation.
+APPLICATION_EXPORTS.md records bounded plaintext handling and exclusions. H17
+software acceptance is complete; H15/H18/H19/H20/H21 keep their remaining gates.
+
 `PrivacyScreen` is available offline from both Settings and the ungranted startup
 gate. It has no platform, database, permission, Bluetooth, network or account
 dependency. Opening/reading it never grants permission, starts optional inspection

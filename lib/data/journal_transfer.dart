@@ -11,6 +11,7 @@ class JournalTransferClient {
   }) async {
     if (!{
       'exportNativeJournal',
+      'exportApplicationData',
       'restoreNativeJournal',
       'restoreJournalRecovery',
     }.contains(operation)) {
@@ -23,12 +24,23 @@ class JournalTransferClient {
     if (result?['cancelled'] == true) return result!;
     if (result == null ||
         result['version'] != 1 ||
-        result['scope'] != 'native_observations_only' ||
+        result['scope'] !=
+            (operation == 'exportApplicationData'
+                ? 'application_data'
+                : 'native_observations_only') ||
         result['count'] is! int ||
         (result['count'] as int) < 0 ||
         result['sha256'] is! String ||
         !RegExp(r'^[0-9a-f]{64}$').hasMatch(result['sha256'] as String)) {
       throw const FormatException('Invalid journal transfer result');
+    }
+    if (operation == 'exportApplicationData' &&
+        (result['componentCount'] != 5 ||
+            result['legacyCount'] is! int ||
+            (result['legacyCount'] as int) < 0 ||
+            (result['legacyCount'] as int) > 200000 ||
+            (result['count'] as int) > 200000)) {
+      throw const FormatException('Invalid application export result');
     }
     return result;
   }

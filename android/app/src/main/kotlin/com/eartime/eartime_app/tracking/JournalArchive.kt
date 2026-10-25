@@ -51,6 +51,10 @@ object JournalArchive {
         }
         return JSONObject(text)
     }
+    internal fun validatedObject(text: String): JSONObject {
+        require(text.length <= MAX_LINE)
+        return json(text)
+    }
     private fun number(map: JSONObject, key: String): Long {
         val value = map.get(key)
         require(value is Int || value is Long) { "Invalid archive integer" }

@@ -5,11 +5,11 @@ Updated 2026-10-25. Each row is an implementation task, not a claim of completio
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **38 IMPLEMENTED, 65 IN_PROGRESS, 15 NOT_STARTED,
+Implementation count: **39 IMPLEMENTED, 64 IN_PROGRESS, 15 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
-Latest software-complete IDs: D1/D2/D3/E5/E6, E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
+Latest software-complete IDs: H17, D1/D2/D3/E5/E6, E12, D7/E1, H28, H25, F4/F5; B3 and earlier E10, F6, I1, I2, I3 retained. Hardware-dependent acceptance
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
@@ -45,6 +45,11 @@ Executable evidence keys:
   is integrated; confidence/live eligibility are still UNKNOWN/false.
 - OPEN: executable production acceptance test is missing. Add it with the
   implementation; never count this row as passing based on a source review.
+- X2: `ApplicationArchiveTest` (21 native executions) and two further API 28/35
+  picker/document integration cases (four executions), three Flutter application
+  transfer cases. Actual native/preferences/legacy export and integrity, source
+  preservation, cancellation, schema refusal, 1001/1203-row capture and real
+  helper/runtime/provider path; APPLICATION_EXPORTS.md. Whole-app restore is open.
 - Z: `EndpointIdentityTest` (24 API 28/35 cases), retired-owner ingress and
   widget unknown-state regressions; `test/device_identity_test.dart` (6 cases).
   `ENDPOINT_IDENTITY.md`: durable random endpoint UUIDs, explicit reversible
@@ -201,7 +206,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | G16 | Bounded diagnostics/logs | IN_PROGRESS; R/D bounds; full legacy logging audit OPEN |
 | G17 | Visible crashes/errors | IN_PROGRESS; journal/stream errors; global crash retention OPEN |
 | G18 | Memory/performance safeguards | IN_PROGRESS; V 1200-session model, transaction-bound rebuild cancellation and indexed pages; startup fairness/device profiling OPEN |
-| G19 | Regression/integration suite | IN_PROGRESS; 222 Flutter/376 native; 15 placeholders replaced; actual engine/OS tests OPEN |
+| G19 | Regression/integration suite | IN_PROGRESS; 225 Flutter/401 native; 15 placeholders replaced; actual engine/OS tests OPEN |
 | G20 | Reproducible hardware validation | IN_PROGRESS; saved rapid-reopen plan; final combined plan OPEN |
 
 ## H: Product and Release
@@ -216,15 +221,15 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | H6 | Analytics | IN_PROGRESS; P/U native actual aggregates, no placeholder scores; full metrics OPEN |
 | H7 | Devices | IN_PROGRESS; U native known-device next/previous pages/details/name overrides; verified aliases/telemetry OPEN |
 | H8 | Wellbeing | IN_PROGRESS; Q/U persisted goals/native summaries; reminders OPEN |
-| H9 | Settings | IN_PROGRESS; Q/X/M themes/goals, recorded-summary/quiet/permission controls, native archive/recovery, legacy/journal diagnostics; full backup/delete OPEN |
+| H9 | Settings | IN_PROGRESS; Q/X/X2/M themes/goals, summary/quiet/permission controls, application export, native archive/recovery and legacy/journal diagnostics; whole-app restore/delete OPEN |
 | H10 | Developer diagnostics | IN_PROGRESS; D/O journal and consent-only read-only catalog paths; vendor values/compatibility remain unknown, full diagnostics/privacy acceptance OPEN |
 | H11 | Android widgets | IN_PROGRESS; W multi-device dark two-column native provider; unknown battery honest; physical launcher/freshness pending |
 | H12 | Foreground notification/controls | IN_PROGRESS; inherited notification; control/status tests OPEN |
 | H13 | Goals/reminders/preferences | IN_PROGRESS; Q/M native goals/themes/names, summary categories/time and quiet hours; live-dependent F2/F3 OPEN |
-| H14 | Data-management settings | IN_PROGRESS; X native export/confirmed restore and recovery UI; full-app backup/confirmed deletion OPEN |
+| H14 | Data-management settings | IN_PROGRESS; X/X2 application-state export plus native-only confirmed restore/recovery UI; whole-app restore/confirmed deletion OPEN |
 | H15 | Local-first privacy | IN_PROGRESS; OS cloud/transfer backup excluded; O automatic BLE and vendor writes removed, explicit ephemeral consent; protected collector logs/full privacy audit OPEN |
 | H16 | Offline functionality | IN_PROGRESS; native/local queries and system fonts; full offline acceptance OPEN |
-| H17 | Export | IN_PROGRESS; X integrated streaming versioned native journal export/checksum/cutoff; legacy/preferences export OPEN, not full-app backup |
+| H17 | Export | IMPLEMENTED / AUTOMATED_PASS X/X2; integrated versioned application-state export includes native/identity rows, typed preferences/notification state, legacy history and cursor/conflict metadata with bounded integrity validation, consent/cancel and actual synthetic document-provider path; caches/logs/older recovery copies excluded, whole-app restore H18 still OPEN; PHYSICAL_PENDING |
 | H18 | Backup/restore | IN_PROGRESS; X explicit transactional native restore, synced recovery, idempotence/conflict/crash/cancel/reopen and 1500-session tests; full legacy/preferences backup OPEN |
 | H19 | User deletion | NOT_STARTED; explicit-confirmation/transaction tests OPEN |
 | H20 | Accessibility | IN_PROGRESS; D large-text test; all-screen semantics OPEN |

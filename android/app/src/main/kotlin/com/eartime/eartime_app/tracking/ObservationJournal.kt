@@ -191,6 +191,36 @@ class ObservationJournal(
         return JournalArchive.write(output, sourceId(db), lastSequence(db), { readAfter(it, 128) }, cancelled)
     }
 
+    internal fun writeApplicationArchive(file: File, cancelled: () -> Boolean = { false }): Map<String, Any?> {
+        val db = database()
+        return transaction(db) {
+            ApplicationArchive.write(appContext, this, file, { output ->
+                var count = 0L
+                fun line(values: Map<String, Any?>) {
+                    if (cancelled()) throw ArchiveCancelled()
+                    val bytes = (JournalJson.encode(values) + "\n").toByteArray(Charsets.UTF_8)
+                    require(bytes.size <= 524288); output.write(bytes)
+                }
+                line(mapOf("record" to "header", "version" to 1))
+                db.rawQuery("SELECT * FROM journal_faults ORDER BY fault_id", null).use { rows ->
+                    while (rows.moveToNext()) {
+                        require(++count <= JournalArchive.MAX_RECORDS)
+                        line(mapOf("record" to "fault", "faultId" to rows.getString(rows.getColumnIndexOrThrow("fault_id")),
+                            "observationId" to rows.getString(rows.getColumnIndexOrThrow("observation_id")),
+                            "reason" to rows.getString(rows.getColumnIndexOrThrow("reason")), "detectedUtcMs" to rows.getLong(rows.getColumnIndexOrThrow("detected_utc_ms"))))
+                    }
+                }
+                db.rawQuery("SELECT consumer, sequence FROM consumer_cursors ORDER BY consumer", null).use { rows ->
+                    while (rows.moveToNext()) {
+                        require(++count <= JournalArchive.MAX_RECORDS)
+                        line(mapOf("record" to "cursor", "consumer" to rows.getString(0), "sequence" to rows.getLong(1)))
+                    }
+                }
+                line(mapOf("record" to "footer", "count" to count))
+            }, cancelled).wire()
+        }
+    }
+
     fun recoveryArchives(offset: Int = 0): Map<String, Any?> {
         require(offset in 0..1000000)
         val files = recoveryFiles()

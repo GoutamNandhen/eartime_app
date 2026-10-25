@@ -22,14 +22,14 @@ class JournalFileTransfer(private val activity: Activity) : AutoCloseable {
     }
 
     fun select(mode: String, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
-        require(mode == "export" || mode == "restore")
+        require(mode == "export" || mode == "exportApp" || mode == "restore")
         if (closed || pending != null) { failure("A journal transfer is already active"); return }
         val request = Request(mode, success, failure).also { pending = it }
         try {
-            activity.startActivityForResult(Intent(if (mode == "export") Intent.ACTION_CREATE_DOCUMENT else Intent.ACTION_OPEN_DOCUMENT).apply {
+            activity.startActivityForResult(Intent(if (mode != "restore") Intent.ACTION_CREATE_DOCUMENT else Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "application/octet-stream"
-                if (mode == "export") putExtra(Intent.EXTRA_TITLE, "EarTime-history.eartime")
+                if (mode != "restore") putExtra(Intent.EXTRA_TITLE, if (mode == "exportApp") "EarTime-application.eartimeapp" else "EarTime-history.eartime")
             }, REQUEST_CODE)
         } catch (_: Exception) { finish(request, null, "Document picker unavailable") }
     }
@@ -63,7 +63,23 @@ class JournalFileTransfer(private val activity: Activity) : AutoCloseable {
         executor.execute {
             var staged: File? = null
             try {
-                val result = if (request.mode == "export") {
+                val result = if (request.mode == "exportApp") {
+                    val file = File.createTempFile("eartime-application-", ".partial", activity.cacheDir).also { staged = it }
+                    val summary = await<Map<String, Any?>> { ok, fail -> NativeJournalRuntime.exportApplication(file, request.cancelled::get, ok, fail) }
+                    if (request.cancelled.get()) throw ArchiveCancelled()
+                    activity.contentResolver.openOutputStream(uri, "w")!!.use { output ->
+                        file.inputStream().use { input ->
+                            val buffer = ByteArray(16384)
+                            while (true) {
+                                if (request.cancelled.get()) throw ArchiveCancelled()
+                                val count = input.read(buffer); if (count < 0) break
+                                output.write(buffer, 0, count)
+                            }
+                        }
+                        output.flush()
+                    }
+                    summary
+                } else if (request.mode == "export") {
                     val info = await<Map<String, Any?>> { ok, fail -> NativeJournalRuntime.readPage(0, 1, ok, fail) }
                     activity.contentResolver.openOutputStream(uri, "w")!!.use { output ->
                         JournalArchive.write(output, info["sourceId"] as String, info["lastSequence"] as Long,
@@ -103,6 +119,10 @@ class JournalFileTransfer(private val activity: Activity) : AutoCloseable {
     private fun failureMessage(error: Exception): String {
         val messages = generateSequence<Throwable>(error) { it.cause }.take(8).mapNotNull { it.message }.toList()
         return when {
+            messages.any { it.contains("Application archive limit") || it.contains("Application metadata exceeds") || it.contains("Application record exceeds") } ->
+                "Application export limit exceeded (256 MiB total, 128 MiB per component, 200000 rows per history). Source data was not changed."
+            messages.any { it.contains("preserved legacy") || it.contains("Unrecognized legacy") || it.contains("Preserved legacy corruption") } ->
+                "Preserved history is damaged or has an unsupported schema. Export was not completed; original data was retained."
             messages.any { it.contains("Conflicting archive history") || it.contains("Archive omits committed") } ->
                 "Archive conflicts with existing history from the same source. Nothing was replaced."
             messages.any { it.contains("Archive exceeds") } -> "Archive limit exceeded (128 MiB / 200000 observations). No history was replaced."

@@ -1,8 +1,9 @@
 # Native Journal Archives
 
 Development implementation, 2026-10-24. Native observations only, **not a full-app
-backup**. H17/H18 remain IN_PROGRESS until preserved legacy history and preferences
-have an explicit tested backup/restore policy. H19 deletion is not implemented.
+backup**. H17 now separately exports application state including preferences and
+legacy history (APPLICATION_EXPORTS.md). H18 whole-app restoration remains
+IN_PROGRESS; H19 deletion is not implemented. The native format below is retained.
 
 ## Integrated Path
 

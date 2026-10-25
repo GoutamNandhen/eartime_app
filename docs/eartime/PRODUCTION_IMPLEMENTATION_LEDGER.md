@@ -4,9 +4,38 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: canonical Timeline sessions, 222 Flutter / 376 native
+Latest checkpoint: versioned application-state export, 225 Flutter / 401 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Application Export Continuation (2026-10-25)
+
+- Prior session checkpoint 079fdd00c70108940fb8ecd866ae70a9effeb1eb was normally
+  pushed/remote-verified; main remains 13ae6609d22cb2a0daf8890fca081fb97c93b36b.
+- Extended existing transfer/runtime/worker, not a competing listening writer.
+  Five fixed bounded components capture native observations/identity/cursors/
+  faults, typed preferences/summary receipts and preserved Drift v1 rows. Original
+  sources and confidence are retained; no automatic legacy import/deletion.
+- Actual disclosure/picker/helper/runtime/writer/provider path tested. Existing
+  native-only archive/restore remains distinct. Whole-app restore and deletion
+  are not implemented by this checkpoint. APPLICATION_EXPORTS.md lists exclusions.
+- Two RED native picker cases and three RED Flutter paths established absence.
+  Two further RED cases proved LIKE's underscore wildcard hiding sqliteXhistory;
+  fixed with literal-prefix GLOB, assertions retained. Known Android locale table
+  is accepted narrowly after AOSP review; default corrupt-DB deletion is refused.
+  JUnit return-type and Windows fixture-path failures corrected without skips.
+- New evidence: 25 native executions including real process-worker/document I/O,
+  immutable repeat/source/prefs/legacy capture, corrupt-original retention,
+  hostile/truncated/recomputed archives, cancellation and 1001 native/1203 legacy
+  rows. Three Flutter cases cover protocol/consent/cancel at 1x/3x.
+- Full gates: 225 Flutter/401 native in 29 suites, no errors/failures/skips,
+  analyzer clean, both Kotlin variants/debug APK pass; four prior service hooks
+  only, version gate and 17 self-tests pass. No physical G/telemetry/OEM durability
+  or signed release claim. H17 software complete: 39/64/15/1=119.
+- Next independent work: explicit Android-managed full-data deletion with scoped
+  confirmation/ownership and honest request-not-completion status, no real device
+  invocation. Whole-app restore needs a durable multi-store recovery contract;
+  native-only replacement cannot masquerade as that. Continue the exact matrix.
 
 ## Canonical Session Continuation (2026-10-25)
 

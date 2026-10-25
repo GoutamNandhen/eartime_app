@@ -45,16 +45,26 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
   Future<void> transfer(String operation, {String? id}) async {
     if (_busy) return;
-    final restore = operation != 'exportNativeJournal';
+    final applicationExport = operation == 'exportApplicationData';
+    final restore = !{
+      'exportNativeJournal',
+      'exportApplicationData',
+    }.contains(operation);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         scrollable: true,
         title: Text(
-          restore ? 'Replace native history?' : 'Export private observations?',
+          applicationExport
+              ? 'Export private application data?'
+              : restore
+              ? 'Replace native history?'
+              : 'Export private observations?',
         ),
         content: Text(
-          restore
+          applicationExport
+              ? 'This unencrypted export contains native observations and device associations, settings, names, goals, notification preferences, preserved legacy history and journal recovery metadata. Choose a private local destination. Android document providers may store files remotely. The file is integrity-checked, not password protected. Whole-app restore is not yet available; native-only restore does not accept this format.'
+              : restore
               ? 'The selected archive will replace native observation history. A local recovery archive is retained first. Legacy history and preferences are not changed. Corrupt or conflicting archives are rejected. Restored open intervals do not continue across the restore.'
               : 'This unencrypted file contains observation timestamps, device identifiers and payloads. Choose a private local destination. It includes native observations only, not legacy history or preferences. It is not a full-app backup.',
         ),
@@ -83,6 +93,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
               ? 'Transfer canceled.'
               : result['unchanged'] == true
               ? 'This history is already present. Nothing changed.'
+              : applicationExport
+              ? 'Application export saved: ${result['count']} observations, ${result['legacyCount']} preserved legacy rows. Whole-app restore is not yet available.'
               : restore
               ? '${result['count']} archived observations restored. A recovery archive was retained.'
               : '${result['count']} observations exported with an integrity checksum.',
@@ -116,6 +128,20 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        const Text(
+          'Application data',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        const Text(
+          'Application exports include settings and preserved history. Whole-app restore and deletion are not available yet.',
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.archive_outlined),
+          title: const Text('Export application data'),
+          onTap: _busy ? null : () => transfer('exportApplicationData'),
+        ),
+        const Divider(),
         const Text(
           'Native observation archives',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),

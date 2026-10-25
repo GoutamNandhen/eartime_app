@@ -1,10 +1,25 @@
 # Architecture
 
-Updated 2026-10-24. Development checkpoint, not a production-ready release.
+Updated 2026-10-25. Development checkpoint, not a production-ready release.
 This replaces historical notes that described an in-memory source of truth or
 asserted physical G without corresponding evidence.
 
 ## Authoritative Path
+
+Timeline session contract 1 is a query-only grouping of the same native intervals
+and raw boundary evidence. Sessions/contributors have separate bounded pages,
+captured clock/epoch/gap fences, clipped overlap unions and explicit transitions.
+Native grouped longest/mean are separate from continuous-run metrics. Period
+totals stay globally unioned: session cards can overlap across uncertainty and
+cannot be added as a replacement. TIMELINE_SESSIONS.md; no source/cache migration.
+
+Application exports capture native source/identity rows, typed settings/delivery
+state, preserved legacy rows and cursor/conflict evidence. The fixed-component,
+bounded format is integrity-validated before separate-worker provider copying.
+Legacy access is read-only/non-deleting; unsupported schema/table content refuses
+export. This does not implement multi-store restore, mutate preferences/legacy,
+copy live SQLite files or change attribution. APPLICATION_EXPORTS.md documents
+format, exclusions and the still-open recovery/deletion contracts.
 
 Record-state UI classifies native metadata without calculating time. Errors stay
 unavailable; missing duration is None recorded, and totals are explicit lower

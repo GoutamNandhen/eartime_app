@@ -30,7 +30,7 @@ class PrivacyScreen extends StatelessWidget {
     ),
     (
       'Export and restore limits',
-      'Local data export currently contains the native observation journal, not a complete app backup. Preferences and preserved legacy history are excluded. Archives can include private device identifiers and usage history, so their destination and sharing require care. Confirmed restore changes native history and retains a private recovery archive; it is not whole-app restoration.',
+      'Application exports include native observations and device associations, settings, goals, notification preferences, preserved legacy history and journal recovery metadata. They are unencrypted and integrity-checked, not password protected. Whole-app restore is not yet available. The separate native-only archive excludes settings and legacy history; confirmed native restore retains a private recovery copy and does not accept application exports. Archives can contain private device identifiers and usage habits, so their destination and sharing require care.',
     ),
     (
       'Retention and deletion',

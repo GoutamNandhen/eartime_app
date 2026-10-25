@@ -1,6 +1,27 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-25. Paths in this document are repository-relative.
+Latest application-export continuation: H17 includes versioned native source and
+identity rows, typed settings/goals/notification-delivery state, preserved legacy
+events and cursor/conflict evidence. Actual Settings consent -> Android document
+helper -> process-scoped worker -> verified file/provider path is model-tested.
+APPLICATION_EXPORTS.md documents framing, bounds, exclusions, schema/corruption
+refusal and unresolved whole-app restore/deletion. No source/preference/legacy
+mutation, confidence promotion, source/cache migration or service-file edit.
+Full actual gates: 225 Flutter / 401 native in 29 suites, zero failures/errors/
+skips; analyzer clean, both Kotlin variants/debug APK pass, strict four-hook and
+version gates/17 version self-tests pass. Three Flutter/25 native executions added.
+Counts: 39 IMPLEMENTED / 64 IN_PROGRESS / 15 NOT_STARTED / 1 BLOCKED_BY_PLATFORM
+=119 (32.8% feature completion, NOT readiness). H18/H19/H14 remain incomplete.
+Prior 079fdd00c70108940fb8ecd866ae70a9effeb1eb was pushed/remote-verified; main
+remains 13ae6609d22cb2a0daf8890fca081fb97c93b36b. No physical or release claim.
+Next: independently safe explicit full-data deletion using Android's self-data
+clear contract (never invoke on real user hardware here), then transaction-safe
+multi-store restore/recovery. Do not apply a native-only restore to this format.
+Continue remaining exact matrix; no consolidated hardware-testing request yet.
+Ignored/unpublished debug APK 1.1.0-dev.1+2 SHA-256:
+`B26A812E09C25F72839A6C91EE20177AAD80365412F9B403286551EEB1CE0966`.
+
 Latest Timeline continuation: query-contract-1 native overlap sessions, separate
 100-row contributor pages, pause/disconnect/output/gap evidence, full timestamps/
 UTC offsets and grouped longest/mean. No new writer, schema, confidence or

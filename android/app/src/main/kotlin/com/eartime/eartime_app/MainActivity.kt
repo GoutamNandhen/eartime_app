@@ -183,7 +183,7 @@ class MainActivity : FlutterActivity() {
                         { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("IDENTITY_UPDATE_FAILED", "Association changed or unavailable; refresh and retry", null) } } },
                         { owner.isActive && navigationOwner == owner.token })
                 }
-                "exportNativeJournal", "restoreNativeJournal", "restoreJournalRecovery" -> {
+                "exportNativeJournal", "exportApplicationData", "restoreNativeJournal", "restoreJournalRecovery" -> {
                     if (!owner.isActive || navigationOwner != owner.token) {
                         result.error("ENGINE_RETIRED", "This engine no longer owns commands", null)
                     } else if (call.method != "exportNativeJournal" && call.argument<Boolean>("confirmed") != true) {
@@ -193,7 +193,11 @@ class MainActivity : FlutterActivity() {
                         val failure: (String) -> Unit = { message -> owner.runIfActive { result.error("JOURNAL_TRANSFER_FAILED", message, null) }; Unit }
                         try {
                             if (call.method == "restoreJournalRecovery") journalTransfer.restoreRecovery(call.argument<String>("id") ?: "", success, failure)
-                            else journalTransfer.select(if (call.method == "exportNativeJournal") "export" else "restore", success, failure)
+                            else journalTransfer.select(when (call.method) {
+                                "exportApplicationData" -> "exportApp"
+                                "exportNativeJournal" -> "export"
+                                else -> "restore"
+                            }, success, failure)
                         } catch (_: Exception) { failure("Invalid journal transfer request") }
                     }
                 }
