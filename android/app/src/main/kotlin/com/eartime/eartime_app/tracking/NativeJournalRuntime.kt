@@ -35,6 +35,7 @@ class NativeObservationIngress(
     private var started = false
     private var commitLossCount = 0L
     private var restoreFenceElapsed: Long? = null
+    private var dataDeletion: ApplicationDataDeletion? = null
     @Volatile private var lastError: String? = null
     private val lifecycleLock = Any()
     @Volatile private var closing = false
@@ -257,6 +258,14 @@ class NativeObservationIngress(
         command({ ensureStarted().writeApplicationArchive(file, cancelled) }, failure, success)
     }
 
+    internal fun deleteApplicationData(confirmed: Boolean, scope: String, ownerActive: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        command({
+            val deletion = dataDeletion ?: ApplicationDataDeletion(context).also { dataDeletion = it }
+            deletion.request(confirmed, scope, ownerActive)
+        }, failure, success)
+    }
+
     fun deviceIdentity(deviceId: String, aliasOffset: Int, candidateOffset: Int,
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         command({ ensureStarted().deviceIdentity(deviceId, aliasOffset, candidateOffset) }, failure, success)
@@ -426,6 +435,13 @@ object NativeJournalRuntime {
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
         val target = ingress
         if (target == null) failure("Native journal was not initialized") else target.exportApplication(file, cancelled, success, failure)
+    }
+
+    internal fun deleteApplicationData(confirmed: Boolean, scope: String, ownerActive: () -> Boolean,
+        success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {
+        val target = ingress
+        if (target == null) failure("Native journal was not initialized")
+        else target.deleteApplicationData(confirmed, scope, ownerActive, success, failure)
     }
 
     internal fun diagnosticEndpoint(source: String, aliasId: String, revision: Long,

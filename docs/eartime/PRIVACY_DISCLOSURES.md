@@ -9,6 +9,11 @@ formats and explicitly retains the whole-app restore/deletion limitation.
 APPLICATION_EXPORTS.md records bounded plaintext handling and exclusions. H17
 software acceptance is complete; H15/H18/H19/H20/H21 keep their remaining gates.
 
+The later H19 disclosure now names Android-managed full private-data deletion,
+irreversibility, runtime-permission reset, external-document retention and the
+request-versus-completion distinction. APPLICATION_DELETION.md; H19's software
+path passes automation, while actual erasure and whole-app restore remain open.
+
 `PrivacyScreen` is available offline from both Settings and the ungranted startup
 gate. It has no platform, database, permission, Bluetooth, network or account
 dependency. Opening/reading it never grants permission, starts optional inspection

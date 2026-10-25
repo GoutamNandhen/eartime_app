@@ -1,6 +1,25 @@
 # EarTime Resume Checkpoint
 
 Updated 2026-10-25. Paths in this document are repository-relative.
+Latest H19 continuation: explicitly confirmed Android-managed full private-data
+deletion, lazy worker-owned helper, native scope/retired-owner fences and honest
+request-not-completion UI. No manual partial table deletion, automatic migration,
+service-file change or real-data wipe. APPLICATION_DELETION.md records the API,
+irreversibility, external-export boundary and physical limits. Four Flutter/19
+native executions added. Full actual gates: 229 Flutter / 420 native in 30 suites,
+zero failures/errors/skips; analyzer clean; debug/release Kotlin/debug APK pass;
+strict prior-four-hook and version guards pass. No physical G/release claim.
+Counts: 40 IMPLEMENTED / 64 IN_PROGRESS / 14 NOT_STARTED / 1 BLOCKED_BY_PLATFORM
+=119 (33.6%, not readiness). Prior d2615599629a75da17bd7bc8f3f7b256fe1b684b was
+pushed/remote-verified; main remains 13ae6609d22cb2a0daf8890fca081fb97c93b36b.
+Next: full-app transactional restore/recovery spanning native journal, preferences
+and legacy Drift. H18/H14 remain partial. Do not substitute native-only restore,
+replace live SQLite files or publish success before recovery/rollback is proven.
+Continue every remaining independently implementable matrix item; no hardware
+acceptance request or all-feature completion claim is justified yet.
+Ignored/unpublished debug APK 1.1.0-dev.1+2 SHA-256:
+`557BE309081635E7AC9256E65C254EFC7CC4AF82D2F11B8192B6A23D020DCF9A`.
+
 Latest application-export continuation: H17 includes versioned native source and
 identity rows, typed settings/goals/notification-delivery state, preserved legacy
 events and cursor/conflict evidence. Actual Settings consent -> Android document

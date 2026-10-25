@@ -79,4 +79,22 @@ class JournalTransferClient {
   Future<void> cancel() async {
     await _channel.invokeMethod<void>('cancelJournalTransfer');
   }
+
+  Future<bool> requestDeletion({required bool confirmed}) async {
+    if (!confirmed) {
+      throw ArgumentError('Explicit deletion confirmation required');
+    }
+    final result = await _channel.invokeMapMethod<dynamic, dynamic>(
+      'deleteApplicationData',
+      {'confirmed': true, 'scope': 'all_app_private_data'},
+    );
+    if (result == null ||
+        result['version'] != 1 ||
+        result['scope'] != 'all_app_private_data' ||
+        result['requested'] is! bool ||
+        result['completed'] != false) {
+      throw const FormatException('Invalid deletion request acknowledgment');
+    }
+    return result['requested'] as bool;
+  }
 }

@@ -3,7 +3,9 @@
 Development implementation, 2026-10-24. Native observations only, **not a full-app
 backup**. H17 now separately exports application state including preferences and
 legacy history (APPLICATION_EXPORTS.md). H18 whole-app restoration remains
-IN_PROGRESS; H19 deletion is not implemented. The native format below is retained.
+IN_PROGRESS; H19 now delegates explicitly confirmed full private-data deletion to
+Android (APPLICATION_DELETION.md), with physical erasure pending. The native format
+below is retained.
 
 ## Integrated Path
 

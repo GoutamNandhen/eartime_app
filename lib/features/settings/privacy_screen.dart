@@ -34,7 +34,7 @@ class PrivacyScreen extends StatelessWidget {
     ),
     (
       'Retention and deletion',
-      'EarTime does not automatically delete uncertain legacy records. Complete in-app history deletion is not implemented yet. Clearing Android app storage or uninstalling may permanently remove local records and private recovery files. Native journal exports do not protect every category of app data. Android cloud-backup and device-transfer exclusions are configured; no automatic recovery is promised.',
+      'EarTime does not automatically delete uncertain legacy records. Local data settings offer explicitly confirmed Android-managed deletion of all app-private data, including native and legacy history, preferences and private recovery archives. Deletion cannot be undone after its request; Android may close the app and revokes runtime permissions. An accepted request is not a completion receipt. Exported documents outside private app storage remain. Whole-app restore is not yet available. Android cloud-backup and device-transfer exclusions are configured; no automatic recovery is promised.',
     ),
     (
       'Diagnostic logs',

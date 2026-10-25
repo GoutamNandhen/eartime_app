@@ -4,6 +4,10 @@
 and deletion remain unfinished. No automatic migration or user-data deletion is
 performed by export. No hardware, physical durability or release claim follows.
 
+Subsequent H19 continuation implements explicitly confirmed Android-managed full
+private-data deletion (APPLICATION_DELETION.md), with actual OS erasure pending.
+The export-checkpoint evidence below is historical; whole-app restore stays open.
+
 ## Production Path
 
 Settings -> Local data -> Export application data requires the plaintext/private-

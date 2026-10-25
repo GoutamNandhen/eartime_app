@@ -6,6 +6,11 @@ asserted physical G without corresponding evidence.
 
 ## Authoritative Path
 
+Explicit full-data deletion delegates to Android's public self-data API only after
+separate checkbox confirmation and native scope/worker-owner fences. It is lazy,
+not a startup path or manual partial-table wipe. Request acknowledgment never
+claims actual erasure; see APPLICATION_DELETION.md. Physical OS acceptance is open.
+
 Timeline session contract 1 is a query-only grouping of the same native intervals
 and raw boundary evidence. Sessions/contributors have separate bounded pages,
 captured clock/epoch/gap fences, clipped overlap unions and explicit transitions.

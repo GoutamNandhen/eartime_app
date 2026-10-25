@@ -2,6 +2,16 @@
 
 Last verified implementation baseline: 2026-10-25.
 
+Explicit deletion: 229 Flutter / 420 native in 30 suites, no failures/errors/skips,
+analyzer clean, debug/release Kotlin/debug APK and strict four-hook/version guards
+pass. Four Flutter/19 native API 24/28/35 executions cover consent/cancel, real
+settings at 1x/3x, request-only protocol, refusal/error retry, service availability,
+public API, idempotence and queued retired-engine refusal. Two initial absent-UI
+RED cases, an indefinitely animating acknowledged spinner and four analyzer block
+findings were corrected. Exact command error-prefix/dialog scroll-owner fixture
+fixes suppress no behavior assertion. APPLICATION_DELETION.md; actual erasure,
+permission reset and process/service termination remain PHYSICAL_PENDING.
+
 Application export: 225 Flutter / 401 native in 29 suites, zero failures/errors/
 skips; analyzer clean, Kotlin debug/release/debug APK pass. Three Flutter/25 native
 executions added. Real helper/native runtime/serialized journal/provider output,
@@ -88,9 +98,9 @@ execute. The pre-fix assertion then failed for Settings covering the destination
 
 | Gate | Actual result |
 | --- | --- |
-| Flutter full suite | 225 passed, 0 failures |
+| Flutter full suite | 229 passed, 0 failures |
 | Analyzer | Exit 0, no issues |
-| Android native suite | 401 passed in 29 suites, 0 failures/errors/skips |
+| Android native suite | 420 passed in 30 suites, 0 failures/errors/skips |
 | Kotlin compilation | Debug and release compile pass |
 | Android packaging | Debug APK build pass; artifact not published |
 | Protected collector comparison | Source equality FALSE; exactly four reviewed observer lifecycle additions; strict hook-only guard passes |

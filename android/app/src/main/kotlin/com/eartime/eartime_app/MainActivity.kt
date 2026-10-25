@@ -183,11 +183,19 @@ class MainActivity : FlutterActivity() {
                         { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("IDENTITY_UPDATE_FAILED", "Association changed or unavailable; refresh and retry", null) } } },
                         { owner.isActive && navigationOwner == owner.token })
                 }
+                "deleteApplicationData" -> {
+                    if (!owner.isActive || navigationOwner != owner.token) {
+                        result.error("ENGINE_RETIRED", "This engine no longer owns commands", null)
+                    } else NativeJournalRuntime.deleteApplicationData(call.argument<Boolean>("confirmed") == true,
+                        call.argument<String>("scope") ?: "", { owner.isActive && navigationOwner == owner.token },
+                        { value -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.success(value) } } },
+                        { _ -> Handler(Looper.getMainLooper()).post { owner.runIfActive { result.error("DELETION_REQUEST_FAILED", "Android data deletion was not confirmed. No completion is assumed.", null) } } })
+                }
                 "exportNativeJournal", "exportApplicationData", "restoreNativeJournal", "restoreJournalRecovery" -> {
                     if (!owner.isActive || navigationOwner != owner.token) {
                         result.error("ENGINE_RETIRED", "This engine no longer owns commands", null)
                     } else if (call.method != "exportNativeJournal" && call.argument<Boolean>("confirmed") != true) {
-                        result.error("CONFIRMATION_REQUIRED", "Explicit restore confirmation required", null)
+                        result.error("CONFIRMATION_REQUIRED", "Explicit data-transfer confirmation required", null)
                     } else {
                         val success: (Map<String, Any?>) -> Unit = { value -> owner.runIfActive { result.success(value) }; Unit }
                         val failure: (String) -> Unit = { message -> owner.runIfActive { result.error("JOURNAL_TRANSFER_FAILED", message, null) }; Unit }

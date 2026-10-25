@@ -15,6 +15,8 @@ class DataManagementScreen extends StatefulWidget {
 
 class _DataManagementScreenState extends State<DataManagementScreen> {
   bool _busy = false;
+  bool _deleting = false;
+  bool _deletionAccepted = false;
   String? _status;
   Map<dynamic, dynamic>? _recoveries;
   bool _recoveryError = false;
@@ -118,8 +120,84 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
   @override
   void dispose() {
-    if (_busy) unawaited(widget.client.cancel().catchError((Object _) {}));
+    if (_busy && !_deleting) {
+      unawaited(widget.client.cancel().catchError((Object _) {}));
+    }
     super.dispose();
+  }
+
+  Future<void> requestDeletion() async {
+    if (_busy) return;
+    var acknowledged = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          scrollable: true,
+          title: const Text('Delete all local data?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Android will erase all EarTime private data: native and legacy history, device names and associations, settings, goals, notification preferences, diagnostics and private recovery archives. Collection and transfers will stop, permissions will be revoked and the app may close. The installed app and exported documents outside its private storage remain. This cannot be undone or canceled after the request is sent. Whole-app restore is not yet available.',
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: acknowledged,
+                onChanged: (value) =>
+                    update(() => acknowledged = value == true),
+                title: const Text(
+                  'I understand that all local EarTime data will be permanently erased.',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              onPressed: acknowledged
+                  ? () => Navigator.pop(context, true)
+                  : null,
+              icon: const Icon(Icons.delete_forever),
+              label: const Text('Delete permanently'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _deleting = true;
+      _deletionAccepted = false;
+      _status = 'Requesting Android data deletion. No completion is assumed.';
+    });
+    try {
+      final requested = await widget.client.requestDeletion(confirmed: true);
+      if (!mounted) return;
+      setState(() {
+        _status = requested
+            ? 'Android accepted the deletion request. The app may close; this acknowledgment is not proof that deletion has completed.'
+            : 'Android did not accept the deletion request. No completion is assumed.';
+        _deletionAccepted = requested;
+        if (!requested) {
+          _busy = false;
+          _deleting = false;
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _deleting = false;
+          _status =
+              'Deletion could not be confirmed. No completion is assumed. You can retry or use Android app settings.';
+        });
+      }
+    }
   }
 
   @override
@@ -133,7 +211,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const Text(
-          'Application exports include settings and preserved history. Whole-app restore and deletion are not available yet.',
+          'Application exports include settings and preserved history. Whole-app restore is not available yet.',
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
@@ -163,24 +241,31 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           title: const Text('Restore native history from file'),
           onTap: _busy ? null : () => transfer('restoreNativeJournal'),
         ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.delete_forever_outlined),
+          title: const Text('Delete all local data'),
+          onTap: _busy ? null : requestDeletion,
+        ),
         if (_busy) ...[
-          const LinearProgressIndicator(),
-          TextButton.icon(
-            onPressed: () async {
-              try {
-                await widget.client.cancel();
-              } catch (_) {
-                if (mounted) {
-                  setState(
-                    () => _status =
-                        'Cancellation could not be requested. The transfer result is still pending.',
-                  );
+          if (!_deletionAccepted) const LinearProgressIndicator(),
+          if (!_deleting)
+            TextButton.icon(
+              onPressed: () async {
+                try {
+                  await widget.client.cancel();
+                } catch (_) {
+                  if (mounted) {
+                    setState(
+                      () => _status =
+                          'Cancellation could not be requested. The transfer result is still pending.',
+                    );
+                  }
                 }
-              }
-            },
-            icon: const Icon(Icons.close),
-            label: const Text('Cancel transfer'),
-          ),
+              },
+              icon: const Icon(Icons.close),
+              label: const Text('Cancel transfer'),
+            ),
         ],
         if (_status != null)
           Padding(

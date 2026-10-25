@@ -4,9 +4,39 @@ Date: 2026-10-24. User authorization: master autonomous implementation request
 and subsequent resume instruction. Historical STOP entries are superseded for
 implementation; their unresolved physical findings remain valid.
 
-Latest checkpoint: versioned application-state export, 225 Flutter / 401 native
+Latest checkpoint: explicit Android-managed full-data deletion, 229 Flutter / 420 native
 passing tests, analyzer clean. The recovery baseline below is historical.
 `LISTENING_PROJECTION.md` describes current attribution/liveness limitations.
+
+## Confirmed Full-Data Deletion (2026-10-25)
+
+- d2615599629a75da17bd7bc8f3f7b256fe1b684b was normally pushed/remote-verified
+  with main unchanged. H19 now has a real public Android self-data-clear path,
+  not partial file/table loops. This avoids an app-side wipe racing its own
+  collectors and covers legacy/preferences/private recovery state as well.
+- Separate disclosure/unchecked acknowledgement precedes the irreversible
+  request. Scope and engine/navigation fences are enforced natively and checked
+  again on the existing worker before/after service lookup. Lazy helper never
+  runs during normal startup. Platform refusal/failure permits explicit retry;
+  accepted requests are not resent. No new permission or collector edit.
+- Framework acknowledgement is explicitly NOT completed erasure. UI/decoder
+  refuse false completion/cancellation promises; the request spinner stops after
+  acknowledgment. External exported documents remain. Android owns erasure/
+  termination; no app transaction rollback or forensic-wipe guarantee is claimed.
+- Four Flutter cases/19 native API 24/28/35 executions: absent-control RED,
+  consent/cancel/1x/3x, malformed receipts/refusal/error retry, supported API,
+  unavailable service/exceptions, idempotence and actual queued-engine retirement.
+  Dialog scroll-owner/exception-prefix fixtures corrected with assertions kept;
+  four analyzer block findings fixed. Infinite acknowledged-request animation
+  reproduced and corrected in production, not hidden with test timeouts.
+- Full gates: 229 Flutter/420 native, 30 suites, no failures/errors/skips;
+  analyzer clean, both Kotlin variants/debug APK/four-hook/version guards pass.
+  H19 IMPLEMENTED/PHYSICAL_PENDING; 40/64/14/1=119. Robolectric deliberately
+  retains its fixture file: no actual OS erasure, physical G or release evidence.
+- Continue H18 multi-store transactional restore with durable recovery before
+  mutation, conflict/idempotence/cancellation and failure injection. Native-only
+  restoration must not masquerade as whole-app recovery. No real deletion was
+  invoked and no intermediate hardware participation is requested.
 
 ## Application Export Continuation (2026-10-25)
 
