@@ -103,6 +103,8 @@ void main() {
           400,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.ensureVisible(find.text('About EarTime'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('About EarTime'));
         await tester.pumpAndSettle();
         expect(find.text('Installed version unavailable'), findsOneWidget);
