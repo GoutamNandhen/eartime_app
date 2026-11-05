@@ -379,7 +379,7 @@ class ListeningSnapshot {
         throw const FormatException('Inconsistent session page');
       }
     }
-    if (![1, 2, 3, 4, 5].contains(map['projectionVersion']) ||
+    if (![1, 2, 3, 4, 5, 6].contains(map['projectionVersion']) ||
         sequence < 0 ||
         confirmed.isNegative ||
         unverified.isNegative ||

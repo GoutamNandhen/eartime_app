@@ -16,7 +16,7 @@ internal object ListeningTimeZones {
 /** A disposable, versioned read model. Observations are always the source of truth. */
 internal class ListeningProjection(private val db: SQLiteDatabase) {
     companion object {
-        const val VERSION = 5
+        const val VERSION = 6
         fun create(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE listening_projection (
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1), version INTEGER NOT NULL,
@@ -57,7 +57,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
     fun requiresUpgrade(): Boolean = db.rawQuery("SELECT version FROM listening_projection WHERE singleton=1", null).use {
         if (!it.moveToFirst()) true
         else if (it.getInt(0) == VERSION) false
-        else { check(it.getInt(0) in 2..4) { "Unsupported listening projection version; source retained" }; true }
+        else { check(it.getInt(0) in 2..5) { "Unsupported listening projection version; source retained" }; true }
     }
 
     fun reset() {
@@ -136,6 +136,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                     update(routes, "legacy-global", null, "UNVERIFIED", snapshot.optBoolean("isPlaying"), observation)
                 }
             }
+            "OUTPUT_EVIDENCE" -> a2dpListening(root, routes, payload, observation)
             "PLAYBACK_STARTED", "PLAYBACK_PAUSED" -> update(routes, "legacy-global", null, "UNVERIFIED",
                 input.kind == "PLAYBACK_STARTED", observation)
             // Only typed native inputs with explicit CONFIRMED provenance can contribute listening time.
@@ -175,6 +176,57 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             put("singleton", 1); put("version", VERSION); put("sequence", observation.sequence)
             put("state_json", root.toString())
         }, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    /**
+     * Bluetooth A2DP listening (projection v6). A tracked earbud endpoint counts as CONFIRMED listening
+     * while, in the same healthy collector sample, BluetoothA2dp.isA2dpPlaying reports its stream active
+     * AND AudioManager.isMusicActive is true. The A2DP stream to a headset is only started when the
+     * platform actually routes audio to it, so speaker playback with earbuds connected does not count.
+     * Evidence is only accepted from the collector owner that currently holds the health record, and
+     * an interval ends at the last sample that proved it; nothing is extrapolated past lost evidence.
+     */
+    private fun a2dpListening(root: JSONObject, routes: JSONObject, payload: JSONObject, observation: JournalObservation) {
+        val input = observation.input
+        if (input.collector != CollectorHealth.SOURCE || input.payloadVersion != 1) return
+        val prefix = "${input.time.collectionEpoch}:a2dp:"
+        fun closeAll(observed: Boolean, reason: String, keep: Set<String> = emptySet()) =
+            routes.keys().asSequence().toList().filter { it.startsWith(prefix) && it !in keep }
+                .forEach { close(routes, it, observation, observed, reason) }
+        val health = root.optJSONObject("collectorHealth")
+        val owned = health != null && health.optString("processGeneration") == input.processGeneration &&
+            health.optString("collectionEpoch") == input.time.collectionEpoch &&
+            health.optLong("generation") == payload.optLong("generation", -1) &&
+            health.optString("continuityEpoch") == payload.optString("continuityEpoch") &&
+            when (health.optString("state")) {
+                "STARTING" -> true
+                "HEALTHY" -> input.time.elapsedMs != null && input.time.elapsedMs < health.optLong("leaseUntilElapsedMs")
+                else -> false
+            }
+        if (!owned) { closeAll(false, "attribution_lost"); return }
+        val sample = payload.optJSONObject("a2dpTransport")
+        val observations = EndpointIdentity.observations(input)
+        if (sample?.optString("state") != "SAMPLED") { closeAll(false, "attribution_lost"); return }
+        val streaming = HashSet<String>()
+        sample.optJSONArray("devices")?.let { rows ->
+            for (index in 0 until rows.length()) rows.optJSONObject(index)?.takeIf {
+                it.optString("streamState") == "STREAMING_REPORTED"
+            }?.let { row -> TransportEndpoint.bluetooth(AudioTransport.BLUETOOTH_CLASSIC, row.optString("endpointAddress"))
+                ?.let { streaming.add(it.address) } }
+        }
+        val musicActive = payload.opt("globalMusicActive") == true
+        val identity = EndpointIdentityProjection(db)
+        val active = HashSet<String>()
+        observations.forEach { observed ->
+            val device = identity.alias(observed.address)?.get("deviceId") as? String ?: return@forEach
+            val key = prefix + observed.address
+            if (musicActive && observed.address in streaming) {
+                active.add(key)
+                update(routes, key, device, "CONFIRMED", true, observation)
+            }
+        }
+        // Paused, routed elsewhere or disconnected since the previous sample: end at this observed sample.
+        closeAll(true, "stopped", active)
     }
 
     private fun comparable(route: JSONObject, time: ObservationTime): Long? {
@@ -249,7 +301,11 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 var end = long("end_utc_ms")
                 val open = long("open") == 1L
                 val route = routes.optJSONObject(text("route_key") ?: "")
-                val liveDuration = if (open && now != null && route != null) comparable(route, now) else null
+                // Live extension only for A2DP-confirmed routes, and never past the collector lease.
+                val liveDuration = if (open && now != null && route != null && text("attribution") == "CONFIRMED" &&
+                    (text("route_key") ?: "").contains(":a2dp:")) comparable(route, now)?.let { live ->
+                        minOf(live, route.getLong("lastElapsed") - route.getLong("startElapsed") + CollectorHealth.MAX_LEASE_MS)
+                    } else null
                 if (liveDuration != null) end = start + liveDuration
                 val clippedStart = maxOf(start, from)
                 val clippedEnd = minOf(end, until)
@@ -259,6 +315,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                     text("close_reason") != "stopped" -> "CONTINUITY_LOST"
                     text("end_kind") == "ROUTE_DISCONNECTED" -> "DISCONNECTED"
                     text("end_kind") == "PLAYBACK_PAUSED" -> "PAUSED"
+                    text("end_kind") == "OUTPUT_EVIDENCE" -> "PAUSED"
                     text("end_kind") == "ROUTE_PLAYBACK" -> if (JSONObject(text("end_payload")!!).optBoolean("external")) "PAUSED" else "OUTPUT_CHANGED"
                     else -> "STOPPED"
                 }

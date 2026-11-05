@@ -224,9 +224,9 @@ class NativeObservationIngress(
 
     fun readListening(from: Long, until: Long, zoneId: String, offset: Int, limit: Int,
         success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit, deviceOffset: Int = 0, deviceId: String? = null, sessionId: String? = null) {
-        // Inventory/activity health is not a route-specific lease. Production reads
-        // never extend listening beyond durable evidence.
-        command({ ensureStarted().listeningSnapshot(from, until, zoneId, null, offset, limit, deviceOffset, now(), deviceId, sessionId) + health() }, failure, success)
+        // Only A2DP-confirmed open intervals extend to "now", capped at the collector lease
+        // (ListeningProjection.snapshot); every other interval ends at its durable evidence.
+        command({ ensureStarted().listeningSnapshot(from, until, zoneId, now(), offset, limit, deviceOffset, now(), deviceId, sessionId) + health() }, failure, success)
     }
 
     fun preferences(values: Map<String, Any?>?, success: (Map<String, Any?>) -> Unit, failure: (String) -> Unit) {

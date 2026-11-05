@@ -35,3 +35,8 @@ permissions to hide this limitation. A valid approved cooperative/per-output
 source would require fresh technical evidence and scoped acceptance before this
 blocker can be removed. Live extrapolation and live-dependent reminders remain
 gated; no listening is fabricated across unknown collection intervals.
+
+## 2026-11-05: Bluetooth A2DP exception
+Bluetooth Classic A2DP output is now attributed as confirmed listening from per-device
+`BluetoothA2dp.isA2dpPlaying` plus global music activity from the owning healthy collector.
+See A2DP_LISTENING.md. Wired, USB and LE Audio routes remain under the limits above.
