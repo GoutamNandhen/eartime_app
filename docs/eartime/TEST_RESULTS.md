@@ -1,5 +1,9 @@
 # Automated Results
 
+## 2026-11-05 CI (GitHub Actions, ubuntu, JDK 17, Flutter stable)
+- Baseline at 09c9282+CI: all gates green (247 Flutter, native suite, guards, audit, debug APK, release Kotlin).
+- f8a4386 (projection v6 A2DP listening): all gates green incl. 22 new A2dpListeningTest executions. Physical: NOT RUN.
+
 Last verified WIP implementation gates: 2026-10-26; shutdown pause, not release.
 
 Frequency WIP: full Flutter 247 passed; flutter analyze --no-pub clean. Native

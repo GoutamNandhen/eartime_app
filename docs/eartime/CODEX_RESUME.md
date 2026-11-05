@@ -1,5 +1,13 @@
 # EarTime Resume Checkpoint
 
+## RESUMED 2026-11-05 (owner instruction: full autonomy, goal production-ready)
+- CI added (.github/workflows/ci.yml): analyze, Flutter tests, collector/version guards, public audit,
+  debug APK, `:app:testDebugUnitTest` + `:app:compileReleaseKotlin`. Green on GitHub Actions.
+- Projection v6: Bluetooth A2DP confirmed listening (A2DP_LISTENING.md, A2dpListeningTest). Production reads
+  now pass `now` so confirmed open intervals tick live within the 15 s lease. Archives accept projection 5..6.
+- Next: physical check of A2DP attribution on CPH2447 + Nord Buds 3 Pro (debug pre-release build),
+  then E7 acceptance review and the remaining matrix (C5/E2, E8/F7, F2/F3, H21, ...).
+
 Updated 2026-10-26. Paths in this document are repository-relative.
 
 ## PAUSED - WIP Shutdown Save

@@ -57,6 +57,7 @@ Executable evidence keys:
 - X: `JournalArchiveTest`, `JournalFileTransferTest`, restore-boundary ingress
   case and `test/journal_transfer_test.dart`. Native-only transfers; full-app
   backup is unfinished. See `JOURNAL_ARCHIVES.md`.
+- A2: `A2dpListeningTest` (11 cases x API 28/35): projection v6 A2DP confirmed listening, speaker rejection, owner/lease fencing, unknown probe, live cap, rebuild parity. See A2DP_LISTENING.md.
 - Y: `A2dpStreamProbeTest` (14 native cases), actual backend API 24/28/35 and
   durable candidate ingress. `A2DP_OBSERVATIONS.md`: raw public-API acquisition
   is integrated; confidence/live eligibility are still UNKNOWN/false.
@@ -116,8 +117,8 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | A3 | Play/pause/reconnect transitions | IN_PROGRESS; L; physical route tests pending |
 | A4 | Closed UI/Recents/screen-off collection | IN_PROGRESS; J models Flutter absence; physical service continuity pending |
 | A5 | Reopen continuity and gaps | IN_PROGRESS; J/P/U durable recovery and B02 opening pass; physical/liveness OPEN |
-| A6 | Reject stale earbuds during speaker playback | IN_PROGRESS; L after disconnect; connected speaker proof OPEN |
-| A7 | Classic/A2DP/LE routes | IN_PROGRESS; R/Y public per-device A2DP samples durably acquired; identity/continuity integration and LE attribution OPEN |
+| A6 | Reject stale earbuds during speaker playback | IN_PROGRESS; L after disconnect; A2 (A2dpListeningTest) speaker-with-buds-connected rejected via suspended A2DP stream; physical proof OPEN |
+| A7 | Classic/A2DP/LE routes | IN_PROGRESS; R/Y/A2 A2DP stream + music activity from the owning healthy collector produce CONFIRMED per-endpoint intervals (projection v6); LE attribution and physical acceptance OPEN |
 | A8 | Wired 3.5 mm | IN_PROGRESS; inherited detection; physical/projection OPEN |
 | A9 | USB-C/USB audio | IN_PROGRESS; inherited detection; physical/projection OPEN |
 | A10 | Multiple devices/output switching | IN_PROGRESS; L/R isolation; actual route selection OPEN |
@@ -146,7 +147,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
-| C1 | Authoritative persisted live timer | IN_PROGRESS; P/U preserve T1 rather than S; production extrapolation disabled until validated collector lease |
+| C1 | Authoritative persisted live timer | IN_PROGRESS; P/U preserve T1 rather than S; A2 production reads extend confirmed open intervals to now, capped at last proof + 15 s lease; physical acceptance OPEN |
 | C2 | Connected device and active output | IN_PROGRESS; L fixes device leakage; output proof OPEN |
 | C3 | Playback confidence | IMPLEMENTED / AUTOMATED_PASS U; confirmed/unverified separated in product views; current collector remains UNKNOWN |
 | C4 | Today's total | IMPLEMENTED / AUTOMATED_PASS P/U; one native clipped total; no legacy/global playback promoted |
@@ -214,7 +215,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | G3 | Serialized sequence/transactions | IMPLEMENTED / AUTOMATED_PASS J/R |
 | G4 | Duplicate-safe processing/replay | IMPLEMENTED / AUTOMATED_PASS J/P/U; product reads native projection, hints not history |
 | G5 | Device-scoped state | IN_PROGRESS; L/R; legacy global context remains |
-| G6 | Evidence-backed attribution | IN_PROGRESS; C/Y rejects inventory/global/communication/predicted claims, acquires per-device A2DP stream candidates; canonical route evidence/lease integration OPEN |
+| G6 | Evidence-backed attribution | IN_PROGRESS; C/Y/A2 rejects inventory/global/communication/predicted claims; A2DP stream + music activity integrated as canonical confirmed evidence under the collector lease; wired/USB/LE OPEN |
 | G7 | One authoritative interval projection | IMPLEMENTED / AUTOMATED_PASS P/U/W; production confirmed attribution/liveness remain gated |
 | G8 | Live/history agreement | IN_PROGRESS; P/U B02 observed opening corrected; validated production live lease OPEN |
 | G9 | Durable recovery/migrations | IN_PROGRESS; J/P/X migrations/replay plus transactional native archive restore/recovery/queued-event fence; full-app legacy/preferences restoration OPEN |
