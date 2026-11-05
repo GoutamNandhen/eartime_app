@@ -226,7 +226,7 @@ internal object ApplicationArchive {
                     val value = objectText(content)
                     require(value.keys().asSequence().toSet() == setOf("format", "version", "journalSchema", "projectionRebuildVersion", "legacySchema"))
                     require(value.getString("format") == "eartime.application" && value.get("version") == 1 &&
-                        value.get("journalSchema") == 3 && value.get("legacySchema") == 1 && value.get("projectionRebuildVersion") == 5) { "Unsupported application schema" }
+                        value.get("journalSchema") == 3 && value.get("legacySchema") == 1 && (value.get("projectionRebuildVersion") as? Int ?: 0) in 5..ListeningProjection.VERSION) { "Unsupported application schema" }
                 }
                 "native.jsonl" -> observations = JournalArchive.read(content, cancelled).count
                 "preferences.json" -> {

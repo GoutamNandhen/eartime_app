@@ -229,7 +229,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                     value: recordedDuration(snapshot.unverified),
                   ),
                   const _Notice(
-                    'The current collector cannot verify the playing output. Unverified activity is not included in listening totals.',
+                    'Confirmed listening is measured for Bluetooth earbuds and headphones. Other outputs show as unverified activity and are not counted.',
                     Icons.info_outline,
                   ),
                 ],

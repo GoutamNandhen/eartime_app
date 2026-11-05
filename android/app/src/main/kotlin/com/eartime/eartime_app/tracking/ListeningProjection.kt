@@ -301,9 +301,9 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 var end = long("end_utc_ms")
                 val open = long("open") == 1L
                 val route = routes.optJSONObject(text("route_key") ?: "")
-                // Live extension only for A2DP-confirmed routes, and never past the collector lease.
-                val liveDuration = if (open && now != null && route != null && text("attribution") == "CONFIRMED" &&
-                    (text("route_key") ?: "").contains(":a2dp:")) comparable(route, now)?.let { live ->
+                // Live extension only for confirmed routes, and never past the collector lease.
+                val liveDuration = if (open && now != null && route != null && text("attribution") == "CONFIRMED")
+                    comparable(route, now)?.let { live ->
                         minOf(live, route.getLong("lastElapsed") - route.getLong("startElapsed") + CollectorHealth.MAX_LEASE_MS)
                     } else null
                 if (liveDuration != null) end = start + liveDuration
