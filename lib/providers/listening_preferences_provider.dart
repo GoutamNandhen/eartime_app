@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/listening_reminders.dart';
 import '../data/wellbeing_notifications.dart';
 
 class ListeningPreferences {
@@ -8,6 +9,9 @@ class ListeningPreferences {
       dailyGoalMinutes = map['dailyGoalMinutes'] as int,
       notifications = WellbeingNotificationPreferences.fromMap(
         map['wellbeingNotifications'],
+      ),
+      reminders = ListeningReminderPreferences.fromMap(
+        map['listeningReminders'],
       ) {
     if (map['version'] != 1 ||
         !['system', 'light', 'dark'].contains(themeMode) ||
@@ -19,6 +23,7 @@ class ListeningPreferences {
   final String themeMode;
   final int dailyGoalMinutes;
   final WellbeingNotificationPreferences notifications;
+  final ListeningReminderPreferences reminders;
 }
 
 class ListeningPreferencesClient {

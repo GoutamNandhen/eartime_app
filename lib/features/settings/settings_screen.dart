@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/listening_reminders.dart';
 import '../../providers/listening_preferences_provider.dart';
 import '../../providers/data_providers.dart';
 import '../../providers/listening_projection_provider.dart';
@@ -145,7 +146,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
                 const Text(
-                  'A personal duration goal, not a safe sound-exposure limit. Automatic listening reminders are unavailable until output attribution is verified.',
+                  'A personal duration goal, not a safe sound-exposure limit.',
+                ),
+                ListeningReminderControls(
+                  value: value.reminders,
+                  saving: _saving,
+                  onSave: (reminders) =>
+                      save({'listeningReminders': reminders.toMap()}),
                 ),
                 WellbeingNotificationControls(
                   value: value.notifications,
@@ -263,6 +270,78 @@ class _GoalDialogState extends State<_GoalDialog> {
           Navigator.pop(context, minutes);
         },
         child: const Text('Save'),
+      ),
+    ],
+  );
+}
+
+
+class ListeningReminderControls extends StatelessWidget {
+  const ListeningReminderControls({
+    super.key,
+    required this.value,
+    required this.saving,
+    required this.onSave,
+  });
+  final ListeningReminderPreferences value;
+  final bool saving;
+  final ValueChanged<ListeningReminderPreferences> onSave;
+
+  Widget _choice(
+    String label,
+    int current,
+    List<int> choices,
+    ValueChanged<int> changed,
+  ) {
+    final options = {...choices, current}.toList()..sort();
+    return DropdownButtonFormField<int>(
+      key: ValueKey('reminder-$label'),
+      initialValue: current,
+      decoration: InputDecoration(labelText: label),
+      items: [
+        for (final minutes in options)
+          DropdownMenuItem(value: minutes, child: Text('$minutes minutes')),
+      ],
+      onChanged: saving || !value.enabled
+          ? null
+          : (minutes) {
+              if (minutes != null) changed(minutes);
+            },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Listening break reminders'),
+        subtitle: const Text(
+          'Notifies you after long continuous listening on Bluetooth earbuds or headphones. Quiet hours apply.',
+        ),
+        value: value.enabled,
+        onChanged: saving
+            ? null
+            : (enabled) => onSave(value.copyWith(enabled: enabled)),
+      ),
+      _choice(
+        'Remind after',
+        value.continuousMinutes,
+        ListeningReminderPreferences.continuousChoices,
+        (minutes) => onSave(value.copyWith(continuousMinutes: minutes)),
+      ),
+      _choice(
+        'Repeat every',
+        value.repeatMinutes,
+        ListeningReminderPreferences.repeatChoices,
+        (minutes) => onSave(value.copyWith(repeatMinutes: minutes)),
+      ),
+      _choice(
+        'A break counts after',
+        value.breakMinutes,
+        ListeningReminderPreferences.breakChoices,
+        (minutes) => onSave(value.copyWith(breakMinutes: minutes)),
       ),
     ],
   );

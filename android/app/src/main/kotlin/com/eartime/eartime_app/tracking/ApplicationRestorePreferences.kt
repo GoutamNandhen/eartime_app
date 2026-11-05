@@ -46,6 +46,7 @@ internal class ApplicationRestorePreferences private constructor(private val sto
                 preferences["themeMode"]?.let { require(it in setOf("system", "light", "dark")) }
                 preferences["dailyGoalMinutes"]?.let { require(it is Int && it in 0..1440) }
                 preferences["wellbeing_notifications_v1"]?.let { require(it is String); WellbeingPreferences.stored(it) }
+                preferences["listening_reminders_v1"]?.let { require(it is String); ReminderPreferences.stored(it) }
                 val names = preferences.filterKeys { it.startsWith("device_name_") }
                 require(names.size <= 2000)
                 names.forEach { (key, value) ->

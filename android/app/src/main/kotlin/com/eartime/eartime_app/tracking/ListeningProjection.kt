@@ -17,6 +17,8 @@ internal object ListeningTimeZones {
 internal class ListeningProjection(private val db: SQLiteDatabase) {
     companion object {
         const val VERSION = 6
+        const val BREAK_MIN_MS = 60_000L
+        const val BREAK_MAX_MS = 4 * 3600_000L
         fun create(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE listening_projection (
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1), version INTEGER NOT NULL,
@@ -386,6 +388,42 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                     (it["clippedStartUtcMs"] as Long) to (it["clippedEndUtcMs"] as Long)
                 }), from, until))
             }
+        // E8 breaks: a pause between consecutive confirmed listening spans, 1 min to 4 h long, with no
+        // collection gap or continuity barrier inside it. Shorter pauses are sampling jitter; longer ones are idle time.
+        val breaks = mutableListOf<Long>()
+        run {
+            val confirmedParts = segments.filter { it["attribution"] == "CONFIRMED" }
+            val breakBarriers = barriers.toMutableSet()
+            if (confirmedParts.size > 1) {
+                // A collector restart or loss between two spans means the pause was not observed.
+                db.rawQuery("""SELECT sequence FROM observations WHERE sequence BETWEEN ? AND ?
+                    AND kind = 'COLLECTOR_STATUS' AND payload_json NOT LIKE '%"state":"HEALTHY"%' LIMIT 100001""",
+                    arrayOf(confirmedParts.minOf { it["startSequence"] as Long }.toString(),
+                        confirmedParts.maxOf { it["endSequence"] as Long }.toString())).use { rows ->
+                    var scanned = 0
+                    while (rows.moveToNext()) {
+                        check(++scanned <= 100000) { "Break boundaries exceed work limit; select a shorter date range" }
+                        breakBarriers.add(rows.getLong(0))
+                    }
+                }
+            }
+            val sortedBarriers = breakBarriers.sorted()
+            var lastEnd = Long.MIN_VALUE; var lastEndSequence = Long.MIN_VALUE
+            segments.filter { it["attribution"] == "CONFIRMED" && (it["clippedEndUtcMs"] as Long) > (it["clippedStartUtcMs"] as Long) }
+                .sortedBy { it["clippedStartUtcMs"] as Long }.forEach { part ->
+                    val start = part["clippedStartUtcMs"] as Long
+                    val end = part["clippedEndUtcMs"] as Long
+                    val startSequence = part["startSequence"] as Long
+                    if (lastEnd != Long.MIN_VALUE && start > lastEnd) {
+                        val gap = start - lastEnd
+                        val low = minOf(lastEndSequence, startSequence); val high = maxOf(lastEndSequence, startSequence)
+                        val index = sortedBarriers.binarySearch(low).let { if (it >= 0) it else -it - 1 }
+                        val interrupted = index < sortedBarriers.size && sortedBarriers[index] < high
+                        if (!interrupted && gap in BREAK_MIN_MS..BREAK_MAX_MS) breaks.add(gap)
+                    }
+                    if (end > lastEnd) { lastEnd = end; lastEndSequence = part["endSequence"] as Long }
+                }
+        }
         val days = mutableListOf<Map<String, Any?>>()
         var startCursor = 0
         val calendar = Calendar.getInstance(TimeZone.getTimeZone(zoneId)).apply {
@@ -417,6 +455,8 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             "listeningRuns" to confirmed.count { it.second > it.first }, "perDevice" to perDevice,
             "hourly" to hourly.mapIndexed { hour, value -> mapOf("hour" to hour, "durationMs" to value,
                 "measuredSessionStarts" to hourlyStarts[hour]) },
+            "breakContractVersion" to 1, "breakCount" to breaks.size, "totalBreakMs" to breaks.sum(),
+            "longestBreakMs" to (breaks.maxOrNull() ?: 0L), "averageBreakMs" to if (breaks.isEmpty()) 0L else breaks.sum() / breaks.size,
             "frequencyContractVersion" to 1, "measuredSessionStarts" to measuredStarts.size,
             "gapCount" to root.optLong("gapCount"), "days" to days,
             "devices" to devices, "deviceCount" to deviceCount,

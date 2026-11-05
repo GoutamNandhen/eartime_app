@@ -372,6 +372,23 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                       'Sessions end at a pause or lost continuity. Overlapping sessions are unioned in period totals.',
                     ),
                   ],
+                  if (snapshot.breakCount case final breaks?) ...[
+                    const _Section('Breaks'),
+                    Text('$breaks observed listening break(s)'),
+                    if (breaks > 0) ...[
+                      _Metric(
+                        label: 'Longest break',
+                        value: recordedDuration(snapshot.longestBreak),
+                      ),
+                      _Metric(
+                        label: 'Average break',
+                        value: recordedDuration(snapshot.averageBreak),
+                      ),
+                    ],
+                    const Text(
+                      'A break is a pause of 1 minute to 4 hours between confirmed listening, observed while collection was running.',
+                    ),
+                  ],
                   if (widget.view != ListeningView.analytics) ...[
                     const _Section('Daily listening'),
                     if (snapshot.confirmed == Duration.zero)

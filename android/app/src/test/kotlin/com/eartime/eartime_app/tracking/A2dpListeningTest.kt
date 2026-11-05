@@ -151,4 +151,30 @@ class A2dpListeningTest {
         journal.rebuildListeningProjection()
         assertEquals(before, confirmed()); assertEquals(7000L, before)
     }
+
+    private fun tick(at: Long, music: Boolean) { journal.append(evidence(at, music)); journal.append(status(at + 10, "HEALTHY")) }
+
+    @Test fun pauseBetweenConfirmedSpansIsReportedAsBreak() = run {
+        ready()
+        tick(2000, true); tick(10000, false)
+        var at = 20000L
+        while (at < 80000) { tick(at, false); at += 10000 }
+        tick(80000, true); tick(90000, false)
+        val snapshot = snapshot()
+        assertEquals(18000L, snapshot["confirmedMs"])
+        assertEquals(1, snapshot["breakCount"]); assertEquals(70000L, snapshot["longestBreakMs"])
+        assertEquals(70000L, snapshot["averageBreakMs"]); assertEquals(70000L, snapshot["totalBreakMs"])
+    }
+
+    @Test fun shortPausesAndPausesAcrossLostCollectionAreNotBreaks() = run {
+        ready()
+        tick(2000, true); tick(10000, false); tick(30000, true); tick(40000, false)
+        assertEquals(0, snapshot()["breakCount"])
+        // Lease lost after 40010: the next span starts after an unknown gap, not an observed break.
+        journal.append(evidence(200000, music = true))
+        journal.append(status(200100, "STARTING", 2)); journal.append(evidence(200200, music = true, generation = 2))
+        journal.append(status(200300, "HEALTHY", 2)); journal.append(evidence(205000, music = true, generation = 2))
+        journal.append(status(205010, "HEALTHY", 2)); journal.append(evidence(210000, music = false, generation = 2))
+        assertEquals(0, snapshot()["breakCount"])
+    }
 }

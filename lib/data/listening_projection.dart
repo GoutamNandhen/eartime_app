@@ -302,9 +302,23 @@ class ListeningSnapshot {
       averageSession = Duration(
         milliseconds: map['averageSessionMs'] as int? ?? 0,
       ),
+      breakCount = map['breakContractVersion'] == 1
+          ? map['breakCount'] as int
+          : null,
+      longestBreak = Duration(milliseconds: map['longestBreakMs'] as int? ?? 0),
+      averageBreak = Duration(milliseconds: map['averageBreakMs'] as int? ?? 0),
       sessionDetail = map['sessionDetail'] == null
           ? null
           : ProjectedSessionDetail(map['sessionDetail'] as Map) {
+    if (map.containsKey('breakContractVersion') &&
+        (map['breakContractVersion'] != 1 ||
+            breakCount == null ||
+            breakCount! < 0 ||
+            longestBreak.isNegative ||
+            averageBreak.isNegative ||
+            averageBreak > longestBreak)) {
+      throw const FormatException('Invalid break contract');
+    }
     if (map.containsKey('frequencyContractVersion')) {
       final count = measuredSessionStarts;
       if (map['frequencyContractVersion'] != 1 ||
@@ -442,6 +456,11 @@ class ListeningSnapshot {
   final int measuredSessionCount;
   final Duration longestSession;
   final Duration averageSession;
+
+  /// E8 observed breaks (1 min to 4 h between confirmed spans); null when the source predates the contract.
+  final int? breakCount;
+  final Duration longestBreak;
+  final Duration averageBreak;
   final ProjectedSessionDetail? sessionDetail;
 
   bool get hasCollectionUncertainty =>

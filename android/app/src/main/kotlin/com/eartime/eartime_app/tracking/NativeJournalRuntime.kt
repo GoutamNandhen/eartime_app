@@ -178,6 +178,8 @@ class NativeObservationIngress(
                                             pending.event["continuityEpoch"] as? String, pending.event["state"] as? String,
                                             now()) }.getOrDefault(false) else true
                                     complete(pending, accepted)
+                                    if (pending.collector == CollectorHealth.SOURCE && pending.event["type"] == "OUTPUT_EVIDENCE")
+                                        ListeningReminders.evaluate(context, store, now())
                                 } catch (error: Exception) {
                                     failedCount.incrementAndGet()
                                     commitLossCount++

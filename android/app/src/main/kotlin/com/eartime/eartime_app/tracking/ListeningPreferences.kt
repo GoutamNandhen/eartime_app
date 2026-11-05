@@ -10,19 +10,28 @@ class ListeningPreferences(context: Context) {
         "dailyGoalMinutes" to preferences.getInt("dailyGoalMinutes", 0),
         "deviceNames" to preferences.all.filterKeys { it.startsWith("device_name_") }
             .mapKeys { it.key.removePrefix("device_name_") },
-        "wellbeingNotifications" to wellbeing().wire())
+        "wellbeingNotifications" to wellbeing().wire(),
+        "listeningReminders" to reminders().wire())
 
     internal fun wellbeing(): WellbeingPreferences = WellbeingPreferences.stored(preferences.getString("wellbeing_notifications_v1", null))
+
+    internal fun reminders(): ReminderPreferences = runCatching {
+        ReminderPreferences.stored(preferences.getString("listening_reminders_v1", null))
+    }.getOrDefault(ReminderPreferences())
 
     fun deviceName(id: String): String? = preferences.getString("device_name_$id", null)
     internal fun goalMinutes(): Int = preferences.getInt("dailyGoalMinutes", 0)
 
     fun update(values: Map<String, Any?>): Map<String, Any?> {
-        require(values.keys.all { it in setOf("themeMode", "dailyGoalMinutes", "deviceNames", "wellbeingNotifications") })
+        require(values.keys.all { it in setOf("themeMode", "dailyGoalMinutes", "deviceNames", "wellbeingNotifications", "listeningReminders") })
         val editor = preferences.edit()
         if (values.containsKey("wellbeingNotifications")) {
             require(values["wellbeingNotifications"] != null)
             editor.putString("wellbeing_notifications_v1", JournalJson.encode(WellbeingPreferences.decode(values["wellbeingNotifications"]).wire()))
+        }
+        if (values.containsKey("listeningReminders")) {
+            require(values["listeningReminders"] != null)
+            editor.putString("listening_reminders_v1", JournalJson.encode(ReminderPreferences.decode(values["listeningReminders"]).wire()))
         }
         if (values.containsKey("themeMode")) {
             val mode = values["themeMode"] as? String
