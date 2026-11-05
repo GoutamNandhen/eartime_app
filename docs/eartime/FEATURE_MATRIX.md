@@ -8,7 +8,7 @@ Kotlin/debug APK pass. Resume E7 acceptance review from CODEX_RESUME.md.
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count (2026-11-05): **50 IMPLEMENTED, 59 IN_PROGRESS, 9 NOT_STARTED,
+Implementation count (2026-11-05): **51 IMPLEMENTED, 58 IN_PROGRESS, 9 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
@@ -18,6 +18,7 @@ remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance)
 Executable evidence keys:
 
 - A2: A2dpListeningTest (API 28/35): A2DP confirmed listening, speaker rejection, owner/lease fencing, live cap, rebuild parity, breaks, connected/idle partition.
+- RP: ListeningReportTest.breakGuidanceUsesOnlyObservedSessionsAndBreaks.
 - RM: ListeningRemindersTest (pure policy/preferences) and Flutter listening_reminders_test.dart.
 
 - C3: eight Flutter trend cases: actual Analytics at 1x/3x, 14-row pages, exact
@@ -206,7 +207,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | F4 | Daily/weekly summaries | IMPLEMENTED / AUTOMATED_PASS P/M; opt-in native calendar summaries, inexact alarms/jobs, canonical union, dated lower bounds, durable at-most-one-attempt receipts; OS/OEM delivery PHYSICAL_PENDING |
 | F5 | Notification controls/quiet hours | IMPLEMENTED / AUTOMATED_PASS M; persisted categories/time/quiet ranges, disable/cancel, default-off receiver, permission/channel/unknown/error recovery and native restart reconciliation; PHYSICAL_PENDING |
 | F6 | Duration insights | IMPLEMENTED / AUTOMATED_PASS N; actual native recorded activity/goal insights in Analytics/Wellbeing; no medical or exposure claims |
-| F7 | Goal/streak/break recommendations | IN_PROGRESS; N personal-goal guidance integrated; observed-break derivation/guidance OPEN |
+| F7 | Goal/streak/break recommendations | IMPLEMENTED / AUTOMATED_PASS N/RP; personal-goal guidance plus observed-session/break guidance (longest session over 1 h, recorded breaks) without exposure claims; PHYSICAL_PENDING |
 | F8 | Guidance distinct from sound exposure | IN_PROGRESS; U explicit not-measured exposure and personal-goal copy; content/accessibility audit OPEN |
 
 ## G: Reliability

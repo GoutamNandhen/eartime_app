@@ -30,6 +30,14 @@ class ListeningReportTest {
         assertEquals(true, r["hasUncertainty"])
         assertTrue((r["insight"] as String).contains("output is unverified"))
     }
+    @Test fun breakGuidanceUsesOnlyObservedSessionsAndBreaks() {
+        fun guidance(extra: Map<String, Any?>) = ListeningReport.build(mapOf("fromUtcMs" to 0L, "untilUtcMs" to DAY,
+            "confirmedMs" to 5_400_000L, "unverifiedMs" to 0L, "gapCount" to 0L,
+            "days" to listOf(mapOf("startUtcMs" to 0L, "endUtcMs" to DAY, "confirmedMs" to 5_400_000L))) + extra, 0, DAY)["guidance"] as String
+        assertTrue(guidance(mapOf("longestSessionMs" to 5_400_000L)).contains("1 h 30 min"))
+        assertTrue(guidance(mapOf("longestSessionMs" to 600_000L, "breakCount" to 3)).contains("3 recorded break(s)"))
+        assertFalse(guidance(emptyMap()).contains("break"))
+    }
     @Test fun partialFirstCalendarDayCannotEstablishGoalMissOrAchievement() {
         val r = report(listOf(60000, 60000), from = 1000)
         assertEquals(1, r["goalDays"])

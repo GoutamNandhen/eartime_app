@@ -47,8 +47,17 @@ object ListeningReport {
             goal > 0 && goalDays > 0 -> "Your recorded listening reached your personal goal on $goalDays day(s) in this period."
             else -> "Confirmed listening was recorded on $activeDays day(s) in this period."
         }
-        val guidance = if (goal == 0L) "Set a personal duration goal in Settings to track recorded goal days."
+        val goalGuidance = if (goal == 0L) "Set a personal duration goal in Settings to track recorded goal days."
             else "Your duration goal is a personal preference, not a safe sound-exposure limit. Unobserved time is excluded."
+        // F7 break guidance from observed sessions and breaks only.
+        val longestMinutes = ((snapshot["longestSessionMs"] as? Number)?.toLong() ?: 0L) / 60000
+        val breaks = (snapshot["breakCount"] as? Number)?.toInt()
+        val breakGuidance = when {
+            longestMinutes >= 60 -> " Your longest recorded session was ${longestMinutes / 60} h ${longestMinutes % 60} min. A few minutes' break every hour rests your ears; break reminders are in Settings."
+            breaks != null && breaks > 0 && confirmed > 0 -> " You took $breaks recorded break(s) between listening sessions."
+            else -> ""
+        }
+        val guidance = goalGuidance + breakGuidance
         return mapOf("version" to 1, "scope" to "selected_window_recorded_lower_bound",
             "activeDays" to activeDays, "goalMinutes" to goalMinutes, "goalDays" to goalDays,
             "completedCalendarDays" to eligibleDays, "currentRecordedStreak" to current,
