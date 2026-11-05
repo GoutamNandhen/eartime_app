@@ -58,7 +58,7 @@ class GlassNavigation extends StatelessWidget {
                         _buildNavItem(1, Icons.bar_chart_rounded),
                         _buildNavItem(2, Icons.history_rounded),
                         _buildNavItem(3, Icons.health_and_safety_rounded),
-                        _buildNavItem(4, Icons.settings_rounded),
+                        _buildNavItem(4, Icons.headphones_rounded),
                       ],
                     ),
                   ),

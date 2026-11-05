@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
+import '../../domain/logic/analytics_calculator.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/data_providers.dart';
 import '../widgets/editorial_metric.dart';
@@ -18,7 +17,7 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final liveSessionState = ref.watch(liveSessionProvider);
     final activeDevice = liveSessionState.activeDevice;
-    final analyticsDataAsync = ref.watch(analyticsDataProvider);
+    final todayClosedAsync = ref.watch(todayClosedListeningProvider);
     final wellbeingDataAsync = ref.watch(wellbeingDataProvider);
     final recentEventsAsync = ref.watch(recentEventsProvider);
 
@@ -70,7 +69,7 @@ class HomeScreen extends ConsumerWidget {
                         // Hero Timer
                         const SizedBox(height: 32),
                         Text(
-                          'TOTAL LISTEN TIME',
+                          'TODAY\'S LISTEN TIME',
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: AppColors.onSurfaceVariant,
                             letterSpacing: 1.5,
@@ -78,12 +77,13 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         
-                        analyticsDataAsync.when(
-                          data: (analyticsData) {
-                            final totalTime = analyticsData?.totalListenTime ?? Duration.zero;
+                        todayClosedAsync.when(
+                          data: (closedToday) {
+                            // Closed intervals come from the DB; the open one is added live.
                             return LiveTimerWidget(
-                              baseDuration: totalTime,
+                              baseDuration: closedToday,
                               currentPlaybackStartTime: activeDevice?.currentPlaybackStartTime,
+                              countFrom: AnalyticsCalculator.startOfDay(DateTime.now()),
                             );
                           },
                           loading: () => const Text('Loading...', style: TextStyle(color: AppColors.onSurfaceVariant)),
@@ -184,16 +184,18 @@ class HomeScreen extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                                 child: wellbeingDataAsync.when(
                                   data: (wellbeingData) {
-                                    final volAvg = wellbeingData?.volumeAvgDb.toString() ?? '--';
-                                    final volPeak = wellbeingData?.volumePeakDb.toString() ?? '--';
+                                    final longest = wellbeingData != null ? wellbeingData.longestContinuous.inMinutes.toString() : '--';
+                                    final guidelinePct = wellbeingData != null
+                                        ? (wellbeingData.todayListening.inSeconds * 100 ~/ AnalyticsCalculator.dailyExposureGuideline.inSeconds).toString()
+                                        : '--';
                                     final breaks = wellbeingData?.breaksCount.toString() ?? '--';
                                     
                                     return Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        Expanded(child: EditorialMetric(label: 'Vol Avg', value: volAvg, unit: 'dB')),
+                                        Expanded(child: EditorialMetric(label: 'Longest Run', value: longest, unit: 'MIN')),
                                         Container(width: 1, height: 48, color: AppColors.glassBorder),
-                                        Expanded(child: EditorialMetric(label: 'Peak', value: volPeak, unit: 'dB', valueColor: AppColors.error)),
+                                        Expanded(child: EditorialMetric(label: 'Daily Limit', value: guidelinePct, unit: '%', valueColor: AppColors.error)),
                                         Container(width: 1, height: 48, color: AppColors.glassBorder),
                                         Expanded(child: EditorialMetric(label: 'Breaks', value: breaks)),
                                       ],
@@ -295,7 +297,7 @@ class HomeScreen extends ConsumerWidget {
                                           ),
                                         ),
                                         Text(
-                                          'Device: ${event.canonicalDeviceId}',
+                                          event.deviceName,
                                           style: theme.textTheme.labelMedium?.copyWith(
                                             color: AppColors.onSurfaceVariant,
                                           ),

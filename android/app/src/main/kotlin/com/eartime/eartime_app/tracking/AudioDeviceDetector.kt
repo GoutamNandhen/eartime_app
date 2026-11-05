@@ -96,34 +96,46 @@ object AudioDeviceDetector {
         }
     }
 
+    /** Returns [address] if it is a real, non-zero Bluetooth MAC, otherwise null. */
+    fun validMacOrNull(address: String?): String? {
+        if (address.isNullOrEmpty()) return null
+        if (address == "00:00:00:00:00:00" || address == "02:00:00:00:00:00") return null
+        return if (MAC_REGEX.matches(address)) address.uppercase() else null
+    }
+
+    private val MAC_REGEX = Regex("^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
+
     /**
      * Extracts structured device info to a Map.
      * Uses provided fallbackName/fallbackAddress if Android AudioManager obscures them.
+     *
+     * The logical id intentionally does NOT include the route type: the A2DP and SCO (or BLE)
+     * routes of one earbud must collapse onto a single logical device.
      */
     fun extractDeviceInfo(
         device: AudioDeviceInfo,
         fallbackName: String? = null,
         fallbackAddress: String? = null
     ): Map<String, Any?> {
-        val hardwareAddress = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            device.address.takeIf { it.isNotEmpty() && it != "00:00:00:00:00:00" && it.contains(":") }
-        } else {
-            null
-        } ?: fallbackAddress
-        
+        val routeAddress = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) device.address else null
+        val hardwareAddress = validMacOrNull(routeAddress) ?: validMacOrNull(fallbackAddress)
+
         // Prefer the Bluetooth-provided name (fallbackName) because Android's AudioManager
         // often incorrectly reports the system hardware model (e.g. CPH2447) instead of the earbud name.
-        val name = fallbackName ?: device.productName?.toString()?.takeIf { it.isNotEmpty() } ?: "Bluetooth Audio Device"
-        
-        // Use MAC address as stable ID if available, fallback to unique name + type
-        val stableId = hardwareAddress ?: "${name}_${device.type}"
-        
+        val name = fallbackName?.takeIf { it.isNotEmpty() }
+            ?: device.productName?.toString()?.takeIf { it.isNotEmpty() }
+            ?: "Bluetooth Audio Device"
+        val connectionType = getConnectionType(device.type)
+
+        // Use MAC address as stable ID if available, otherwise connection type + name.
+        val stableId = hardwareAddress ?: "$connectionType:$name"
+
         val info = mapOf(
             "id" to stableId,
-            "systemId" to device.id.toString(), // The volatile system ID
+            "systemId" to device.id.toString(), // The volatile system route ID
             "hardwareAddress" to hardwareAddress,
             "friendlyName" to name,
-            "connectionType" to getConnectionType(device.type),
+            "connectionType" to connectionType,
             "nativeType" to device.type
         )
         Log.i(TAG, "[DETECTOR] Device model created: $info")

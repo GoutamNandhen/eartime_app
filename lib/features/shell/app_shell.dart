@@ -11,6 +11,7 @@ import '../settings/settings_screen.dart';
 import '../permissions/permission_screen.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/permission_provider.dart';
+import '../../domain/logic/capability_detector.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -47,6 +48,8 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     // Wake up tracking pipeline passively ONLY if permissions are granted
     ref.watch(trackingPipelineProvider);
+    // Keep earbud capability detection running app-wide, not only on the diagnostics screen.
+    ref.watch(capabilityDetectorServiceProvider);
 
     return Scaffold(
       extendBody: true, // Important for floating glass nav
@@ -76,12 +79,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: GlassNavigation(
               currentIndex: _currentIndex,
               onIndexChanged: (index) {
-                // If settings icon (index 4) was somehow clicked in nav (wait, we have 5 items in nav!)
-                // DevicesScreen is index 4. The icons are: grid_view, bar_chart, history, health, settings.
-                if (index == 4) {
-                  _openSettings();
-                  return;
-                }
+                // Settings lives in the app bar; index 4 is the Devices tab.
                 setState(() {
                   _currentIndex = index;
                 });

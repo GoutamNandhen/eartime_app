@@ -18,19 +18,10 @@ class MainActivity : FlutterActivity() {
 
         // Automatically start the tracking service to ensure passive monitoring
         android.util.Log.i("EarTimeDiag", "[START] Checking permissions before automatically starting tracking service on app launch")
-        if (android.os.Build.VERSION.SDK_INT >= 31) { // Android 12+
-            val hasBluetoothConnect = androidx.core.content.ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.BLUETOOTH_CONNECT
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            
-            if (hasBluetoothConnect) {
-                startTrackingService()
-            } else {
-                android.util.Log.w("EarTimeDiag", "[START] Skipped automatic tracking service startup: BLUETOOTH_CONNECT permission not yet granted.")
-            }
-        } else {
+        if (hasTrackingPermission()) {
             startTrackingService()
+        } else {
+            android.util.Log.w("EarTimeDiag", "[START] Skipped automatic tracking service startup: BLUETOOTH_CONNECT permission not yet granted.")
         }
 
         // Method Channel for starting/stopping tracking
@@ -39,14 +30,22 @@ class MainActivity : FlutterActivity() {
                 "startMonitoring" -> {
                     android.util.Log.i("EarTimeDiag", "[FLUTTER] MethodChannel start command received")
                     android.util.Log.i("EarTimeDiag", "[START] Monitoring start command received")
-                    startTrackingService()
-                    result.success(null)
+                    if (hasTrackingPermission()) {
+                        startTrackingService()
+                        result.success(null)
+                    } else {
+                        result.error("PERMISSION_DENIED", "BLUETOOTH_CONNECT is required to start tracking", null)
+                    }
                 }
                 "stopMonitoring" -> {
                     stopTrackingService()
                     result.success(null)
                 }
                 "startBleDiagnostic" -> {
+                    if (!hasTrackingPermission()) {
+                        result.error("PERMISSION_DENIED", "BLUETOOTH_CONNECT is required for BLE diagnostics", null)
+                        return@setMethodCallHandler
+                    }
                     val address = call.argument<String>("address")
                     val intent = Intent(this, AudioTrackingService::class.java).apply {
                         action = "ACTION_START_BLE_DIAGNOSTIC"
@@ -73,11 +72,14 @@ class MainActivity : FlutterActivity() {
                     android.util.Log.i("EarTimeDiag", "[FLUTTER] EventChannel listener attached")
                     TrackingEventBroker.setEventSink(events)
                     
-                    // Force a sync of active audio devices to guarantee Flutter receives the latest state
-                    val intent = Intent(this@MainActivity, AudioTrackingService::class.java).apply {
-                        action = "ACTION_SYNC_STATE"
+                    // Force a sync of active audio devices to guarantee Flutter receives the latest state.
+                    // Without the permission the service cannot enter the foreground, so don't start it.
+                    if (hasTrackingPermission()) {
+                        val intent = Intent(this@MainActivity, AudioTrackingService::class.java).apply {
+                            action = AudioTrackingService.ACTION_SYNC_STATE
+                        }
+                        startService(intent)
                     }
-                    startService(intent)
                 }
 
                 override fun onCancel(arguments: Any?) {
@@ -88,8 +90,18 @@ class MainActivity : FlutterActivity() {
         )
     }
 
+    private fun hasTrackingPermission(): Boolean {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return true
+        return androidx.core.content.ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.BLUETOOTH_CONNECT
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
     private fun startTrackingService() {
-        val intent = Intent(this, AudioTrackingService::class.java)
+        val intent = Intent(this, AudioTrackingService::class.java).apply {
+            action = AudioTrackingService.ACTION_START
+        }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
@@ -98,9 +110,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun stopTrackingService() {
-        val intent = Intent(this, AudioTrackingService::class.java).apply {
-            action = AudioTrackingService.ACTION_STOP
-        }
-        startService(intent) // Send STOP action
+        // stopService() needs no foreground promotion and is a no-op when the service isn't running.
+        stopService(Intent(this, AudioTrackingService::class.java))
     }
 }

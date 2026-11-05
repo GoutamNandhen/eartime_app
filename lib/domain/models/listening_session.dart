@@ -23,6 +23,17 @@ sealed class PlaybackInterval with _$PlaybackInterval {
     return Duration.zero;
   }
   
+  /// Closed (completed) playback time that falls inside [from, to). Open intervals count as
+  /// zero here: the live part is added separately by the UI, which avoids double counting.
+  Duration staticDurationWithin(DateTime from, DateTime to) {
+    final end = endTime;
+    if (end == null) return Duration.zero;
+    final s = startTime.isBefore(from) ? from : startTime;
+    final e = end.isAfter(to) ? to : end;
+    if (!e.isAfter(s)) return Duration.zero;
+    return e.difference(s);
+  }
+
   Duration activeDurationToday(DateTime startOfDay) {
     var effectiveStart = startTime;
     if (startTime.isBefore(startOfDay)) {
@@ -68,6 +79,13 @@ sealed class ListeningSession with _$ListeningSession {
       return intervals.last.startTime;
     }
     return null;
+  }
+
+  Duration staticDurationWithin(DateTime from, DateTime to) {
+    return intervals.fold(
+      Duration.zero,
+      (total, interval) => total + interval.staticDurationWithin(from, to),
+    );
   }
 
   Duration get todayActiveDuration {

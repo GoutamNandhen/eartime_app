@@ -7,6 +7,7 @@ import '../providers/ear_state_provider.dart';
 class EarbudCapabilitiesNotifier extends Notifier<EarbudCapabilities> {
   @override
   EarbudCapabilities build() => const EarbudCapabilities(providerName: 'Initializing...');
+  @override
   set state(EarbudCapabilities value) => super.state = value;
 }
 
@@ -14,8 +15,18 @@ final earbudCapabilitiesProvider = NotifierProvider<EarbudCapabilitiesNotifier, 
 
 class ActiveEarStateProviderNotifier extends Notifier<EarStateProvider?> {
   @override
-  EarStateProvider? build() => null;
-  set state(EarStateProvider? value) => super.state = value;
+  EarStateProvider? build() {
+    ref.onDispose(() => stateOrNull?.dispose());
+    return null;
+  }
+
+  @override
+  set state(EarStateProvider? value) {
+    final previous = stateOrNull;
+    // The replaced provider owns a StreamController; close it instead of leaking it.
+    if (previous != null && !identical(previous, value)) previous.dispose();
+    super.state = value;
+  }
 }
 
 final activeEarStateProviderProvider = NotifierProvider<ActiveEarStateProviderNotifier, EarStateProvider?>(ActiveEarStateProviderNotifier.new);

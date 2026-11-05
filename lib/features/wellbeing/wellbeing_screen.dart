@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
+import '../../domain/logic/analytics_calculator.dart';
 import '../../providers/data_providers.dart';
 import '../widgets/editorial_metric.dart';
 import '../widgets/liquid_glass_surface.dart';
@@ -125,7 +126,7 @@ class WellbeingScreen extends ConsumerWidget {
                                         ),
                                         const SizedBox(height: 16),
                                         Text(
-                                          'Your listening pattern looks balanced.',
+                                          _scoreSummary(wellbeingData.healthScore!),
                                           textAlign: TextAlign.center,
                                           style: theme.textTheme.bodyLarge?.copyWith(
                                             color: AppColors.onSurfaceVariant,
@@ -149,14 +150,14 @@ class WellbeingScreen extends ConsumerWidget {
                                             const Icon(Icons.waves_rounded, color: AppColors.primary),
                                             const SizedBox(height: 16),
                                             Text(
-                                              'Exposure Pattern',
+                                              'Daily Exposure',
                                               style: theme.textTheme.labelLarge?.copyWith(
                                                 color: AppColors.editorialWhite,
                                               ),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              'Safe volume levels maintained.',
+                                              _exposureSummary(wellbeingData.todayListening),
                                               style: theme.textTheme.bodyMedium?.copyWith(
                                                 color: AppColors.onSurfaceVariant,
                                               ),
@@ -182,7 +183,7 @@ class WellbeingScreen extends ConsumerWidget {
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              'Good rest intervals detected.',
+                                              _breakSummary(wellbeingData.breaksCount, wellbeingData.longestContinuous),
                                               style: theme.textTheme.bodyMedium?.copyWith(
                                                 color: AppColors.onSurfaceVariant,
                                               ),
@@ -246,4 +247,24 @@ class WellbeingScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _formatMinutes(Duration d) =>
+    d.inHours > 0 ? '${d.inHours}h ${d.inMinutes % 60}m' : '${d.inMinutes}m';
+
+String _scoreSummary(int score) {
+  if (score >= 85) return 'Your listening pattern looks balanced.';
+  if (score >= 60) return 'Mostly healthy listening. A few more breaks would help.';
+  return 'Your ears have had a long day. Time for a rest.';
+}
+
+String _exposureSummary(Duration today) {
+  final pct = today.inSeconds * 100 ~/ AnalyticsCalculator.dailyExposureGuideline.inSeconds;
+  return '${_formatMinutes(today)} today, $pct% of the daily listening guideline.';
+}
+
+String _breakSummary(int breaks, Duration longestRun) {
+  final runText = 'Longest run ${_formatMinutes(longestRun)}.';
+  if (breaks == 0) return 'No breaks yet today. $runText';
+  return '$breaks break${breaks == 1 ? '' : 's'} today. $runText';
 }

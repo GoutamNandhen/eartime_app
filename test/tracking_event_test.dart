@@ -36,4 +36,38 @@ void main() {
       expect(event.timestamp, 1600000000000);
     });
   });
+
+  group('SYNC_STATE contract', () {
+    test('reads root-level connectedDevices / isPlaying / playbackStartedAt (native format)', () {
+      final event = TrackingEvent.fromJson({
+        'type': 'SYNC_STATE',
+        'timestamp': 1700000000000,
+        'deviceId': 'AA:BB',
+        'connectedDevices': [
+          {'id': 'AA:BB', 'friendlyName': 'Buds'}
+        ],
+        'isPlaying': true,
+        'playbackStartedAt': 1699999990000,
+      });
+      expect(event.connectedDevices.single['friendlyName'], 'Buds');
+      expect(event.isPlaying, isTrue);
+      expect(event.playbackStartedAt, 1699999990000);
+      expect(event.resolvedDeviceId, 'AA:BB');
+    });
+
+    test('still accepts the legacy nested format', () {
+      final event = TrackingEvent.fromJson({
+        'type': 'SYNC_STATE',
+        'timestamp': 1700000000000,
+        'device': {
+          'connectedDevices': [
+            {'id': 'AA:BB', 'friendlyName': 'Buds'}
+          ],
+          'isPlaying': false,
+        },
+      });
+      expect(event.connectedDevices.length, 1);
+      expect(event.isPlaying, isFalse);
+    });
+  });
 }

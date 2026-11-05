@@ -1,5 +1,9 @@
 # Test Results
 
+## Phase 6 Review Fixes (branch fix/phase6-review) – 2026-11-05
+- **Automated**: `flutter test` 33/33 passing (pipeline regression 1–14 implemented, reducer/reconciler, analytics, LiveTimerWidget, SYNC_STATE contract). `flutter analyze`: no issues. Kotlin sources compile against android-36 + Flutter embedding (kotlinc 2.2.20).
+- **Physical**: NOT YET RUN. Re-run Tests A–G on CPH2447 / Nord Buds 3 Pro.
+
 ## Phase 6 Core Sync Fixes
 - **Test Date**: TBD (Pending User Verification)
 - **Environment**: OnePlus CPH2447, Android 16 (API 36), OnePlus Nord Buds 3 Pro

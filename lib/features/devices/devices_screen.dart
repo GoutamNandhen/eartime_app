@@ -12,6 +12,7 @@ class DevicesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final devicesAsync = ref.watch(knownDevicesProvider);
+    final totals = ref.watch(deviceListeningTotalsProvider).value ?? const <String, Duration>{};
 
     return Scaffold(
       body: Stack(
@@ -76,7 +77,7 @@ class DevicesScreen extends ConsumerWidget {
                             padding: const EdgeInsets.all(32),
                             child: Center(
                               child: Text(
-                                'No compatible audio device connected',
+                                'No audio devices seen yet. Connect your earbuds to start tracking.',
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color: AppColors.onSurfaceVariant,
@@ -102,7 +103,7 @@ class DevicesScreen extends ConsumerWidget {
                               padding: const EdgeInsets.only(bottom: 16),
                               child: DeviceRow(
                                 device: device,
-                                durationText: '', // Omit hardcoded duration entirely
+                                durationText: _formatDuration(totals[device.canonicalDeviceId]),
                                 onTap: () {},
                               ),
                             );
@@ -133,4 +134,11 @@ class DevicesScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _formatDuration(Duration? d) {
+  if (d == null || d == Duration.zero) return '';
+  if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m';
+  if (d.inMinutes > 0) return '${d.inMinutes}m';
+  return '<1m';
 }

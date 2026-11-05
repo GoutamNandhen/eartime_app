@@ -85,7 +85,6 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                       _buildSectionHeader(theme, 'PERMISSIONS'),
                       _buildDataBox(
                         'BLUETOOTH_CONNECT: ${_diagData?['hasBluetoothConnect'] ?? false}\n'
-                        'BLUETOOTH_SCAN: ${_diagData?['hasBluetoothScan'] ?? false}\n'
                         'FOREGROUND_SERVICE_CONNECTED_DEVICE: ${_diagData?['hasFgServiceConnectedDevice'] ?? false}',
                       ),
 
@@ -163,8 +162,7 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                               ...rawServices.map((service) {
                                 final chars = (service['characteristics'] as List<dynamic>?)?.cast<Map<dynamic, dynamic>>() ?? [];
                                 return _buildDataBox(
-                                  'Service: ${service['uuid']}\n' +
-                                  chars.map((c) => '  Char: ${c['uuid']}\n    Props: ${(c['properties'] as List<dynamic>?)?.join(", ")}').join('\n')
+                                  "Service: ${service['uuid']}\n${chars.map((c) => '  Char: ${c['uuid']}\n    Props: ${(c['properties'] as List<dynamic>?)?.join(", ")}').join('\n')}"
                                 );
                               }),
                             ],

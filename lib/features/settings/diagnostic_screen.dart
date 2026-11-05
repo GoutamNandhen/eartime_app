@@ -91,7 +91,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
         
         _buildSectionTitle('Permissions', theme),
         _buildDataRow('BLUETOOTH_CONNECT', data['hasBluetoothConnect']),
-        _buildDataRow('BLUETOOTH_SCAN', data['hasBluetoothScan']),
         _buildDataRow('FG_SERVICE_CONNECTED_DEVICE', data['hasFgServiceConnectedDevice']),
         const SizedBox(height: 24),
 

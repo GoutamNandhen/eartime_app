@@ -7,7 +7,6 @@ void main() {
         'androidVersion': '16',
         'apiLevel': 36,
         'hasBluetoothConnect': true,
-        'hasBluetoothScan': true,
         'hasFgServiceConnectedDevice': true,
         'bluetoothAdapterState': 'enabled',
         'a2dpConnectedCount': 1,

@@ -54,10 +54,16 @@ Map<String, dynamic> _$TimeOfDayUsageToJson(_TimeOfDayUsage instance) =>
 _WellbeingData _$WellbeingDataFromJson(Map<String, dynamic> json) =>
     _WellbeingData(
       healthScore: (json['healthScore'] as num?)?.toInt(),
-      volumeAvgDb: (json['volumeAvgDb'] as num).toInt(),
-      volumePeakDb: (json['volumePeakDb'] as num).toInt(),
+      volumeAvgDb: (json['volumeAvgDb'] as num?)?.toInt(),
+      volumePeakDb: (json['volumePeakDb'] as num?)?.toInt(),
       breaksCount: (json['breaksCount'] as num).toInt(),
       recommendation: json['recommendation'] as String?,
+      todayListening: json['todayListening'] == null
+          ? Duration.zero
+          : Duration(microseconds: (json['todayListening'] as num).toInt()),
+      longestContinuous: json['longestContinuous'] == null
+          ? Duration.zero
+          : Duration(microseconds: (json['longestContinuous'] as num).toInt()),
     );
 
 Map<String, dynamic> _$WellbeingDataToJson(_WellbeingData instance) =>
@@ -67,4 +73,6 @@ Map<String, dynamic> _$WellbeingDataToJson(_WellbeingData instance) =>
       'volumePeakDb': instance.volumePeakDb,
       'breaksCount': instance.breaksCount,
       'recommendation': instance.recommendation,
+      'todayListening': instance.todayListening.inMicroseconds,
+      'longestContinuous': instance.longestContinuous.inMicroseconds,
     };

@@ -6,7 +6,7 @@
 
 ## 2. Current Git Baseline
 **Baseline Commit**: `baseline-phase6-debug-state`
-**Status**: Pre-release / Phase 6 Debugging. Clean working tree.
+**Status**: Pre-release / Phase 6. All review findings fixed on branch `fix/phase6-review` (2026-11-05); awaiting physical verification of Tests A–G.
 
 ## 3. Current Phase
 **Phase 6 Debugging** (Stabilizing A/B/D/E test matrix and Foreground Service initialization).
@@ -67,11 +67,8 @@ EarTime uses a hybrid architecture:
 - Glassmorphic UI dashboard and timeline.
 
 ## 14. Known Bugs
-- **Bug A2**: Earbud connects, appears on UI, then instantly disappears.
-- **Bug B1/B2**: Unknown playback sync issues when reconnecting.
-- **Bug B4**: UI state changes to PAUSED but LiveTimer continues ticking.
-- **Bug D1/D2**: LiveTimer logic bugs relating to pausing and resuming.
-- **Bug E2**: UI remains PAUSED while timer glitches.
+- A2, B1/B2, B4, D1/D2, E2 and G have code fixes on `fix/phase6-review` (see CHANGELOG 2026-11-05). Not yet physically verified.
+- Remaining limitation: `isMusicActive` is a global signal (see BUGS.md).
 
 ## 15. Physical Test Matrix (Current State)
 | Test | Action | Result |
@@ -95,36 +92,41 @@ EarTime uses a hybrid architecture:
 - **G Crash**: Confirmed Android 14 FGS `connectedDevice` requires `BLUETOOTH_CONNECT`. FIXED by adding a `try-catch` in native and a UI permission gate.
 - **A2 Bug**: Confirmed that `AudioTrackingService` maps A2DP and SCO routes to the exact same logical ID. When Android removes the SCO route, the logical ID is evicted, incorrectly sending `DEVICE_DISCONNECTED` even though A2DP remains active.
 
-## 17. Unconfirmed Hypotheses
-- B, D, and E timer glitch bugs are currently hypothesized to be state management desyncs in `LiveSessionNotifier` or `LiveTimerWidget`, but have not been formally diagnosed through logs.
+## 17. Root causes (confirmed in code review 2026-11-05)
+- B: Kotlin sent SYNC_STATE fields at the root; Flutter read them from `device` → always empty.
+- D/E: pause handler copied `currentPlaybackStartTime` forward; native also counted paused players as "playing".
+- Random desync: every `TrackingPlatform.eventStream` access called `receiveBroadcastStream()`, so later subscribers stole the channel from the pipeline.
 
 ## 18. Current Investigation
-- Fixing the **A2** identity bug by modifying `onAudioDevicesRemoved` to verify if other routes exist for the same MAC address before eviction.
+- Physical verification of the fixes.
 
 ## 19. Known Regressions
-- None currently verified. G was hypothesized as a regression but proved to be a Flutter UI lockup.
+- None known.
 
 ## 20. Important Architectural Constraints
 - **FGS Requirement**: Android 14 strictly mandates runtime permissions *before* launching the service.
-- **Riverpod Sync**: The tracking pipeline must remain passive (`ref.watch`) in the background.
+- **Single event stream**: never call `receiveBroadcastStream()` anywhere except `TrackingPlatform.eventStream`; consume via `trackingEventStreamProvider`.
+- **Live vs persisted time**: Home shows closed DB intervals + the live interval; never add an open DB interval to the live timer.
+- **Native threading**: tracking state in `AudioTrackingService` is main-thread only.
 
 ## 21. Files/Functions Associated With Subsystems
 - **Audio Service**: `AudioTrackingService.kt`, `AudioDeviceDetector.kt`
-- **Flutter UI**: `app_shell.dart`, `live_timer_widget.dart`
-- **Flutter State**: `data_providers.dart`, `live_session_state.dart`
-- **Database**: `database.dart`, `session_manager.dart`
+- **Flutter state**: `providers/data_providers.dart` (`TrackingPipeline`), `domain/logic/live_session_reducer.dart`
+- **Timeline/DB**: `domain/logic/session_manager.dart` (`SessionManager`, `SyncReconciler`), `data/database/database.dart`
+- **Analytics/Wellbeing**: `domain/logic/analytics_calculator.dart`
+- **UI**: `app_shell.dart`, `live_timer_widget.dart`
 
-## 22. Next Planned Investigation
-- Implement the A2 identity fix in `AudioTrackingService.kt`.
-- Diagnose the B4/D/E timer bugs by tracing `PLAYBACK_PAUSED` logic in `LiveSessionNotifier`.
+## 22. Next Planned Work
+- Physically verify Tests A–G; then Phase 7 (historical charts).
 
-## 23. Things That MUST NOT Be Changed Yet
-- DO NOT modify Timer (D) or Playback Pause/Resume (E) logic.
-- DO NOT modify Timeline persistence.
-- DO NOT modify BLE discovery mechanisms.
+## 23. Things That MUST NOT Be Changed Without Re-running Tests
+- `LiveSessionReducer`, `SyncReconciler`, route tracking in `AudioTrackingService`.
 
 ## 24. Required Physical Verification
-- A2 fix must be physically verified by connecting an earbud and observing if it stays on screen without playback.
+- A2: connect earbuds without playback; device must stay on screen (also during/after a call, which adds/removes the SCO route).
+- B: kill the app from Recents with earbuds connected and playing, reopen; Home must show the device playing with the correct elapsed time.
+- D/E: pause/resume several times; timer must stop on pause and resume from the accumulated total.
+- G: reopen repeatedly after clearing from Recents; no crash.
 
 ## 25. Historical Architectural Decisions
 - Switched from `StateNotifier` to `Notifier` (Riverpod 3.0+).

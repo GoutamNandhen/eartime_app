@@ -19,8 +19,7 @@ EarTime is a Flutter application designed to passively track Bluetooth earbud am
 - **Flutter**: `trackingPipelineProvider` routes events to `LiveSessionNotifier`, which builds the `LiveSessionState`. `SessionManager` silently commits new sessions and updates to Drift.
 
 ## 4. What is currently broken?
-- **Bug A2**: Earbuds appear upon connection, but instantly disappear.
-- **Bugs B/D/E**: The `LiveTimerWidget` continues ticking when paused, and play/pause state synchronization is buggy.
+- As of 2026-11-05 all known bugs (A2, B, D/E, G) have code fixes on `fix/phase6-review`, pending physical verification. See CHANGELOG and BUGS.md.
 
 ## 5. What has actually been physically tested?
 See `CURRENT_STATE.md` for the full physical test matrix. Disconnected launches (A1), disconnect events (A4), timeline accuracy (A5), and midnight crossing (F) all PASS.
