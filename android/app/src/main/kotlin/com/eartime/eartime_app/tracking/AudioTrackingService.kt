@@ -48,6 +48,13 @@ class AudioTrackingService : Service() {
 
         /** Debounce window used to let AudioManager settle after a playback config change. */
         private const val PLAYBACK_SETTLE_MS = 350L
+        /**
+         * Re-check interval while music is active and an earbud is connected. Android does not
+         * reliably fire AudioPlaybackCallback when an already-playing player is re-routed (speaker
+         * -> buds when the buds connect mid-song, or buds -> speaker via the output switcher), so
+         * the routing change is picked up by polling. Only runs while both conditions hold.
+         */
+        private const val ROUTE_WATCH_MS = 2000L
 
         private val BLUETOOTH_TYPES = setOf(
             AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
@@ -86,6 +93,7 @@ class AudioTrackingService : Service() {
     private var playbackStartedAt: Long? = null
 
     private val playbackEvaluation = Runnable { evaluatePlaybackState() }
+    private val routeWatch = Runnable { evaluatePlaybackState() }
 
     override fun onCreate() {
         super.onCreate()
@@ -495,6 +503,7 @@ class AudioTrackingService : Service() {
 
     private fun evaluatePlaybackState(emit: Boolean = true) {
         val isPlaying = isMediaPlaying()
+        updateRouteWatch()
         if (isPlaying == lastIsPlaying) return
         lastIsPlaying = isPlaying
         playbackStartedAt = if (isPlaying) System.currentTimeMillis() else null
@@ -514,6 +523,14 @@ class AudioTrackingService : Service() {
             "device" to device,
             "timestamp" to System.currentTimeMillis()
         ))
+    }
+
+    /** Keeps [routeWatch] scheduled only while music is active and a tracked device is connected. */
+    private fun updateRouteWatch() {
+        mainHandler.removeCallbacks(routeWatch)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return // no per-player routing below API 34
+        if (logicalDevices.isEmpty() || !audioManager.isMusicActive) return
+        mainHandler.postDelayed(routeWatch, ROUTE_WATCH_MS)
     }
 
     // ---------------------------------------------------------------------------------------

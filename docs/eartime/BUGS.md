@@ -12,6 +12,7 @@
 - **[Phase 6] Infinite Timer on Pause (Test D/E)**: reducer clears `currentPlaybackStartTime`; native pause detection uses `isMusicActive`.
 - **[Phase 6] Crash on Reopen (Test G)**: `startForeground` on every start command via `ServiceCompat` (also fixes API < 29).
 - **EventChannel multi-listener**: single shared stream.
+- **Speaker -> buds re-route while playing not detected** (found on device 2026-11-05): 2 s route watch while music is active and a device is connected (API 34+).
 - **BLE GATT callback races / unbounded event buffer / broker cache written off main thread**: fixed in follow-up.
 - **Double-counted listening time / stale device attribution / dropped same-ms events / stuck connected device**: see CHANGELOG.
 

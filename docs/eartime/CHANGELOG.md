@@ -1,5 +1,11 @@
 # Changelog
 
+## [Phase 6 Review Fixes – route watch] - 2026-11-05
+Branch `fix/phase6-review`. From the first device run on the CPH2447.
+
+### Fixed (native, Kotlin)
+- **Playing music not picked up when buds connect mid-song**: music playing on the speaker, buds connected without pausing; the audio moved to the buds but Home stayed on PAUSED until a manual pause/play. Android does not reliably fire `AudioPlaybackCallback` when an already-playing player is re-routed, and the single re-check 350 ms after `onAudioDevicesAdded` ran before the route switched. `AudioTrackingService` now re-evaluates playback every 2 s (`ROUTE_WATCH_MS`) while music is active and a tracked device is connected (API 34+ only, stops as soon as either condition ends). Also covers moving playback from buds to the speaker with the output switcher while the buds stay connected.
+
 ## [Phase 6 Review Fixes – follow-up] - 2026-11-05
 Branch `fix/phase6-review`. Closes the items left open by the first pass. Needs physical verification.
 
