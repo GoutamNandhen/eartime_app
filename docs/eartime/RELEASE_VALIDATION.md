@@ -46,3 +46,6 @@ is disabled without a validated lease. Proprietary battery/case/wearing support
 has no hardware evidence. These are product blockers, not acceptable release
 claims based on synthetic confirmed-route fixtures. Complete remaining feature,
 localization, accessibility, storage/performance and signing gates first.
+
+## Continuous integration (2026-11-05)
+`.github/workflows/ci.yml` runs on pushes to `main`/`codex/**`, pull requests and manual dispatch (Ubuntu, JDK 17, Flutter stable): `flutter analyze`, `flutter test`, the collector baseline guard (`-AllowObserverLifecycleHooks`), the app version guard, the public tree audit, `flutter build apk --debug`, then `:app:testDebugUnitTest :app:compileReleaseKotlin`. Native test reports and the debug APK are uploaded as artifacts. A tag `apk-*` additionally publishes the debug APK as a GitHub pre-release for device testing. CI is automated evidence only; it does not replace physical acceptance or signed-release validation.
