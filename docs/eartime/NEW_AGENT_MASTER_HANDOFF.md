@@ -18,7 +18,7 @@ On explicit user RESUME: fetch and inspect the current review branch, working tr
 - Codex local-gate report: 247 Flutter tests passed; 468 native tests passed across 32 suites; analyzer clean; debug/release Kotlin compilation and debug APK packaging passed; four-hook collector guard passed. These results are documented on GitHub but not independently rerun here and are not hardware/CI proof.
 - WIP saved: E7 recorded listening frequency is source-implemented with regression tests and native Analytics/Wellbeing display but final feature-acceptance review was intentionally paused. E7 remains IN_PROGRESS.
 - Journal source schema 3; disposable projection/cache version 5. Current app development version 1.1.0-dev.1+2, min SDK 24, target SDK 36. Flutter toolchain documented as Dart 3.11-compatible, JDK 17, Android SDK 36.
-- Historic local checkout path supplied by the user: F:\projects\eartime_flutter\eartime_app; this is not guaranteed in a fresh agent environment. Public repository access is the recoverable shared source.
+- Historic local checkout path supplied by the user: (user-local Windows checkout, path redacted); this is not guaranteed in a fresh agent environment. Public repository access is the recoverable shared source.
 - The latest main branch was verified unchanged at 13ae6609d22cb2a0daf8890fca081fb97c93b36b. No release/tag/merge authorized.
 
 ### Counts by family
