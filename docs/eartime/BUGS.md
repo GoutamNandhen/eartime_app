@@ -20,6 +20,8 @@
 - `isMusicActive` is global below API 34: playback on a non-tracked output while earbuds are connected still counts there. Fixed on API 34+ via per-player routing (2026-11-05 follow-up); verify on the CPH2447 by playing on the speaker with the buds connected but out of the ear / routed away.
 - A paused-but-unreleased media player routed to the buds plus music on the speaker could still read as "playing" (no public per-player state API). Rare; noted for completeness.
 
+- Toolchain: Flutter 3.47 warns that support for Gradle 8.14, AGP 8.11.1 and Kotlin 2.2.20 will soon be dropped (wants Gradle ≥ 9.1, AGP ≥ 9.0.1, Kotlin ≥ 2.3.20). Builds fine today; AGP 9 is a major upgrade, do it as its own change.
+
 ## Previously listed (now resolved, kept for history)
 - **[Phase 6] False Disconnection (Test A)**: `AudioDeviceDetector` receives an SCO route removal and erroneously removes the matching A2DP device from the cache because they share the same ID.
 - **[Phase 6] Missing Live State on Boot (Test B)**: `SYNC_STATE` payload mismatch. Kotlin sends `connectedDevices` at root, but Flutter `TrackingEvent.fromJson` ignores it, booting with a wiped state.
