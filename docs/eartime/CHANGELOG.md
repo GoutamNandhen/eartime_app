@@ -10,7 +10,7 @@ Branch `fix/phase6-review`. Closes the items left open by the first pass. Needs 
 - **TrackingEventBroker**: cache fields are only touched on the main thread (were written from binder threads); the buffer used while Flutter is detached is capped at 500 events (oldest dropped; `SYNC_STATE` reconciliation covers the gap) so a long-lived service cannot grow memory without bound.
 
 ### Added
-- GitHub Actions CI (`.github/workflows/ci.yml`): `flutter analyze`, `flutter test`, `flutter build apk --debug` on Ubuntu, with the debug APK uploaded as the `eartime-debug-apk` artifact. First real Gradle verification of this branch.
+- GitHub Actions CI (`.github/workflows/ci.yml`): `flutter analyze`, `flutter test`, `flutter build apk --debug` on Ubuntu, with the debug APK uploaded as the `eartime-debug-apk` artifact. First real Gradle verification of this branch. Pushing a tag `apk-*` also publishes the debug APK as a GitHub pre-release for direct phone install.
 
 ## [Phase 6 Review Fixes] - 2026-11-05
 Branch `fix/phase6-review`. Full code review; every finding fixed. Needs physical verification (see TEST_PLAN / CURRENT_STATE §15).
