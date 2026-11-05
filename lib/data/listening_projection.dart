@@ -302,6 +302,12 @@ class ListeningSnapshot {
       averageSession = Duration(
         milliseconds: map['averageSessionMs'] as int? ?? 0,
       ),
+      connected = map['connectionContractVersion'] == 1
+          ? Duration(milliseconds: map['connectedMs'] as int)
+          : null,
+      connectedIdle = map['connectionContractVersion'] == 1
+          ? Duration(milliseconds: map['connectedIdleMs'] as int)
+          : null,
       breakCount = map['breakContractVersion'] == 1
           ? map['breakCount'] as int
           : null,
@@ -310,6 +316,15 @@ class ListeningSnapshot {
       sessionDetail = map['sessionDetail'] == null
           ? null
           : ProjectedSessionDetail(map['sessionDetail'] as Map) {
+    if (map.containsKey('connectionContractVersion') &&
+        (map['connectionContractVersion'] != 1 ||
+            connected == null ||
+            connectedIdle == null ||
+            connected!.isNegative ||
+            connectedIdle!.isNegative ||
+            connectedIdle! > connected!)) {
+      throw const FormatException('Invalid connection contract');
+    }
     if (map.containsKey('breakContractVersion') &&
         (map['breakContractVersion'] != 1 ||
             breakCount == null ||
@@ -456,6 +471,10 @@ class ListeningSnapshot {
   final int measuredSessionCount;
   final Duration longestSession;
   final Duration averageSession;
+
+  /// C5/E2 connection time (Bluetooth A2DP endpoints); null before the contract.
+  final Duration? connected;
+  final Duration? connectedIdle;
 
   /// E8 observed breaks (1 min to 4 h between confirmed spans); null when the source predates the contract.
   final int? breakCount;

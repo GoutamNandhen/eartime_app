@@ -177,4 +177,16 @@ class A2dpListeningTest {
         journal.append(status(205010, "HEALTHY", 2)); journal.append(evidence(210000, music = false, generation = 2))
         assertEquals(0, snapshot()["breakCount"])
     }
+
+    @Test fun connectedTimeSplitsIntoListeningAndIdleWithoutAffectingListeningTotals() = run {
+        ready()
+        tick(2000, true); tick(10000, false); tick(20000, false)
+        journal.append(evidence(30000, music = false, connected = emptyList(), streaming = emptySet()))
+        val snapshot = snapshot()
+        assertEquals(8000L, snapshot["confirmedMs"])
+        assertEquals(28000L, snapshot["connectedMs"]); assertEquals(20000L, snapshot["connectedIdleMs"])
+        assertTrue((snapshot["intervals"] as List<*>).none { (it as Map<*, *>)["attribution"] == "CONNECTED" })
+        val day = (snapshot["days"] as List<*>).first() as Map<*, *>
+        assertEquals(28000L, day["connectedMs"]); assertEquals(20000L, day["connectedIdleMs"])
+    }
 }

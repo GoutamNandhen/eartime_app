@@ -228,6 +228,16 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                     label: 'Unverified playback activity',
                     value: recordedDuration(snapshot.unverified),
                   ),
+                  if (snapshot.connected case final connected?) ...[
+                    _Metric(
+                      label: 'Earbuds connected',
+                      value: recordedDuration(connected),
+                    ),
+                    _Metric(
+                      label: 'Connected, not listening',
+                      value: recordedDuration(snapshot.connectedIdle!),
+                    ),
+                  ],
                   const _Notice(
                     'Confirmed listening is measured for Bluetooth earbuds and headphones. Other outputs show as unverified activity and are not counted.',
                     Icons.info_outline,

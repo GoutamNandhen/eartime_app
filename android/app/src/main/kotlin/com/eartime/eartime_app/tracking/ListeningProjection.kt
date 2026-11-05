@@ -192,8 +192,9 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
         val input = observation.input
         if (input.collector != CollectorHealth.SOURCE || input.payloadVersion != 1) return
         val prefix = "${input.time.collectionEpoch}:a2dp:"
+        val connectedPrefix = "${input.time.collectionEpoch}:a2dpc:"
         fun closeAll(observed: Boolean, reason: String, keep: Set<String> = emptySet()) =
-            routes.keys().asSequence().toList().filter { it.startsWith(prefix) && it !in keep }
+            routes.keys().asSequence().toList().filter { (it.startsWith(prefix) || it.startsWith(connectedPrefix)) && it !in keep }
                 .forEach { close(routes, it, observation, observed, reason) }
         val health = root.optJSONObject("collectorHealth")
         val owned = health != null && health.optString("processGeneration") == input.processGeneration &&
@@ -222,6 +223,9 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
         observations.forEach { observed ->
             val device = identity.alias(observed.address)?.get("deviceId") as? String ?: return@forEach
             val key = prefix + observed.address
+            // C5/E2: connection time per endpoint, independent of listening; never counted as listening.
+            active.add(connectedPrefix + observed.address)
+            update(routes, connectedPrefix + observed.address, device, "CONNECTED", true, observation)
             if (musicActive && observed.address in streaming) {
                 active.add(key)
                 update(routes, key, device, "CONFIRMED", true, observation)
@@ -304,7 +308,7 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                 val open = long("open") == 1L
                 val route = routes.optJSONObject(text("route_key") ?: "")
                 // Live extension only for confirmed routes, and never past the collector lease.
-                val liveDuration = if (open && now != null && route != null && text("attribution") == "CONFIRMED")
+                val liveDuration = if (open && now != null && route != null && text("attribution") in setOf("CONFIRMED", "CONNECTED"))
                     comparable(route, now)?.let { live ->
                         minOf(live, route.getLong("lastElapsed") - route.getLong("startElapsed") + CollectorHealth.MAX_LEASE_MS)
                     } else null
@@ -331,6 +335,8 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                     "startSequence" to long("start_sequence"), "endSequence" to long("end_sequence")))
             }
         }
+        val connectedSegments = segments.filter { it["attribution"] == "CONNECTED" }
+        segments.removeAll { it["attribution"] == "CONNECTED" }
         val barriers = segments.filter { it["closeReason"] != null && it["closeReason"] != "stopped" }
             .map { it["endSequence"] as Long }.toMutableSet()
         if (segments.isNotEmpty()) {
@@ -424,6 +430,17 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
                     if (end > lastEnd) { lastEnd = end; lastEndSequence = part["endSequence"] as Long }
                 }
         }
+        val connected = union(connectedSegments.map { (it["clippedStartUtcMs"] as Long) to (it["clippedEndUtcMs"] as Long) })
+            .filter { it.second > it.first }
+        fun overlap(a: List<Pair<Long, Long>>, b: List<Pair<Long, Long>>, from: Long, until: Long): Long {
+            var i = 0; var j = 0; var total = 0L
+            while (i < a.size && j < b.size) {
+                val start = maxOf(a[i].first, b[j].first, from); val end = minOf(a[i].second, b[j].second, until)
+                if (end > start) total += end - start
+                if (a[i].second < b[j].second) i++ else j++
+            }
+            return total
+        }
         val days = mutableListOf<Map<String, Any?>>()
         var startCursor = 0
         val calendar = Calendar.getInstance(TimeZone.getTimeZone(zoneId)).apply {
@@ -438,6 +455,8 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             while (startCursor < measuredStarts.size && measuredStarts[startCursor] < end) startCursor++
             days.add(mapOf("startUtcMs" to start, "endUtcMs" to end,
                 "confirmedMs" to duration(confirmed, start, end), "unverifiedMs" to duration(unverified, start, end),
+                "connectedMs" to duration(connected, start, end),
+                "connectedIdleMs" to (duration(connected, start, end) - overlap(connected, confirmed, start, end)).coerceAtLeast(0),
                 "measuredSessionStarts" to (startCursor - firstStart)))
         }
         val deviceWhere = if (deviceId == null) "" else " WHERE device_id = ?"
@@ -455,6 +474,8 @@ internal class ListeningProjection(private val db: SQLiteDatabase) {
             "listeningRuns" to confirmed.count { it.second > it.first }, "perDevice" to perDevice,
             "hourly" to hourly.mapIndexed { hour, value -> mapOf("hour" to hour, "durationMs" to value,
                 "measuredSessionStarts" to hourlyStarts[hour]) },
+            "connectionContractVersion" to 1, "connectedMs" to duration(connected, from, until),
+            "connectedIdleMs" to (duration(connected, from, until) - overlap(connected, confirmed, from, until)).coerceAtLeast(0),
             "breakContractVersion" to 1, "breakCount" to breaks.size, "totalBreakMs" to breaks.sum(),
             "longestBreakMs" to (breaks.maxOrNull() ?: 0L), "averageBreakMs" to if (breaks.isEmpty()) 0L else breaks.sum() / breaks.size,
             "frequencyContractVersion" to 1, "measuredSessionStarts" to measuredStarts.size,
