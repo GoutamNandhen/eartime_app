@@ -10,17 +10,33 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.media.AudioAttributes
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.AudioManager.AudioPlaybackCallback
 import android.media.AudioPlaybackConfiguration
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import java.util.concurrent.ConcurrentHashMap
+import androidx.core.app.ServiceCompat
 
+/**
+ * Persistent foreground service that tracks external audio sinks and media playback.
+ *
+ * Threading model: every mutation of tracking state ([logicalDevices], [systemIdToLogicalId],
+ * [lastIsPlaying], [playbackStartedAt]) happens on the main thread. Heavy start-up work
+ * (A2DP proxy binding) runs on a background thread and posts its results back to [mainHandler].
+ *
+ * Device identity: Android exposes one [AudioDeviceInfo] per *route* (A2DP, SCO, BLE...). Several
+ * routes can belong to the same physical earbud and resolve to the same logical id (the MAC).
+ * We therefore keep, per logical device, the set of system route ids that are currently present
+ * and only emit DEVICE_DISCONNECTED when the last route of that device disappears.
+ */
 class AudioTrackingService : Service() {
 
     companion object {
@@ -29,238 +45,285 @@ class AudioTrackingService : Service() {
         const val ACTION_STOP = "ACTION_STOP"
         const val ACTION_START_BLE_DIAGNOSTIC = "ACTION_START_BLE_DIAGNOSTIC"
         const val ACTION_SYNC_STATE = "ACTION_SYNC_STATE"
+
+        /** Debounce window used to let AudioManager settle after a playback config change. */
+        private const val PLAYBACK_SETTLE_MS = 350L
+        /**
+         * Re-check interval while music is active and an earbud is connected. Android does not
+         * reliably fire AudioPlaybackCallback when an already-playing player is re-routed (speaker
+         * -> buds when the buds connect mid-song, or buds -> speaker via the output switcher), so
+         * the routing change is picked up by polling. Only runs while both conditions hold.
+         */
+        private const val ROUTE_WATCH_MS = 2000L
+
+        private val BLUETOOTH_TYPES = setOf(
+            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+            26, // TYPE_BLE_HEADSET
+            27, // TYPE_BLE_SPEAKER
+            30  // TYPE_BLE_BROADCAST
+        )
     }
 
     private lateinit var audioManager: AudioManager
     private var bluetoothAdapter: BluetoothAdapter? = null
-    private var a2dpProxy: BluetoothA2dp? = null
+    @Volatile private var a2dpProxy: BluetoothA2dp? = null
     private var bleDiscoveryManager: BleDiscoveryManager? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val notificationId = 1001
     private val channelId = "EarTimeTrackingChannel"
-    private var isInitialized = false
-    private var playbackCallback: AudioPlaybackCallback? = null
 
-    // Track active devices to avoid duplicates
-    private val connectedDevices = ConcurrentHashMap<String, Map<String, Any?>>()
+    /** True once start-up was kicked off (guards against double initialisation). */
+    private var initStarted = false
+    /** True once callbacks are registered and the initial scan has completed. */
+    private var initCompleted = false
+
+    private var playbackCallback: AudioPlaybackCallback? = null
+    private var callbacksRegistered = false
+
+    /** logicalId -> device info map sent to Flutter. Main thread only. */
+    private val logicalDevices = LinkedHashMap<String, Map<String, Any?>>()
+    /** logicalId -> system route ids currently present for that device. Main thread only. */
+    private val logicalRoutes = HashMap<String, MutableSet<Int>>()
+    /** system route id -> logicalId, so removal never has to re-derive the id. Main thread only. */
+    private val systemIdToLogicalId = HashMap<Int, String>()
+
+    private var lastIsPlaying: Boolean? = null
+    private var playbackStartedAt: Long? = null
+
+    private val playbackEvaluation = Runnable { evaluatePlaybackState() }
+    private val routeWatch = Runnable { evaluatePlaybackState() }
 
     override fun onCreate() {
         super.onCreate()
         Log.i(TAG, "[START] Service onCreate")
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = btManager.adapter
+        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
+        bluetoothAdapter = btManager?.adapter
         bleDiscoveryManager = BleDiscoveryManager(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i(TAG, "[START] Service onStartCommand")
-        if (intent?.action == ACTION_STOP) {
-            stopForeground(true)
-            stopSelf()
+        Log.i(TAG, "[START] Service onStartCommand action=${intent?.action}")
+
+        // Every start command must satisfy the startForegroundService() contract, including
+        // re-deliveries while the service is already running (Test G).
+        if (!enterForeground()) {
             return START_NOT_STICKY
         }
 
-        if (intent?.action == ACTION_START_BLE_DIAGNOSTIC) {
-            var address = intent.getStringExtra("address")
-            
-            // If address is invalid or missing, try to auto-detect the best connected Bluetooth device
-            if (address.isNullOrEmpty() || !address.contains(":")) {
-                val best = getBestBluetoothDeviceInfo()
-                address = best.second
+        when (intent?.action) {
+            ACTION_STOP -> {
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return START_NOT_STICKY
             }
-
-            if (address != null && address.contains(":")) {
-                val btDevice = bluetoothAdapter?.getRemoteDevice(address)
-                if (btDevice != null) {
-                    Log.i(TAG, "[BLE-REFRESH] Starting diagnostic refresh")
-                    Log.i(TAG, "[BLE-REFRESH] Selected GATT device:\nname=${btDevice.name}\naddress=${btDevice.address}")
-                    bleDiscoveryManager?.discover(btDevice, forceRefresh = true)
-                } else {
-                    TrackingEventBroker.sendEvent(mapOf(
-                        "type" to "BLE_DIAGNOSTIC_STATE",
-                        "deviceId" to address,
-                        "state" to "ERROR",
-                        "message" to "BluetoothAdapter.getRemoteDevice returned null",
-                        "timestamp" to System.currentTimeMillis()
-                    ))
-                }
-            } else {
-                TrackingEventBroker.sendEvent(mapOf(
-                    "type" to "BLE_DIAGNOSTIC_STATE",
-                    "deviceId" to "unknown",
-                    "state" to "ERROR",
-                    "message" to "No address provided to ACTION_START_BLE_DIAGNOSTIC",
-                    "timestamp" to System.currentTimeMillis()
-                ))
+            ACTION_START_BLE_DIAGNOSTIC -> startBleDiagnostic(intent.getStringExtra("address"))
+            ACTION_SYNC_STATE -> {
+                Log.i(TAG, "[BLE-LIFECYCLE] Sync state requested (initCompleted=$initCompleted)")
+                // Before init completes the initial scan emits SYNC_STATE itself, so an early
+                // request must not publish an empty (and therefore wrong) snapshot.
+                if (initCompleted) emitSyncState()
             }
-            // Allow to fall through so startForeground() is always called
-        }
-        if (intent?.action == ACTION_SYNC_STATE) {
-            Log.i(TAG, "[BLE-LIFECYCLE] Sync state requested")
-            if (isInitialized) {
-                TrackingEventBroker.sendEvent(mapOf(
-                    "type" to "SYNC_STATE",
-                    "connectedDevices" to connectedDevices.values.toList(),
-                    "isPlaying" to (lastIsPlaying ?: false),
-                    "timestamp" to System.currentTimeMillis()
-                ))
-            }
-            // Allow to fall through so startForeground() is always called
         }
 
-        // Always ensure startForeground is called to satisfy Android 12+ requirements
-        // when startForegroundService is used, even if already initialized.
-        createNotificationChannel()
-        var foregroundServiceType = 0
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            foregroundServiceType = android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-        }
-        try {
-            startForeground(notificationId, createNotification(), foregroundServiceType)
-        } catch (e: SecurityException) {
-            Log.e(TAG, "[SECURITY] Failed to start foreground service: ${e.message}")
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        if (!isInitialized) {
+        if (!initStarted) {
+            initStarted = true
             Log.i(TAG, "SERVICE_RUNNING")
-
-            Thread {
-                try {
-                    initBluetoothA2dp()
-                    registerCallbacks()
-                    checkInitialAudioState()
-                } catch (e: Exception) {
-                    Log.e(TAG, "[STARTUP] Exception during background initialization: ${e.message}")
-                }
-            }.start()
-            isInitialized = true
+            initialize()
         }
-        
+
         return START_STICKY
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         Log.i(TAG, "SERVICE_DESTROYED")
-        if (isInitialized) {
-            unregisterCallbacks()
-            cleanupBluetoothA2dp()
-        }
+        mainHandler.removeCallbacksAndMessages(null)
+        if (callbacksRegistered) unregisterCallbacks()
+        cleanupBluetoothA2dp()
+        bleDiscoveryManager?.close()
+        bleDiscoveryManager = null
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent): IBinder? = null
 
-    private fun initBluetoothA2dp() {
-        try {
-            bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
-                override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
-                    if (profile == BluetoothProfile.A2DP) {
-                        a2dpProxy = proxy as BluetoothA2dp
-                        Log.d(TAG, "[DIAGNOSTIC] BluetoothA2dp proxy connected.")
-                        compareSources()
-                    }
-                }
+    // ---------------------------------------------------------------------------------------
+    // Foreground / lifecycle
+    // ---------------------------------------------------------------------------------------
 
-                override fun onServiceDisconnected(profile: Int) {
-                    if (profile == BluetoothProfile.A2DP) {
-                        a2dpProxy = null
-                        Log.d(TAG, "[DIAGNOSTIC] BluetoothA2dp proxy disconnected.")
-                    }
-                }
-            }, BluetoothProfile.A2DP)
-        } catch (e: Exception) {
-            Log.e(TAG, "[DIAGNOSTIC] Exception binding A2DP profile: ${e.message}")
+    private fun enterForeground(): Boolean {
+        createNotificationChannel()
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+        } else {
+            0
         }
+        return try {
+            // ServiceCompat picks the right overload: the 3-arg startForeground() only exists on API 29+.
+            ServiceCompat.startForeground(this, notificationId, createNotification(), type)
+            true
+        } catch (e: SecurityException) {
+            Log.e(TAG, "[SECURITY] Failed to start foreground service: ${e.message}")
+            stopSelf()
+            false
+        } catch (e: IllegalStateException) {
+            // e.g. ForegroundServiceStartNotAllowedException when started from the background.
+            Log.e(TAG, "[FGS] Foreground start not allowed: ${e.message}")
+            stopSelf()
+            false
+        }
+    }
+
+    private fun initialize() {
+        Thread {
+            try {
+                initBluetoothA2dp()
+            } catch (e: Exception) {
+                Log.e(TAG, "[STARTUP] Exception binding A2DP: ${e.message}")
+            }
+            mainHandler.post {
+                try {
+                    registerCallbacks()
+                    checkInitialAudioState()
+                } catch (e: Exception) {
+                    Log.e(TAG, "[STARTUP] Exception during initialization: ${e.message}")
+                } finally {
+                    initCompleted = true
+                }
+            }
+        }.start()
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Bluetooth helpers
+    // ---------------------------------------------------------------------------------------
+
+    private fun initBluetoothA2dp() {
+        bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
+            override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+                if (profile == BluetoothProfile.A2DP) {
+                    a2dpProxy = proxy as BluetoothA2dp
+                    Log.d(TAG, "[DIAGNOSTIC] BluetoothA2dp proxy connected.")
+                    // Names/MACs may only become resolvable now; refresh the snapshot on main.
+                    mainHandler.post { if (initCompleted) checkInitialAudioState() }
+                }
+            }
+
+            override fun onServiceDisconnected(profile: Int) {
+                if (profile == BluetoothProfile.A2DP) {
+                    a2dpProxy = null
+                    Log.d(TAG, "[DIAGNOSTIC] BluetoothA2dp proxy disconnected.")
+                }
+            }
+        }, BluetoothProfile.A2DP)
     }
 
     private fun cleanupBluetoothA2dp() {
         try {
-            a2dpProxy?.let {
-                bluetoothAdapter?.closeProfileProxy(BluetoothProfile.A2DP, it)
-            }
+            a2dpProxy?.let { bluetoothAdapter?.closeProfileProxy(BluetoothProfile.A2DP, it) }
         } catch (e: Exception) {
             Log.e(TAG, "[DIAGNOSTIC] Exception closing A2DP proxy: ${e.message}")
         }
+        a2dpProxy = null
     }
 
-    private fun compareSources() {
-        Log.d(TAG, "[DIAGNOSTIC] --- COMPARING SOURCE A (AudioManager) vs SOURCE B (BluetoothA2dp) ---")
-        
-        val amDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-            .filter { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }
-        
-        Log.d(TAG, "[DIAGNOSTIC] SOURCE A: AudioManager A2DP Output Devices: ${amDevices.size}")
-        amDevices.forEach { device ->
-            val addr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) device.address else "N/A"
-            Log.d(TAG, "[DIAGNOSTIC]   A-> type=bt_a2dp, id=${device.id}, name='${device.productName}', addr='$addr'")
-        }
-
-        val btDevices = try {
-            a2dpProxy?.connectedDevices ?: emptyList()
-        } catch (e: SecurityException) {
-            Log.e(TAG, "[DIAGNOSTIC] SOURCE B: SecurityException accessing A2DP connected devices.")
-            emptyList<BluetoothDevice>()
-        }
-
-        Log.d(TAG, "[DIAGNOSTIC] SOURCE B: BluetoothA2dp Connected Devices: ${btDevices.size}")
-        btDevices.forEach { bd ->
-            val name = try { bd.name } catch (e: SecurityException) { "PermDenied" }
-            val alias = try { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) bd.alias else null } catch (e: SecurityException) { null }
-            val addr = bd.address
-            Log.d(TAG, "[DIAGNOSTIC]   B-> name='$name', alias='$alias', addr='$addr'")
-        }
-
-        Log.d(TAG, "[DIAGNOSTIC] --- END COMPARISON ---")
-
-        // Retrigger check just in case A2DP proxy connected after initial enumeration
-        checkInitialAudioState()
+    private fun connectedA2dpDevices(): List<BluetoothDevice> = try {
+        a2dpProxy?.connectedDevices ?: emptyList()
+    } catch (e: SecurityException) {
+        emptyList()
     }
 
-    private fun getBestBluetoothDeviceInfo(): Pair<String?, String?> {
-        val bd = try {
-            a2dpProxy?.connectedDevices?.firstOrNull()
-        } catch (e: SecurityException) {
-            null
+    private fun bluetoothName(device: BluetoothDevice): String? {
+        val alias = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) device.alias else null
+        } catch (e: SecurityException) { null }
+        val name = try { device.name } catch (e: SecurityException) { null }
+        return alias ?: name
+    }
+
+    /**
+     * Resolves the Bluetooth name/MAC for an audio route.
+     *
+     * - If the route exposes a MAC, the name is taken from the A2DP device with the same MAC.
+     * - If it does not, we only fall back to the A2DP list when it is unambiguous (exactly one
+     *   connected device); guessing with firstOrNull() attributed sessions to the wrong device.
+     */
+    private fun resolveBluetoothIdentity(device: AudioDeviceInfo): Pair<String?, String?> {
+        if (device.type !in BLUETOOTH_TYPES) return Pair(null, null)
+        val routeAddress = AudioDeviceDetector.validMacOrNull(device.address)
+        val a2dp = connectedA2dpDevices()
+        if (routeAddress != null) {
+            val match = a2dp.firstOrNull { it.address.equals(routeAddress, ignoreCase = true) }
+            return Pair(match?.let { bluetoothName(it) }, routeAddress)
         }
-        if (bd != null) {
-            val name = try { bd.name } catch (e: SecurityException) { null }
-            val alias = try { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) bd.alias else null } catch (e: SecurityException) { null }
-            val addr = bd.address
-            return Pair(alias ?: name, addr)
+        if (a2dp.size == 1) {
+            val only = a2dp.first()
+            return Pair(bluetoothName(only), only.address)
         }
-        
-        // If not A2DP, try to find any connected bonded device that might be LE Audio
-        try {
-            val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            val leDevices = btManager.getConnectedDevices(BluetoothProfile.GATT)
-            val leDevice = leDevices.firstOrNull()
-            if (leDevice != null) {
-                val name = try { leDevice.name } catch (e: SecurityException) { null }
-                val alias = try { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) leDevice.alias else null } catch (e: SecurityException) { null }
-                return Pair(alias ?: name, leDevice.address)
-            }
-        } catch (e: SecurityException) {
-            Log.e(TAG, "[DIAGNOSTIC] SecurityException checking GATT connected devices.")
-        }
-        
         return Pair(null, null)
     }
 
+    private fun getBestBluetoothDeviceAddress(): String? {
+        // Prefer the device that is actually tracked (it is the one routing audio).
+        logicalDevices.values.lastOrNull { it["hardwareAddress"] != null }?.let {
+            return it["hardwareAddress"] as String
+        }
+        connectedA2dpDevices().singleOrNull()?.let { return it.address }
+        return try {
+            val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            btManager.getConnectedDevices(BluetoothProfile.GATT).singleOrNull()?.address
+        } catch (e: SecurityException) {
+            null
+        }
+    }
+
+    private fun remoteDeviceOrNull(address: String?): BluetoothDevice? {
+        if (address == null || !BluetoothAdapter.checkBluetoothAddress(address)) return null
+        return try {
+            bluetoothAdapter?.getRemoteDevice(address)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
+
+    private fun startBleDiagnostic(requested: String?) {
+        val address = AudioDeviceDetector.validMacOrNull(requested?.uppercase())
+            ?: getBestBluetoothDeviceAddress()
+        val btDevice = remoteDeviceOrNull(address)
+        if (btDevice != null) {
+            Log.i(TAG, "[BLE-REFRESH] Starting diagnostic refresh for ${btDevice.address}")
+            bleDiscoveryManager?.discover(btDevice, forceRefresh = true)
+        } else {
+            TrackingEventBroker.sendEvent(mapOf(
+                "type" to "BLE_DIAGNOSTIC_STATE",
+                "deviceId" to (address ?: "unknown"),
+                "state" to "ERROR",
+                "message" to if (address == null) "No valid Bluetooth address available" else "Invalid Bluetooth address: $address",
+                "timestamp" to System.currentTimeMillis()
+            ))
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Callbacks
+    // ---------------------------------------------------------------------------------------
+
     private fun registerCallbacks() {
-        audioManager.registerAudioDeviceCallback(deviceCallback, null)
+        audioManager.registerAudioDeviceCallback(deviceCallback, mainHandler)
         Log.i(TAG, "[CALLBACK] AudioDeviceCallback registered")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            playbackCallback = object : AudioPlaybackCallback() {
+            val callback = object : AudioPlaybackCallback() {
                 override fun onPlaybackConfigChanged(configs: List<AudioPlaybackConfiguration>?) {
-                    handlePlaybackConfigs(configs)
+                    schedulePlaybackEvaluation()
                 }
             }
-            audioManager.registerAudioPlaybackCallback(playbackCallback!!, null)
+            playbackCallback = callback
+            audioManager.registerAudioPlaybackCallback(callback, mainHandler)
             Log.i(TAG, "[CALLBACK] AudioPlaybackCallback registered")
         }
+        callbacksRegistered = true
     }
 
     private fun unregisterCallbacks() {
@@ -268,186 +331,211 @@ class AudioTrackingService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             playbackCallback?.let { audioManager.unregisterAudioPlaybackCallback(it) }
         }
-    }
-
-    private fun checkInitialAudioState() {
-        Log.i(TAG, "[INITIAL_SCAN] started")
-        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-        
-        Log.i(TAG, "[INITIAL_SCAN] output device count = ${devices.size}")
-        
-        val activeDeviceList = mutableListOf<Map<String, Any?>>()
-
-        devices.forEach { device ->
-            val passedFilter = AudioDeviceDetector.isExternalListeningDevice(device)
-            
-            if (passedFilter) {
-                Log.i(TAG, "[INITIAL_SCAN] compatible device = ${device.productName}")
-                val info = handleDeviceAdded(device, "INITIAL_SCAN")
-                if (info != null) {
-                    activeDeviceList.add(info)
-                }
-            }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val configs = audioManager.activePlaybackConfigurations
-            lastIsPlaying = configs?.isNotEmpty() == true
-        } else {
-            @Suppress("DEPRECATION")
-            lastIsPlaying = audioManager.isMusicActive
-        }
-
-        Log.i(TAG, "INITIAL_SCAN_EXECUTED. Emitting SYNC_STATE.")
-        
-        TrackingEventBroker.sendEvent(mapOf(
-            "type" to "SYNC_STATE",
-            "connectedDevices" to activeDeviceList,
-            "isPlaying" to (lastIsPlaying ?: false),
-            "timestamp" to System.currentTimeMillis()
-        ))
-    }
-
-    private var lastIsPlaying: Boolean? = null
-
-    private fun handlePlaybackConfigs(configs: List<AudioPlaybackConfiguration>?) {
-        val isPlaying = configs?.isNotEmpty() == true
-        handlePlaybackStateChanged(isPlaying)
-    }
-
-    private fun handlePlaybackStateChanged(isPlaying: Boolean) {
-        Log.d(TAG, "[DUPCHECK] playback state before = $lastIsPlaying")
-        Log.d(TAG, "[DUPCHECK] playback state after = $isPlaying")
-
-        if (isPlaying == lastIsPlaying) {
-            Log.d(TAG, "[DUPCHECK] duplicate ignored = true")
-            return
-        }
-        
-        Log.d(TAG, "[DUPCHECK] duplicate ignored = false")
-        lastIsPlaying = isPlaying
-
-        val state = if (isPlaying) "PLAYBACK_STARTED" else "PLAYBACK_PAUSED"
-        Log.i(TAG, "[PLAYBACK] EVENT_RECEIVED")
-        Log.i(TAG, "[PLAYBACK] STATE=$state")
-
-        // Identify the connected device for this playback event
-        val activeDevice = connectedDevices.values.firstOrNull()
-        val deviceId = activeDevice?.get("id") as? String
-        val deviceName = activeDevice?.get("friendlyName") as? String
-        val address = activeDevice?.get("hardwareAddress") as? String
-
-        Log.i(TAG, "[PLAYBACK] DEVICE=$deviceName")
-        Log.i(TAG, "[PLAYBACK] DEVICE_ADDRESS=$address")
-        
-        val eventTime = System.currentTimeMillis()
-        Log.i(TAG, "[PLAYBACK] TIMESTAMP=$eventTime")
-
-        val eventMap = mutableMapOf<String, Any>(
-            "type" to state,
-            "timestamp" to eventTime
-        )
-        
-        if (deviceId != null) {
-            eventMap["deviceId"] = deviceId
-            eventMap["device"] = activeDevice
-        }
-
-        TrackingEventBroker.sendEvent(eventMap)
-    }
-
-    private fun handleDeviceAdded(device: AudioDeviceInfo, context: String = "CALLBACK"): Map<String, Any?>? {
-        // If it's a Bluetooth device, we use SOURCE B to inject real name/mac if Android obscured it in SOURCE A
-        val isBluetooth = device.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
-                          device.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
-                          device.type == 26 || device.type == 27 || device.type == 30
-        val (fallbackName, fallbackAddress) = if (isBluetooth) getBestBluetoothDeviceInfo() else Pair(null, null)
-
-        val info = AudioDeviceDetector.extractDeviceInfo(device, fallbackName, fallbackAddress)
-        val id = info["id"] as String
-        val name = info["friendlyName"] as? String ?: "null"
-        val type = info["nativeType"] as? Int ?: -1
-        
-        Log.i(TAG, "[NATIVE_DEVICE]\nDetected:\nname=$name\ntype=$type\nid=$id")
-        
-        if (context == "INITIAL_SCAN") {
-            Log.i(TAG, "[INITIAL_SCAN] creating AudioDevice")
-        }
-        
-        if (!connectedDevices.containsKey(id)) {
-            connectedDevices[id] = info
-            
-            val eventMap = mapOf(
-                "type" to "DEVICE_CONNECTED",
-                "device" to info,
-                "timestamp" to System.currentTimeMillis()
-            )
-            Log.i(TAG, "[NATIVE_EVENT]\nDEVICE_CONNECTED created")
-            if (context == "INITIAL_SCAN") {
-                Log.i(TAG, "[INITIAL_SCAN] emitting DEVICE_CONNECTED")
-            }
-            TrackingEventBroker.sendEvent(eventMap)
-
-            // Trigger BLE discovery if we have a valid MAC address
-            val hardwareAddress = info["hardwareAddress"] as? String
-            if (hardwareAddress != null && hardwareAddress != "null") {
-                val btDevice = bluetoothAdapter?.getRemoteDevice(hardwareAddress)
-                if (btDevice != null) {
-                    bleDiscoveryManager?.discover(btDevice)
-                }
-            }
-            return info
-        } else {
-            Log.i(TAG, "Device $id is already tracked. Ignoring duplicate.")
-            return connectedDevices[id]
-        }
+        callbacksRegistered = false
     }
 
     private val deviceCallback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
             Log.d(TAG, "[DIAGNOSTIC] onAudioDevicesAdded: ${addedDevices?.size ?: 0} devices")
             addedDevices?.forEach { device ->
-                AudioDeviceDetector.logDeviceDiagnostic(device, "DEVICES_ADDED_CALLBACK")
-                
-                val passedFilter = AudioDeviceDetector.isExternalListeningDevice(device)
-                Log.d(TAG, "[POST_FILTER_TRACE] DEVICES_ADDED_CALLBACK isExternalListeningDevice() -> $passedFilter")
-                
-                if (passedFilter) {
-                    // Try to update A2DP sources first just in case
-                    if (device.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP && a2dpProxy != null) {
-                        compareSources()
-                    }
-                    handleDeviceAdded(device, "CALLBACK")
+                if (AudioDeviceDetector.isExternalListeningDevice(device)) {
+                    handleRouteAdded(device, "CALLBACK")
                 }
             }
+            // Audio may already be playing when a device appears; re-evaluate attribution.
+            schedulePlaybackEvaluation()
         }
 
         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
             Log.d(TAG, "[DIAGNOSTIC] onAudioDevicesRemoved: ${removedDevices?.size ?: 0} devices")
-            removedDevices?.forEach { device ->
-                AudioDeviceDetector.logDeviceDiagnostic(device, "DEVICES_REMOVED_CALLBACK")
-                
-                // If it's a Bluetooth device, provide the fallback
-                val isBluetooth = device.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
-                                  device.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
-                                  device.type == 26 || device.type == 27 || device.type == 30
-                val (fallbackName, fallbackAddress) = if (isBluetooth) getBestBluetoothDeviceInfo() else Pair(null, null)
-
-                val info = AudioDeviceDetector.extractDeviceInfo(device, fallbackName, fallbackAddress)
-                val id = info["id"] as String
-                
-                if (connectedDevices.containsKey(id)) {
-                    connectedDevices.remove(id)
-                    val eventMap = mapOf(
-                        "type" to "DEVICE_DISCONNECTED",
-                        "deviceId" to id,
-                        "timestamp" to System.currentTimeMillis()
-                    )
-                    TrackingEventBroker.sendEvent(eventMap)
-                }
-            }
+            removedDevices?.forEach { handleRouteRemoved(it) }
+            schedulePlaybackEvaluation()
         }
     }
+
+    // ---------------------------------------------------------------------------------------
+    // Device tracking
+    // ---------------------------------------------------------------------------------------
+
+    private fun checkInitialAudioState() {
+        Log.i(TAG, "[INITIAL_SCAN] started")
+        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        val presentSystemIds = HashSet<Int>()
+        devices.forEach { device ->
+            if (AudioDeviceDetector.isExternalListeningDevice(device)) {
+                presentSystemIds.add(device.id)
+                handleRouteAdded(device, "INITIAL_SCAN")
+            }
+        }
+        // Drop routes we believed present but which disappeared while callbacks were not registered.
+        systemIdToLogicalId.keys.filter { it !in presentSystemIds }.forEach { removeRoute(it) }
+
+        evaluatePlaybackState(emit = false)
+        Log.i(TAG, "INITIAL_SCAN_EXECUTED. Emitting SYNC_STATE.")
+        emitSyncState()
+    }
+
+    private fun handleRouteAdded(device: AudioDeviceInfo, context: String) {
+        val (fallbackName, fallbackAddress) = resolveBluetoothIdentity(device)
+        val info = AudioDeviceDetector.extractDeviceInfo(device, fallbackName, fallbackAddress)
+        val logicalId = info["id"] as String
+
+        systemIdToLogicalId[device.id] = logicalId
+        val routes = logicalRoutes.getOrPut(logicalId) { HashSet() }
+        routes.add(device.id)
+
+        if (logicalDevices.containsKey(logicalId)) {
+            Log.i(TAG, "[$context] Route ${device.id} (type=${device.type}) joined existing device $logicalId")
+            return
+        }
+
+        logicalDevices[logicalId] = info
+        Log.i(TAG, "[NATIVE_EVENT] DEVICE_CONNECTED $logicalId via $context")
+        TrackingEventBroker.sendEvent(mapOf(
+            "type" to "DEVICE_CONNECTED",
+            "deviceId" to logicalId,
+            "device" to info,
+            "timestamp" to System.currentTimeMillis()
+        ))
+
+        remoteDeviceOrNull(info["hardwareAddress"] as? String)?.let {
+            bleDiscoveryManager?.discover(it)
+        }
+    }
+
+    private fun handleRouteRemoved(device: AudioDeviceInfo) {
+        // Look the route up by its system id; recomputing the id from a half-torn-down
+        // AudioDeviceInfo (empty address, A2DP proxy already updated) produced a different id
+        // and left the device stuck in the "connected" state.
+        if (!systemIdToLogicalId.containsKey(device.id)) return
+        removeRoute(device.id)
+    }
+
+    private fun removeRoute(systemId: Int) {
+        val logicalId = systemIdToLogicalId.remove(systemId) ?: return
+        val routes = logicalRoutes[logicalId]
+        routes?.remove(systemId)
+        if (!routes.isNullOrEmpty()) {
+            Log.i(TAG, "[ROUTE] Route $systemId removed; $logicalId still has routes $routes. Keeping device.")
+            return
+        }
+        logicalRoutes.remove(logicalId)
+        logicalDevices.remove(logicalId)
+        Log.i(TAG, "[NATIVE_EVENT] DEVICE_DISCONNECTED $logicalId")
+        TrackingEventBroker.sendEvent(mapOf(
+            "type" to "DEVICE_DISCONNECTED",
+            "deviceId" to logicalId,
+            "timestamp" to System.currentTimeMillis()
+        ))
+    }
+
+    /** The device playback is attributed to: the most recently connected tracked device. */
+    private fun activeDevice(): Map<String, Any?>? = logicalDevices.values.lastOrNull()
+
+    private fun emitSyncState() {
+        val active = if (lastIsPlaying == true) playbackDevice() else activeDevice()
+        // Root-level keys are the contract (see docs/eartime/NATIVE_FLUTTER_CONTRACT.md).
+        TrackingEventBroker.sendEvent(mapOf(
+            "type" to "SYNC_STATE",
+            "deviceId" to active?.get("id"),
+            "connectedDevices" to logicalDevices.values.toList(),
+            "isPlaying" to (lastIsPlaying == true && active != null),
+            "playbackStartedAt" to if (lastIsPlaying == true && active != null) playbackStartedAt else null,
+            "timestamp" to System.currentTimeMillis()
+        ))
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Playback tracking
+    // ---------------------------------------------------------------------------------------
+
+    private fun schedulePlaybackEvaluation() {
+        mainHandler.removeCallbacks(playbackEvaluation)
+        mainHandler.postDelayed(playbackEvaluation, PLAYBACK_SETTLE_MS)
+    }
+
+    private fun isMediaUsage(config: AudioPlaybackConfiguration): Boolean =
+        when (config.audioAttributes.usage) {
+            AudioAttributes.USAGE_MEDIA,
+            AudioAttributes.USAGE_GAME,
+            AudioAttributes.USAGE_UNKNOWN -> true
+            else -> false
+        }
+
+    /**
+     * Playback counts as "playing" only when a media-type player exists AND the music stream is
+     * actually active. activePlaybackConfigurations alone also lists paused-but-unreleased players
+     * and notification/assistant sounds, which kept the state stuck on "playing".
+     *
+     * On API 34+ each player also reports the output it is routed to. When it does, playback only
+     * counts if at least one media player is routed to a tracked earbud route, so music playing on
+     * the phone speaker (or an untracked output) while earbuds are connected is not counted.
+     * Players that report no device fall back to the global check.
+     */
+    @Suppress("DEPRECATION") // getAudioDeviceInfo: deprecated in API 36 but the only per-player route signal.
+    private fun isMediaPlaying(): Boolean {
+        val musicActive = audioManager.isMusicActive
+        if (!musicActive) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+        val mediaPlayers = audioManager.activePlaybackConfigurations.filter { isMediaUsage(it) }
+        if (mediaPlayers.isEmpty()) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+        val routedIds = mediaPlayers.mapNotNull { it.audioDeviceInfo?.id }
+        if (routedIds.isEmpty()) return true // No routing info reported: keep the global behaviour.
+        return routedIds.any { systemIdToLogicalId.containsKey(it) }
+    }
+
+    /**
+     * The logical device media is routed to (API 34+), or the most recently connected device when
+     * the platform does not report routing.
+     */
+    @Suppress("DEPRECATION")
+    private fun playbackDevice(): Map<String, Any?>? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val routed = audioManager.activePlaybackConfigurations
+                .filter { isMediaUsage(it) }
+                .mapNotNull { it.audioDeviceInfo?.id?.let(systemIdToLogicalId::get) }
+                .lastOrNull()
+            if (routed != null) logicalDevices[routed]?.let { return it }
+        }
+        return activeDevice()
+    }
+
+    private fun evaluatePlaybackState(emit: Boolean = true) {
+        val isPlaying = isMediaPlaying()
+        updateRouteWatch()
+        if (isPlaying == lastIsPlaying) return
+        lastIsPlaying = isPlaying
+        playbackStartedAt = if (isPlaying) System.currentTimeMillis() else null
+        if (!emit) return
+
+        val device = playbackDevice()
+        if (device == null) {
+            // Speaker playback is not earbud listening time; nothing to attribute it to.
+            Log.i(TAG, "[PLAYBACK] isPlaying=$isPlaying with no external device; not emitting.")
+            return
+        }
+        val state = if (isPlaying) "PLAYBACK_STARTED" else "PLAYBACK_PAUSED"
+        Log.i(TAG, "[PLAYBACK] $state on ${device["id"]}")
+        TrackingEventBroker.sendEvent(mapOf(
+            "type" to state,
+            "deviceId" to device["id"],
+            "device" to device,
+            "timestamp" to System.currentTimeMillis()
+        ))
+    }
+
+    /** Keeps [routeWatch] scheduled only while music is active and a tracked device is connected. */
+    private fun updateRouteWatch() {
+        mainHandler.removeCallbacks(routeWatch)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return // no per-player routing below API 34
+        if (logicalDevices.isEmpty() || !audioManager.isMusicActive) return
+        mainHandler.postDelayed(routeWatch, ROUTE_WATCH_MS)
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Notification
+    // ---------------------------------------------------------------------------------------
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -466,7 +554,8 @@ class AudioTrackingService : Service() {
     private fun createNotification() = NotificationCompat.Builder(this, channelId)
         .setContentTitle("EarTime")
         .setContentText("Monitoring audio sessions for your wellbeing")
-        .setSmallIcon(android.R.drawable.ic_media_play) // Use a built-in icon for now
+        .setSmallIcon(android.R.drawable.ic_media_play)
         .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setOngoing(true)
         .build()
 }

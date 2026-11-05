@@ -69,7 +69,8 @@ class PermissionScreen extends ConsumerWidget {
                   if (permissionState == PermissionStatusState.checking)
                     const Center(child: CircularProgressIndicator(color: AppColors.primary))
                   else ...[
-                    if (permissionState == PermissionStatusState.denied)
+                    if (permissionState == PermissionStatusState.denied ||
+                        permissionState == PermissionStatusState.permanentlyDenied)
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -103,25 +104,18 @@ class PermissionScreen extends ConsumerWidget {
                           ),
                         ),
                         onPressed: () async {
-                          if (permissionState == PermissionStatusState.denied) {
-                            // First, try requesting again. If permanently denied, Android ignores it.
-                            final granted = await notifier.requestPermissions();
-                            if (!granted) {
-                              // If still denied after request, open settings.
-                              openAppSettings();
-                            } else {
-                               // Start tracking now that it's granted
-                               TrackingPlatform.startMonitoring();
-                            }
-                          } else {
-                            final granted = await notifier.requestPermissions();
-                            if (granted) {
-                               TrackingPlatform.startMonitoring();
-                            }
+                          if (permissionState == PermissionStatusState.permanentlyDenied) {
+                            // The OS no longer shows the dialog; the lifecycle listener re-checks on return.
+                            await openAppSettings();
+                            return;
+                          }
+                          final granted = await notifier.requestPermissions();
+                          if (granted) {
+                            await TrackingPlatform.startMonitoring();
                           }
                         },
                         child: Text(
-                          permissionState == PermissionStatusState.denied ? 'Open Settings' : 'Grant Permissions',
+                          permissionState == PermissionStatusState.permanentlyDenied ? 'Open Settings' : 'Grant Permissions',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 1.2),
                         ),
                       ),

@@ -574,7 +574,8 @@ as Duration,
 /// @nodoc
 mixin _$WellbeingData {
 
- int? get healthScore; int get volumeAvgDb; int get volumePeakDb; int get breaksCount; String? get recommendation;
+ int? get healthScore;// Volume cannot be measured with public Android APIs; null until a real source exists.
+ int? get volumeAvgDb; int? get volumePeakDb; int get breaksCount; String? get recommendation; Duration get todayListening; Duration get longestContinuous;
 /// Create a copy of WellbeingData
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -587,16 +588,16 @@ $WellbeingDataCopyWith<WellbeingData> get copyWith => _$WellbeingDataCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WellbeingData&&(identical(other.healthScore, healthScore) || other.healthScore == healthScore)&&(identical(other.volumeAvgDb, volumeAvgDb) || other.volumeAvgDb == volumeAvgDb)&&(identical(other.volumePeakDb, volumePeakDb) || other.volumePeakDb == volumePeakDb)&&(identical(other.breaksCount, breaksCount) || other.breaksCount == breaksCount)&&(identical(other.recommendation, recommendation) || other.recommendation == recommendation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WellbeingData&&(identical(other.healthScore, healthScore) || other.healthScore == healthScore)&&(identical(other.volumeAvgDb, volumeAvgDb) || other.volumeAvgDb == volumeAvgDb)&&(identical(other.volumePeakDb, volumePeakDb) || other.volumePeakDb == volumePeakDb)&&(identical(other.breaksCount, breaksCount) || other.breaksCount == breaksCount)&&(identical(other.recommendation, recommendation) || other.recommendation == recommendation)&&(identical(other.todayListening, todayListening) || other.todayListening == todayListening)&&(identical(other.longestContinuous, longestContinuous) || other.longestContinuous == longestContinuous));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,healthScore,volumeAvgDb,volumePeakDb,breaksCount,recommendation);
+int get hashCode => Object.hash(runtimeType,healthScore,volumeAvgDb,volumePeakDb,breaksCount,recommendation,todayListening,longestContinuous);
 
 @override
 String toString() {
-  return 'WellbeingData(healthScore: $healthScore, volumeAvgDb: $volumeAvgDb, volumePeakDb: $volumePeakDb, breaksCount: $breaksCount, recommendation: $recommendation)';
+  return 'WellbeingData(healthScore: $healthScore, volumeAvgDb: $volumeAvgDb, volumePeakDb: $volumePeakDb, breaksCount: $breaksCount, recommendation: $recommendation, todayListening: $todayListening, longestContinuous: $longestContinuous)';
 }
 
 
@@ -607,7 +608,7 @@ abstract mixin class $WellbeingDataCopyWith<$Res>  {
   factory $WellbeingDataCopyWith(WellbeingData value, $Res Function(WellbeingData) _then) = _$WellbeingDataCopyWithImpl;
 @useResult
 $Res call({
- int? healthScore, int volumeAvgDb, int volumePeakDb, int breaksCount, String? recommendation
+ int? healthScore, int? volumeAvgDb, int? volumePeakDb, int breaksCount, String? recommendation, Duration todayListening, Duration longestContinuous
 });
 
 
@@ -624,14 +625,16 @@ class _$WellbeingDataCopyWithImpl<$Res>
 
 /// Create a copy of WellbeingData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? healthScore = freezed,Object? volumeAvgDb = null,Object? volumePeakDb = null,Object? breaksCount = null,Object? recommendation = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? healthScore = freezed,Object? volumeAvgDb = freezed,Object? volumePeakDb = freezed,Object? breaksCount = null,Object? recommendation = freezed,Object? todayListening = null,Object? longestContinuous = null,}) {
   return _then(_self.copyWith(
 healthScore: freezed == healthScore ? _self.healthScore : healthScore // ignore: cast_nullable_to_non_nullable
-as int?,volumeAvgDb: null == volumeAvgDb ? _self.volumeAvgDb : volumeAvgDb // ignore: cast_nullable_to_non_nullable
-as int,volumePeakDb: null == volumePeakDb ? _self.volumePeakDb : volumePeakDb // ignore: cast_nullable_to_non_nullable
-as int,breaksCount: null == breaksCount ? _self.breaksCount : breaksCount // ignore: cast_nullable_to_non_nullable
+as int?,volumeAvgDb: freezed == volumeAvgDb ? _self.volumeAvgDb : volumeAvgDb // ignore: cast_nullable_to_non_nullable
+as int?,volumePeakDb: freezed == volumePeakDb ? _self.volumePeakDb : volumePeakDb // ignore: cast_nullable_to_non_nullable
+as int?,breaksCount: null == breaksCount ? _self.breaksCount : breaksCount // ignore: cast_nullable_to_non_nullable
 as int,recommendation: freezed == recommendation ? _self.recommendation : recommendation // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,todayListening: null == todayListening ? _self.todayListening : todayListening // ignore: cast_nullable_to_non_nullable
+as Duration,longestContinuous: null == longestContinuous ? _self.longestContinuous : longestContinuous // ignore: cast_nullable_to_non_nullable
+as Duration,
   ));
 }
 
@@ -713,10 +716,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? healthScore,  int volumeAvgDb,  int volumePeakDb,  int breaksCount,  String? recommendation)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? healthScore,  int? volumeAvgDb,  int? volumePeakDb,  int breaksCount,  String? recommendation,  Duration todayListening,  Duration longestContinuous)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WellbeingData() when $default != null:
-return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.breaksCount,_that.recommendation);case _:
+return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.breaksCount,_that.recommendation,_that.todayListening,_that.longestContinuous);case _:
   return orElse();
 
 }
@@ -734,10 +737,10 @@ return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.bre
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? healthScore,  int volumeAvgDb,  int volumePeakDb,  int breaksCount,  String? recommendation)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? healthScore,  int? volumeAvgDb,  int? volumePeakDb,  int breaksCount,  String? recommendation,  Duration todayListening,  Duration longestContinuous)  $default,) {final _that = this;
 switch (_that) {
 case _WellbeingData():
-return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.breaksCount,_that.recommendation);}
+return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.breaksCount,_that.recommendation,_that.todayListening,_that.longestContinuous);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -751,10 +754,10 @@ return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.bre
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? healthScore,  int volumeAvgDb,  int volumePeakDb,  int breaksCount,  String? recommendation)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? healthScore,  int? volumeAvgDb,  int? volumePeakDb,  int breaksCount,  String? recommendation,  Duration todayListening,  Duration longestContinuous)?  $default,) {final _that = this;
 switch (_that) {
 case _WellbeingData() when $default != null:
-return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.breaksCount,_that.recommendation);case _:
+return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.breaksCount,_that.recommendation,_that.todayListening,_that.longestContinuous);case _:
   return null;
 
 }
@@ -766,14 +769,17 @@ return $default(_that.healthScore,_that.volumeAvgDb,_that.volumePeakDb,_that.bre
 @JsonSerializable()
 
 class _WellbeingData implements WellbeingData {
-  const _WellbeingData({required this.healthScore, required this.volumeAvgDb, required this.volumePeakDb, required this.breaksCount, required this.recommendation});
+  const _WellbeingData({required this.healthScore, this.volumeAvgDb, this.volumePeakDb, required this.breaksCount, required this.recommendation, this.todayListening = Duration.zero, this.longestContinuous = Duration.zero});
   factory _WellbeingData.fromJson(Map<String, dynamic> json) => _$WellbeingDataFromJson(json);
 
 @override final  int? healthScore;
-@override final  int volumeAvgDb;
-@override final  int volumePeakDb;
+// Volume cannot be measured with public Android APIs; null until a real source exists.
+@override final  int? volumeAvgDb;
+@override final  int? volumePeakDb;
 @override final  int breaksCount;
 @override final  String? recommendation;
+@override@JsonKey() final  Duration todayListening;
+@override@JsonKey() final  Duration longestContinuous;
 
 /// Create a copy of WellbeingData
 /// with the given fields replaced by the non-null parameter values.
@@ -788,16 +794,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WellbeingData&&(identical(other.healthScore, healthScore) || other.healthScore == healthScore)&&(identical(other.volumeAvgDb, volumeAvgDb) || other.volumeAvgDb == volumeAvgDb)&&(identical(other.volumePeakDb, volumePeakDb) || other.volumePeakDb == volumePeakDb)&&(identical(other.breaksCount, breaksCount) || other.breaksCount == breaksCount)&&(identical(other.recommendation, recommendation) || other.recommendation == recommendation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WellbeingData&&(identical(other.healthScore, healthScore) || other.healthScore == healthScore)&&(identical(other.volumeAvgDb, volumeAvgDb) || other.volumeAvgDb == volumeAvgDb)&&(identical(other.volumePeakDb, volumePeakDb) || other.volumePeakDb == volumePeakDb)&&(identical(other.breaksCount, breaksCount) || other.breaksCount == breaksCount)&&(identical(other.recommendation, recommendation) || other.recommendation == recommendation)&&(identical(other.todayListening, todayListening) || other.todayListening == todayListening)&&(identical(other.longestContinuous, longestContinuous) || other.longestContinuous == longestContinuous));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,healthScore,volumeAvgDb,volumePeakDb,breaksCount,recommendation);
+int get hashCode => Object.hash(runtimeType,healthScore,volumeAvgDb,volumePeakDb,breaksCount,recommendation,todayListening,longestContinuous);
 
 @override
 String toString() {
-  return 'WellbeingData(healthScore: $healthScore, volumeAvgDb: $volumeAvgDb, volumePeakDb: $volumePeakDb, breaksCount: $breaksCount, recommendation: $recommendation)';
+  return 'WellbeingData(healthScore: $healthScore, volumeAvgDb: $volumeAvgDb, volumePeakDb: $volumePeakDb, breaksCount: $breaksCount, recommendation: $recommendation, todayListening: $todayListening, longestContinuous: $longestContinuous)';
 }
 
 
@@ -808,7 +814,7 @@ abstract mixin class _$WellbeingDataCopyWith<$Res> implements $WellbeingDataCopy
   factory _$WellbeingDataCopyWith(_WellbeingData value, $Res Function(_WellbeingData) _then) = __$WellbeingDataCopyWithImpl;
 @override @useResult
 $Res call({
- int? healthScore, int volumeAvgDb, int volumePeakDb, int breaksCount, String? recommendation
+ int? healthScore, int? volumeAvgDb, int? volumePeakDb, int breaksCount, String? recommendation, Duration todayListening, Duration longestContinuous
 });
 
 
@@ -825,14 +831,16 @@ class __$WellbeingDataCopyWithImpl<$Res>
 
 /// Create a copy of WellbeingData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? healthScore = freezed,Object? volumeAvgDb = null,Object? volumePeakDb = null,Object? breaksCount = null,Object? recommendation = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? healthScore = freezed,Object? volumeAvgDb = freezed,Object? volumePeakDb = freezed,Object? breaksCount = null,Object? recommendation = freezed,Object? todayListening = null,Object? longestContinuous = null,}) {
   return _then(_WellbeingData(
 healthScore: freezed == healthScore ? _self.healthScore : healthScore // ignore: cast_nullable_to_non_nullable
-as int?,volumeAvgDb: null == volumeAvgDb ? _self.volumeAvgDb : volumeAvgDb // ignore: cast_nullable_to_non_nullable
-as int,volumePeakDb: null == volumePeakDb ? _self.volumePeakDb : volumePeakDb // ignore: cast_nullable_to_non_nullable
-as int,breaksCount: null == breaksCount ? _self.breaksCount : breaksCount // ignore: cast_nullable_to_non_nullable
+as int?,volumeAvgDb: freezed == volumeAvgDb ? _self.volumeAvgDb : volumeAvgDb // ignore: cast_nullable_to_non_nullable
+as int?,volumePeakDb: freezed == volumePeakDb ? _self.volumePeakDb : volumePeakDb // ignore: cast_nullable_to_non_nullable
+as int?,breaksCount: null == breaksCount ? _self.breaksCount : breaksCount // ignore: cast_nullable_to_non_nullable
 as int,recommendation: freezed == recommendation ? _self.recommendation : recommendation // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,todayListening: null == todayListening ? _self.todayListening : todayListening // ignore: cast_nullable_to_non_nullable
+as Duration,longestContinuous: null == longestContinuous ? _self.longestContinuous : longestContinuous // ignore: cast_nullable_to_non_nullable
+as Duration,
   ));
 }
 

@@ -32,10 +32,13 @@ sealed class TimeOfDayUsage with _$TimeOfDayUsage {
 sealed class WellbeingData with _$WellbeingData {
   const factory WellbeingData({
     required int? healthScore,
-    required int volumeAvgDb,
-    required int volumePeakDb,
+    // Volume cannot be measured with public Android APIs; null until a real source exists.
+    int? volumeAvgDb,
+    int? volumePeakDb,
     required int breaksCount,
     required String? recommendation,
+    @Default(Duration.zero) Duration todayListening,
+    @Default(Duration.zero) Duration longestContinuous,
   }) = _WellbeingData;
 
   factory WellbeingData.fromJson(Map<String, dynamic> json) => _$WellbeingDataFromJson(json);

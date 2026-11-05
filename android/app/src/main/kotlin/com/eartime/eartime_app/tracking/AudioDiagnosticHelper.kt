@@ -11,8 +11,15 @@ import androidx.core.content.ContextCompat
 import android.util.Log
 
 object AudioDiagnosticHelper {
-    fun getDiagnostics(context: Context, onComplete: (Map<String, Any?>) -> Unit) {
-        val result = mutableMapOf<String, Any?>()
+    fun getDiagnostics(context: Context, onCompleteRaw: (Map<String, Any?>) -> Unit) {
+        // A MethodChannel Result may only be answered once; the profile listener can fire again
+        // (e.g. after a Bluetooth restart), which used to crash with "Reply already submitted".
+        val completed = java.util.concurrent.atomic.AtomicBoolean(false)
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        val onComplete: (Map<String, Any?>) -> Unit = { data ->
+            if (completed.compareAndSet(false, true)) mainHandler.post { onCompleteRaw(data) }
+        }
+        val result = java.util.Collections.synchronizedMap(mutableMapOf<String, Any?>())
         val tag = "EarTimeDiag"
         
         Log.i(tag, "[AUDIO] getAudioDiagnostics called")
@@ -28,11 +35,6 @@ object AudioDiagnosticHelper {
         } else {
             true // implicitly granted
         }
-        val hasBtScan = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
         val hasFgServiceConnectedDevice = if (Build.VERSION.SDK_INT >= 34) { // Android 14
             ContextCompat.checkSelfPermission(context, Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE) == PackageManager.PERMISSION_GRANTED
         } else {
@@ -40,11 +42,11 @@ object AudioDiagnosticHelper {
         }
         
         Log.i(tag, "[PERMISSION] BLUETOOTH_CONNECT: $hasBtConnect")
-        Log.i(tag, "[PERMISSION] BLUETOOTH_SCAN: $hasBtScan")
         Log.i(tag, "[PERMISSION] FOREGROUND_SERVICE_CONNECTED_DEVICE: $hasFgServiceConnectedDevice")
 
         result["hasBluetoothConnect"] = hasBtConnect
-        result["hasBluetoothScan"] = hasBtScan
+        // BLUETOOTH_SCAN is intentionally not reported: EarTime never scans and the permission
+        // is not declared in the manifest, so the check always returned false.
         result["hasFgServiceConnectedDevice"] = hasFgServiceConnectedDevice
 
         // 3. Bluetooth Adapter
@@ -91,7 +93,22 @@ object AudioDiagnosticHelper {
                     // Nothing to do
                 }
             }
-            adapter.getProfileProxy(context, profileListener, BluetoothProfile.A2DP)
+            val bound = adapter.getProfileProxy(context, profileListener, BluetoothProfile.A2DP)
+            if (!bound) {
+                result["a2dpConnectedCount"] = 0
+                result["a2dpConnectedNames"] = emptyList<String>()
+                finishDiagnostics(context, result, onComplete)
+            } else {
+                // Never leave the Flutter future hanging if the proxy never connects.
+                mainHandler.postDelayed({
+                    if (!completed.get()) {
+                        result["a2dpConnectedCount"] = 0
+                        result["a2dpConnectedNames"] = emptyList<String>()
+                        result["a2dpProxyTimedOut"] = true
+                        finishDiagnostics(context, result, onComplete)
+                    }
+                }, 3000)
+            }
         } else {
             result["a2dpConnectedCount"] = 0
             result["a2dpConnectedNames"] = emptyList<String>()

@@ -5,9 +5,11 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.os.Build
 import android.util.Log
 
 class BleDiscoveryManager(private val context: Context) {
@@ -16,25 +18,26 @@ class BleDiscoveryManager(private val context: Context) {
         private const val TAG = "BleDiscoveryManager"
     }
 
-    private var currentGatt: BluetoothGatt? = null
-    private var isConnecting = false
-    private var isConnected = false
+    // GATT callbacks arrive on binder threads while discover() is called from the main thread.
+    @Volatile private var currentGatt: BluetoothGatt? = null
+    @Volatile private var isConnecting = false
+    @Volatile private var isConnected = false
+    private val lock = Any()
 
     @SuppressLint("MissingPermission")
-    fun discover(device: BluetoothDevice, forceRefresh: Boolean = false) {
+    fun discover(device: BluetoothDevice, forceRefresh: Boolean = false) = synchronized(lock) {
         Log.i(TAG, "[BLE_DISCOVERY] Starting discovery for ${device.address}. Force=$forceRefresh")
-        
-        if (currentGatt != null && currentGatt!!.device.address == device.address) {
+
+        val existing = currentGatt
+        if (existing != null && existing.device.address == device.address) {
             if (!forceRefresh && (isConnecting || isConnected)) {
                 Log.i(TAG, "[BLE_DISCOVERY] Already connecting/connected to ${device.address}. Ignoring duplicate request.")
                 return
             }
         }
-        
+
         // Clean up previous connection if exists
-        currentGatt?.disconnect()
-        currentGatt?.close()
-        currentGatt = null
+        releaseCurrentGatt()
         TrackingEventBroker.clearLatestDiscoveryResult()
         isConnecting = true
         isConnected = false
@@ -47,7 +50,12 @@ class BleDiscoveryManager(private val context: Context) {
                 "timestamp" to System.currentTimeMillis()
             ))
             Log.i(TAG, "[BLE-LIFECYCLE] GATT connect requested")
-            currentGatt = device.connectGatt(context, false, gattCallback)
+            // Probe over LE explicitly: dual-mode earbuds otherwise often get a BR/EDR GATT link.
+            currentGatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+            } else {
+                device.connectGatt(context, false, gattCallback)
+            }
         } catch (e: Exception) {
             isConnecting = false
             Log.e(TAG, "[BLE_DISCOVERY] Exception starting GATT: ${e.message}")
@@ -64,13 +72,22 @@ class BleDiscoveryManager(private val context: Context) {
     private val gattCallback = object : BluetoothGattCallback() {
 
         @SuppressLint("MissingPermission")
-        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) = synchronized(lock) {
+            // Holding the lock also guarantees discover() has finished assigning currentGatt, so the
+            // first callback of a fresh connection is never mistaken for a stale one.
             val stateStr = when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> "CONNECTED"
                 BluetoothProfile.STATE_DISCONNECTED -> "DISCONNECTED"
                 else -> "UNKNOWN_$newState"
             }
             Log.i(TAG, "[BLE-LIFECYCLE] GATT state changed: $stateStr (status=$status)")
+
+            // A late callback from a connection we already replaced must not touch the new one.
+            if (gatt !== currentGatt) {
+                Log.i(TAG, "[BLE-LIFECYCLE] Ignoring callback from stale GATT ${gatt.device.address}")
+                if (newState == BluetoothProfile.STATE_DISCONNECTED) gatt.close()
+                return
+            }
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 isConnecting = false
@@ -126,6 +143,7 @@ class BleDiscoveryManager(private val context: Context) {
 
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            if (synchronized(lock) { gatt !== currentGatt }) return
             Log.i(TAG, "[GATT DISCOVERY] onServicesDiscovered entered")
             Log.i(TAG, "[GATT DISCOVERY] status=$status")
             Log.i(TAG, "[GATT DISCOVERY] serviceCount=${gatt.services.size}")
@@ -182,8 +200,7 @@ class BleDiscoveryManager(private val context: Context) {
                             val cccdUuid = java.util.UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
                             val descriptor = char.getDescriptor(cccdUuid)
                             if (descriptor != null) {
-                                descriptor.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                                gatt.writeDescriptor(descriptor)
+                                writeCccd(gatt, descriptor)
                                 Log.i(TAG, "[BLE_DISCOVERY] Wrote CCCD descriptor for OPOv1.")
                                 Log.i(TAG, "[BLE-LIFECYCLE] Notifications enabled")
                             } else {
@@ -235,8 +252,26 @@ class BleDiscoveryManager(private val context: Context) {
             }
         }
 
+        // API 33+ delivers the value directly; older releases only call the deprecated overload.
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
+            emitNotification(gatt, characteristic, value)
+        }
+
+        @Deprecated("Used on API < 33")
+        @Suppress("DEPRECATION")
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-            val payloadBytes = characteristic.value ?: ByteArray(0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
+            emitNotification(gatt, characteristic, characteristic.value ?: ByteArray(0))
+        }
+    }
+
+    private fun emitNotification(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, payloadBytes: ByteArray) {
+        if (synchronized(lock) { gatt !== currentGatt }) return
+        run {
             val hexPayload = payloadBytes.joinToString("") { "%02X".format(it) }
             
             Log.i(TAG, "[BLE_NOTIFY] Char: ${characteristic.uuid} Payload: $hexPayload")
@@ -255,7 +290,39 @@ class BleDiscoveryManager(private val context: Context) {
     }
 
     @SuppressLint("MissingPermission")
-    fun disconnect() {
+    private fun writeCccd(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+        } else {
+            @Suppress("DEPRECATION")
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            @Suppress("DEPRECATION")
+            gatt.writeDescriptor(descriptor)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun releaseCurrentGatt() {
+        val gatt = currentGatt ?: return
+        currentGatt = null
+        try {
+            gatt.disconnect()
+            gatt.close()
+        } catch (e: SecurityException) {
+            Log.e(TAG, "[BLE_DISCOVERY] SecurityException releasing GATT: ${e.message}")
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun disconnect() = synchronized(lock) {
         currentGatt?.disconnect()
+        Unit
+    }
+
+    /** Releases the GATT client. Call from the owning service's onDestroy(). */
+    fun close() = synchronized(lock) {
+        releaseCurrentGatt()
+        isConnecting = false
+        isConnected = false
     }
 }

@@ -1,6 +1,4 @@
 import 'audio_device.dart';
-import 'connection_state.dart';
-import 'playback_state.dart';
 
 class LiveSessionState {
   final AudioDevice? activeDevice;
@@ -22,9 +20,11 @@ class LiveSessionState {
   }
 
   LiveSessionState withNoDevice() {
-    return LiveSessionState(
+    return const LiveSessionState(
       activeDevice: null,
       isInitialized: true,
     );
   }
+
+  bool get isPlaying => activeDevice?.currentPlaybackStartTime != null;
 }

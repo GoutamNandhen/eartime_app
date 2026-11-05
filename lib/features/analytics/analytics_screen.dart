@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
+import '../../domain/logic/analytics_calculator.dart';
 import '../../providers/data_providers.dart';
 import '../widgets/data_visualization_bar.dart';
 import '../widgets/editorial_metric.dart';
@@ -19,7 +20,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final analyticsDataAsync = ref.watch(analyticsDataProvider);
+    final analyticsDataAsync = ref.watch(analyticsForPeriodProvider(AnalyticsPeriod.values[_selectedTab]));
 
     return Scaffold(
       body: Stack(
@@ -102,8 +103,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                             // Calculate percentages for UI
                             // For simplicity, we fallback to 0 if total time is zero
                             double getPct(Duration duration) {
-                              if (analyticsData.totalListenTime == Duration.zero) return 0;
-                              return duration.inMinutes / analyticsData.totalListenTime.inMinutes;
+                              // Seconds, not minutes: under a minute of listening made this 0/0 = NaN.
+                              final total = analyticsData.totalListenTime.inSeconds;
+                              if (total == 0) return 0;
+                              return (duration.inSeconds / total).clamp(0.0, 1.0);
                             }
 
                             return Column(
@@ -163,7 +166,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                     Expanded(
                                       child: LiquidGlassSurface(
                                         padding: const EdgeInsets.all(24),
-                                        child: EditorialMetric(label: 'Longest', value: analyticsData.longestSession.inHours.toString(), unit: 'HRS'),
+                                        child: EditorialMetric(
+                                          label: 'Longest',
+                                          value: analyticsData.longestSession.inHours >= 1
+                                              ? (analyticsData.longestSession.inMinutes / 60).toStringAsFixed(1)
+                                              : analyticsData.longestSession.inMinutes.toString(),
+                                          unit: analyticsData.longestSession.inHours >= 1 ? 'HRS' : 'MIN',
+                                        ),
                                       ),
                                     ),
                                   ],

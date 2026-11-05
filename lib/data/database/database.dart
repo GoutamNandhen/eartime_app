@@ -13,7 +13,7 @@ part 'database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   
-  AppDatabase.forTesting(QueryExecutor e) : super(e);
+  AppDatabase.forTesting(super.e);
 
   @override
   int get schemaVersion => 1;
@@ -24,8 +24,17 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  Future<List<EarTimeEventEntity>> getAllEvents() {
+    return (select(earTimeEvents)
+          ..orderBy([(t) => OrderingTerm(expression: t.timestamp, mode: OrderingMode.asc)]))
+        .get();
+  }
+
+  /// Inserts an event, ignoring exact duplicates (same id). Ids are derived from
+  /// timestamp + device + type, so a replayed native event is not stored twice and two
+  /// different events in the same millisecond no longer collide.
   Future<int> insertEvent(EarTimeEventsCompanion event) {
-    return into(earTimeEvents).insert(event);
+    return into(earTimeEvents).insert(event, mode: InsertMode.insertOrIgnore);
   }
 
   Future<void> clearAllEvents() {

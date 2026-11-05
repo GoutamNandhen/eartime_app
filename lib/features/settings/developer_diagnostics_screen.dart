@@ -130,7 +130,6 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
 
     final capabilities = ref.watch(earbudCapabilitiesProvider);
     final discoveryResult = ref.watch(bleDiscoveryResultProvider);
-    final diagnosticState = ref.watch(bleDiagnosticStateProvider);
 
     ref.listen<AsyncValue<TrackingEvent>>(bleDiagnosticStateProvider, (previous, next) {
       if (next.hasValue && next.value != null) {
@@ -144,7 +143,7 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
         
         _logs.add(_LogEntry(
           timestamp: DateTime.fromMillisecondsSinceEpoch(event.timestamp),
-          label: '[GATT STATE] ${_gattState}${event.message != null ? ' - ${event.message}' : ''}',
+          label: '[GATT STATE] $_gattState${event.message != null ? ' - ${event.message}' : ''}',
           isAction: true, // Make it pop visually
         ));
         _scrollToBottom();
