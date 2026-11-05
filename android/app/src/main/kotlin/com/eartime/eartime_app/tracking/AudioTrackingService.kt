@@ -425,7 +425,7 @@ class AudioTrackingService : Service() {
     private fun activeDevice(): Map<String, Any?>? = logicalDevices.values.lastOrNull()
 
     private fun emitSyncState() {
-        val active = activeDevice()
+        val active = if (lastIsPlaying == true) playbackDevice() else activeDevice()
         // Root-level keys are the contract (see docs/eartime/NATIVE_FLUTTER_CONTRACT.md).
         TrackingEventBroker.sendEvent(mapOf(
             "type" to "SYNC_STATE",
@@ -446,24 +446,51 @@ class AudioTrackingService : Service() {
         mainHandler.postDelayed(playbackEvaluation, PLAYBACK_SETTLE_MS)
     }
 
+    private fun isMediaUsage(config: AudioPlaybackConfiguration): Boolean =
+        when (config.audioAttributes.usage) {
+            AudioAttributes.USAGE_MEDIA,
+            AudioAttributes.USAGE_GAME,
+            AudioAttributes.USAGE_UNKNOWN -> true
+            else -> false
+        }
+
     /**
      * Playback counts as "playing" only when a media-type player exists AND the music stream is
      * actually active. activePlaybackConfigurations alone also lists paused-but-unreleased players
      * and notification/assistant sounds, which kept the state stuck on "playing".
+     *
+     * On API 34+ each player also reports the output it is routed to. When it does, playback only
+     * counts if at least one media player is routed to a tracked earbud route, so music playing on
+     * the phone speaker (or an untracked output) while earbuds are connected is not counted.
+     * Players that report no device fall back to the global check.
      */
+    @Suppress("DEPRECATION") // getAudioDeviceInfo: deprecated in API 36 but the only per-player route signal.
     private fun isMediaPlaying(): Boolean {
-        @Suppress("DEPRECATION")
         val musicActive = audioManager.isMusicActive
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return musicActive
-        val hasMediaPlayer = audioManager.activePlaybackConfigurations.any { config ->
-            when (config.audioAttributes.usage) {
-                AudioAttributes.USAGE_MEDIA,
-                AudioAttributes.USAGE_GAME,
-                AudioAttributes.USAGE_UNKNOWN -> true
-                else -> false
-            }
+        if (!musicActive) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+        val mediaPlayers = audioManager.activePlaybackConfigurations.filter { isMediaUsage(it) }
+        if (mediaPlayers.isEmpty()) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+        val routedIds = mediaPlayers.mapNotNull { it.audioDeviceInfo?.id }
+        if (routedIds.isEmpty()) return true // No routing info reported: keep the global behaviour.
+        return routedIds.any { systemIdToLogicalId.containsKey(it) }
+    }
+
+    /**
+     * The logical device media is routed to (API 34+), or the most recently connected device when
+     * the platform does not report routing.
+     */
+    @Suppress("DEPRECATION")
+    private fun playbackDevice(): Map<String, Any?>? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val routed = audioManager.activePlaybackConfigurations
+                .filter { isMediaUsage(it) }
+                .mapNotNull { it.audioDeviceInfo?.id?.let(systemIdToLogicalId::get) }
+                .lastOrNull()
+            if (routed != null) logicalDevices[routed]?.let { return it }
         }
-        return musicActive && hasMediaPlayer
+        return activeDevice()
     }
 
     private fun evaluatePlaybackState(emit: Boolean = true) {
@@ -473,7 +500,7 @@ class AudioTrackingService : Service() {
         playbackStartedAt = if (isPlaying) System.currentTimeMillis() else null
         if (!emit) return
 
-        val device = activeDevice()
+        val device = playbackDevice()
         if (device == null) {
             // Speaker playback is not earbud listening time; nothing to attribute it to.
             Log.i(TAG, "[PLAYBACK] isPlaying=$isPlaying with no external device; not emitting.")

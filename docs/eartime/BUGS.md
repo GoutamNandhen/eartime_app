@@ -12,11 +12,13 @@
 - **[Phase 6] Infinite Timer on Pause (Test D/E)**: reducer clears `currentPlaybackStartTime`; native pause detection uses `isMusicActive`.
 - **[Phase 6] Crash on Reopen (Test G)**: `startForeground` on every start command via `ServiceCompat` (also fixes API < 29).
 - **EventChannel multi-listener**: single shared stream.
+- **BLE GATT callback races / unbounded event buffer / broker cache written off main thread**: fixed in follow-up.
 - **Double-counted listening time / stale device attribution / dropped same-ms events / stuck connected device**: see CHANGELOG.
 
 ## Open / Pending Investigation
 - Verify all of the above on the CPH2447 + Nord Buds 3 Pro (Tests A–G).
-- `isMusicActive` is global: playback on a non-tracked output while earbuds are connected would still count. Consider `AudioPlaybackConfiguration.getAudioDeviceInfo()` on newer APIs.
+- `isMusicActive` is global below API 34: playback on a non-tracked output while earbuds are connected still counts there. Fixed on API 34+ via per-player routing (2026-11-05 follow-up); verify on the CPH2447 by playing on the speaker with the buds connected but out of the ear / routed away.
+- A paused-but-unreleased media player routed to the buds plus music on the speaker could still read as "playing" (no public per-player state API). Rare; noted for completeness.
 
 ## Previously listed (now resolved, kept for history)
 - **[Phase 6] False Disconnection (Test A)**: `AudioDeviceDetector` receives an SCO route removal and erroneously removes the matching A2DP device from the cache because they share the same ID.

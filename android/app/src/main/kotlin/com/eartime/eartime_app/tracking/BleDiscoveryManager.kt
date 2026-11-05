@@ -72,7 +72,9 @@ class BleDiscoveryManager(private val context: Context) {
     private val gattCallback = object : BluetoothGattCallback() {
 
         @SuppressLint("MissingPermission")
-        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) = synchronized(lock) {
+            // Holding the lock also guarantees discover() has finished assigning currentGatt, so the
+            // first callback of a fresh connection is never mistaken for a stale one.
             val stateStr = when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> "CONNECTED"
                 BluetoothProfile.STATE_DISCONNECTED -> "DISCONNECTED"
@@ -141,7 +143,7 @@ class BleDiscoveryManager(private val context: Context) {
 
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            if (gatt !== currentGatt) return
+            if (synchronized(lock) { gatt !== currentGatt }) return
             Log.i(TAG, "[GATT DISCOVERY] onServicesDiscovered entered")
             Log.i(TAG, "[GATT DISCOVERY] status=$status")
             Log.i(TAG, "[GATT DISCOVERY] serviceCount=${gatt.services.size}")
@@ -268,6 +270,7 @@ class BleDiscoveryManager(private val context: Context) {
     }
 
     private fun emitNotification(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, payloadBytes: ByteArray) {
+        if (synchronized(lock) { gatt !== currentGatt }) return
         run {
             val hexPayload = payloadBytes.joinToString("") { "%02X".format(it) }
             
@@ -311,8 +314,9 @@ class BleDiscoveryManager(private val context: Context) {
     }
 
     @SuppressLint("MissingPermission")
-    fun disconnect() {
+    fun disconnect() = synchronized(lock) {
         currentGatt?.disconnect()
+        Unit
     }
 
     /** Releases the GATT client. Call from the owning service's onDestroy(). */

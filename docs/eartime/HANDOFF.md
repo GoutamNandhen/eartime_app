@@ -29,24 +29,26 @@ See `CURRENT_STATE.md` for the full physical test matrix. Disconnected launches 
 - The A2 bug is confirmed to be an identity eviction bug in `onAudioDevicesRemoved` when secondary Bluetooth routes (like SCO) are disconnected by the OS.
 
 ## 7. What is only a hypothesis?
-- The timer glitches (B/D/E) are hypothesized to be `LiveSessionNotifier` state management flaws, but they haven't been conclusively diagnosed with logs yet.
+- The B/D/E root causes (SYNC_STATE parse mismatch, reducer not clearing the start time, paused players still listed as active) were found by code review and fixed, but not yet confirmed with device logs.
+- Per-player routing (`getAudioDeviceInfo`, API 34+) is expected to be reported by OxygenOS 16; unverified on the CPH2447.
 
 ## 8. What files implement each feature?
-- **Android Tracking**: `AudioTrackingService.kt`, `AudioDeviceDetector.kt`
-- **Flutter State**: `live_session_state.dart`, `data_providers.dart`
+- **Android Tracking**: `AudioTrackingService.kt` (route-set tracking, playback detection), `AudioDeviceDetector.kt`, `TrackingEventBroker.kt`, `BleDiscoveryManager.kt`
+- **Flutter State**: `live_session_reducer.dart`, `live_session_state.dart`, `data_providers.dart` (`TrackingPipeline`), `session_manager.dart` (`SyncReconciler`)
 - **Database**: `session_manager.dart`, `database.dart`
+- **Analytics/Wellbeing**: `analytics_calculator.dart`
 - **UI**: `app_shell.dart`, `live_timer_widget.dart`
 
 ## 9. What should NOT be changed?
 - DO NOT modify the Drift database schema.
-- DO NOT modify the `LiveTimerWidget` or Pause/Resume logic until formally diagnosed.
+- DO NOT change the reducer, `SyncReconciler`, route-set tracking or playback detection without adding/adjusting tests (see CURRENT_STATE §23).
 - DO NOT invent new Android architectural patterns (like WorkManager) to replace the existing FGS.
 
 ## 10. What is the exact next engineering task?
-Implement the diagnosed fix for **Bug A2** in `AudioTrackingService.kt`. Update `onAudioDevicesRemoved` to ensure that no remaining active output routes exist for the physical MAC address before evicting it from `connectedDevices`.
+Run Tests A–G (CURRENT_STATE §24) on the CPH2447 / Nord Buds 3 Pro using the CI-built debug APK or `flutter run`, then fix anything that fails on `fix/phase6-review`.
 
 ## 11. What evidence is required before implementation?
-We already have the diagnosis for A2. Before implementing the timer fixes (B/D/E), we must capture actual Flutter logs or state dumps of the `LiveSessionState` during the play/pause physical actions.
+For any failing test: `adb logcat` output filtered on `AudioTrackingService|EarTimeDiag|BleDiscoveryManager`, plus the exact steps and timestamps.
 
 ## 12. What documentation must be updated after every future change?
 **FUTURE ENGINEERING RULE**: Every future feature, bug fix, architectural change, protocol change, state-model change, test, or important engineering discovery MUST update the persistent engineering documentation (including `CURRENT_STATE.md`, `TEST_RESULTS.md`, `BUGS.md`, and this `HANDOFF.md`) in the same implementation task.

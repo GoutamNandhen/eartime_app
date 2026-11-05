@@ -1,5 +1,17 @@
 # Changelog
 
+## [Phase 6 Review Fixes – follow-up] - 2026-11-05
+Branch `fix/phase6-review`. Closes the items left open by the first pass. Needs physical verification.
+
+### Fixed (native, Kotlin)
+- **Speaker playback counted while earbuds connected**: on API 34+ playback only counts when a media player is routed (`AudioPlaybackConfiguration.getAudioDeviceInfo()`) to a tracked earbud route. Players reporting no route fall back to the global `isMusicActive` check; older APIs unchanged.
+- **Playback attribution**: on API 34+ `PLAYBACK_*` and `SYNC_STATE` name the device the media is actually routed to, not just the most recently connected one.
+- **BLE GATT races**: `onConnectionStateChange` runs under the manager lock, so a late callback can no longer null out a newer connection, and the first callback of a new connection can no longer arrive before `currentGatt` is assigned (which closed it as "stale"). Notifications from stale GATT objects are dropped; `disconnect()` is locked.
+- **TrackingEventBroker**: cache fields are only touched on the main thread (were written from binder threads); the buffer used while Flutter is detached is capped at 500 events (oldest dropped; `SYNC_STATE` reconciliation covers the gap) so a long-lived service cannot grow memory without bound.
+
+### Added
+- GitHub Actions CI (`.github/workflows/ci.yml`): `flutter analyze`, `flutter test`, `flutter build apk --debug` on Ubuntu, with the debug APK uploaded as the `eartime-debug-apk` artifact. First real Gradle verification of this branch.
+
 ## [Phase 6 Review Fixes] - 2026-11-05
 Branch `fix/phase6-review`. Full code review; every finding fixed. Needs physical verification (see TEST_PLAN / CURRENT_STATE §15).
 

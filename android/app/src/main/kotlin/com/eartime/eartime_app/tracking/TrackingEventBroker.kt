@@ -7,7 +7,11 @@ import io.flutter.plugin.common.EventChannel
 object TrackingEventBroker {
     private var eventSink: EventChannel.EventSink? = null
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val pendingEvents = mutableListOf<Map<String, Any?>>()
+    // All fields below are only touched on the main thread (sendEvent may be called from binder threads).
+    private val pendingEvents = ArrayDeque<Map<String, Any?>>()
+    // Events buffered while no Flutter listener is attached (e.g. UI process killed, service alive).
+    // Bounded so a long-lived service cannot grow memory without limit; SYNC_STATE reconciles the rest.
+    private const val MAX_PENDING_EVENTS = 500
     
     private var latestDiagnosticState: Map<String, Any?>? = null
     private var latestDiscoveryResult: Map<String, Any?>? = null
@@ -47,27 +51,27 @@ object TrackingEventBroker {
     }
 
     fun clearLatestDiscoveryResult() {
-        latestDiscoveryResult = null
+        mainHandler.post { latestDiscoveryResult = null }
     }
 
     fun sendEvent(event: Map<String, Any?>) {
         val type = event["type"] as? String ?: "UNKNOWN"
         android.util.Log.i("EarTimeDiag", "[BROKER]\n$type emitted")
         
-        // Cache important state events
-        if (type == "BLE_DIAGNOSTIC_STATE") {
-            latestDiagnosticState = event
-        } else if (type == "BLE_DISCOVERY_RESULT") {
-            latestDiscoveryResult = event
-        }
-        
         mainHandler.post {
+            // Cache important state events
+            if (type == "BLE_DIAGNOSTIC_STATE") {
+                latestDiagnosticState = event
+            } else if (type == "BLE_DISCOVERY_RESULT") {
+                latestDiscoveryResult = event
+            }
             if (eventSink != null) {
                 eventSink?.success(event)
                 android.util.Log.i("EarTimeDiag", "[EVENT_CHANNEL]\n$type sent")
             } else {
                 android.util.Log.i("EarTimeDiag", "Buffering event because EventSink is null")
-                pendingEvents.add(event)
+                if (pendingEvents.size >= MAX_PENDING_EVENTS) pendingEvents.removeFirst()
+                pendingEvents.addLast(event)
             }
         }
     }
