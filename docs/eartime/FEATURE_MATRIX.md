@@ -8,7 +8,7 @@ Kotlin/debug APK pass. Resume E7 acceptance review from CODEX_RESUME.md.
 approved production acceptance path is not implemented. Physical evidence is
 pending for all new native behavior. None of these rows implies RELEASE_READY.
 
-Implementation count: **44 IMPLEMENTED, 60 IN_PROGRESS, 14 NOT_STARTED,
+Implementation count (2026-11-05): **50 IMPLEMENTED, 59 IN_PROGRESS, 9 NOT_STARTED,
 1 BLOCKED_BY_PLATFORM = 119**. A1's generic cross-app output dependency is now
 explicitly platform-blocked, not silently treated as unfinished UI or hardware-only
 verification. Its acceptance criteria remain unchanged; see PLATFORM_ATTRIBUTION_LIMITS.md.
@@ -16,6 +16,9 @@ Latest software-complete IDs: E3/E13, H14/H18, H19/H17, D1/D2/D3/E5/E6, E12, D7/
 remains PHYSICAL_PENDING, not RELEASE_READY. F7 remains partial (break guidance).
 
 Executable evidence keys:
+
+- A2: A2dpListeningTest (API 28/35): A2DP confirmed listening, speaker rejection, owner/lease fencing, live cap, rebuild parity, breaks, connected/idle partition.
+- RM: ListeningRemindersTest (pure policy/preferences) and Flutter listening_reminders_test.dart.
 
 - C3: eight Flutter trend cases: actual Analytics at 1x/3x, 14-row pages, exact
   semantic durations, zero/unknown separation, malformed hourly contracts,
@@ -151,7 +154,7 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | C2 | Connected device and active output | IN_PROGRESS; L fixes device leakage; output proof OPEN |
 | C3 | Playback confidence | IMPLEMENTED / AUTOMATED_PASS U; confirmed/unverified separated in product views; current collector remains UNKNOWN |
 | C4 | Today's total | IMPLEMENTED / AUTOMATED_PASS P/U; one native clipped total; no legacy/global playback promoted |
-| C5 | Connected/listening/idle breakdown | NOT_STARTED; interval partition tests OPEN |
+| C5 | Connected/listening/idle breakdown | IMPLEMENTED / AUTOMATED_PASS A2; projection v6 A2DP endpoint connection intervals (attribution CONNECTED, never counted as listening), connectedMs/connectedIdleMs globally and per day, Home/Analytics metrics; wired/USB/LE connection time OPEN under G6; PHYSICAL_PENDING |
 | C6 | Battery/wearing indicators | NOT_STARTED; capability widgets OPEN |
 | C7 | Goal progress | IMPLEMENTED / AUTOMATED_PASS Q/U; personal duration goal uses confirmed native total; not an exposure limit |
 | C8 | Permission/stale/error status | IN_PROGRESS; S/D/U/C durable scoped runtime health/expiry/denial/recovery; physical recovery acceptance OPEN |
@@ -179,13 +182,13 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
 | E1 | Calendar/custom totals | IMPLEMENTED / AUTOMATED_PASS P/C2; actual day/week/month/year/custom control-to-query acceptance and canonical clipped union/bucket reconciliation across reopen/replay; physical date/timezone acceptance pending |
-| E2 | Connected/listening/idle comparison | NOT_STARTED; projection tests OPEN |
+| E2 | Connected/listening/idle comparison | IMPLEMENTED / AUTOMATED_PASS A2; per-day connected vs confirmed vs connected-idle values from one native union pass; PHYSICAL_PENDING |
 | E3 | Daily/hourly trends | IMPLEMENTED / AUTOMATED_PASS P/C2/C3; canonical native daily and local-hour buckets, bounded mode/page controls, localized labels, zero/unknown/unverified separation and strict hourly reconciliation; no Flutter accounting, PHYSICAL_PENDING |
 | E4 | Per-device comparisons | IN_PROGRESS; P per-device union totals; actual identity attribution OPEN |
 | E5 | Longest session | IMPLEMENTED / AUTOMATED_PASS S2/P; native longest measured confirmed grouped session integrated into Analytics/Wellbeing, separate from existing continuous-run metric; PHYSICAL_PENDING |
 | E6 | Average duration | IMPLEMENTED / AUTOMATED_PASS S2/P/R2; native mean of measured confirmed grouped sessions excludes zero-duration/unverified observations; continuous-run mean retained; PHYSICAL_PENDING |
-| E7 | Listening frequency | IN_PROGRESS; WIP native original-start frequency contract/day/hour counts and integrated Analytics/Wellbeing; five native methods (10 executions) /three Flutter cases pass; final acceptance review pending; LISTENING_FREQUENCY.md |
-| E8 | Breaks/break lengths | NOT_STARTED; gap-vs-break tests OPEN |
+| E7 | Listening frequency | IMPLEMENTED / AUTOMATED_PASS LISTENING_FREQUENCY.md; native original-start frequency contract 1 with day/hour counts, integrated Analytics/Wellbeing/trends; acceptance reviewed 2026-11-05 and now fed by real A2DP-confirmed sessions; PHYSICAL_PENDING |
+| E8 | Breaks/break lengths | IMPLEMENTED / AUTOMATED_PASS A2; breakContractVersion 1: pauses of 1 min to 4 h between confirmed spans with no collection gap, collector restart/loss or continuity barrier inside; count/longest/average/total in Analytics/Wellbeing; PHYSICAL_PENDING |
 | E9 | Wearing trends | NOT_STARTED; validated role data OPEN |
 | E10 | Goals/streaks | IMPLEMENTED / AUTOMATED_PASS N; native recorded goal days/window streaks, partial-day and DST tests; lower bounds, not all-time/completeness claims |
 | E11 | Calendar/date boundaries | IMPLEMENTED / AUTOMATED_PASS P; midnight and spring/autumn DST reconciliation |
@@ -198,8 +201,8 @@ details, strict decoding and actual 1x/3x navigation; TIMELINE_SESSIONS.md.
 | ID | Feature | State / evidence / remaining gate |
 | --- | --- | --- |
 | F1 | Daily duration goals | IMPLEMENTED / AUTOMATED_PASS Q/U; native-backed personal goal, explicit disable, no fabricated exposure threshold |
-| F2 | Continuous-listening reminders | NOT_STARTED; duration/scheduler tests OPEN |
-| F3 | Break reminders | NOT_STARTED; scheduler tests OPEN |
+| F2 | Continuous-listening reminders | IMPLEMENTED / AUTOMATED_PASS RM; native ListeningReminders after configurable continuous confirmed listening (default 60 min, breaks shorter than 5 min join the run), receipt-before-notify, quiet hours, permission/channel checks, Settings controls; PHYSICAL_PENDING |
+| F3 | Break reminders | IMPLEMENTED / AUTOMATED_PASS RM; repeat reminder every configurable interval (default 30 min) while the same run continues, reset by an observed break; PHYSICAL_PENDING |
 | F4 | Daily/weekly summaries | IMPLEMENTED / AUTOMATED_PASS P/M; opt-in native calendar summaries, inexact alarms/jobs, canonical union, dated lower bounds, durable at-most-one-attempt receipts; OS/OEM delivery PHYSICAL_PENDING |
 | F5 | Notification controls/quiet hours | IMPLEMENTED / AUTOMATED_PASS M; persisted categories/time/quiet ranges, disable/cancel, default-off receiver, permission/channel/unknown/error recovery and native restart reconciliation; PHYSICAL_PENDING |
 | F6 | Duration insights | IMPLEMENTED / AUTOMATED_PASS N; actual native recorded activity/goal insights in Analytics/Wellbeing; no medical or exposure claims |

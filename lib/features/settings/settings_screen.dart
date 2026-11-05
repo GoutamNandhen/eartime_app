@@ -296,11 +296,15 @@ class ListeningReminderControls extends StatelessWidget {
     final options = {...choices, current}.toList()..sort();
     return DropdownButtonFormField<int>(
       key: ValueKey('reminder-$label'),
+      isExpanded: true,
       initialValue: current,
       decoration: InputDecoration(labelText: label),
       items: [
         for (final minutes in options)
-          DropdownMenuItem(value: minutes, child: Text('$minutes minutes')),
+          DropdownMenuItem(
+            value: minutes,
+            child: Text('$minutes minutes', overflow: TextOverflow.ellipsis),
+          ),
       ],
       onChanged: saving || !value.enabled
           ? null
