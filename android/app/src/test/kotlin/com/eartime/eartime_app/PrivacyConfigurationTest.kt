@@ -20,8 +20,15 @@ class PrivacyConfigurationTest {
             "android.permission.POST_NOTIFICATIONS", "android.permission.RECEIVE_BOOT_COMPLETED",
             "android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE")))
         for (permission in listOf("RECORD_AUDIO", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION",
-            "BLUETOOTH_SCAN", "READ_MEDIA_AUDIO", "SCHEDULE_EXACT_ALARM")) {
+            "READ_MEDIA_AUDIO", "SCHEDULE_EXACT_ALARM")) {
             assertFalse(permissions.contains("android.permission.$permission"))
+        }
+        // BLUETOOTH_SCAN exists only for the user-started ear probe and must assert neverForLocation.
+        val manifest = java.io.File("src/main/AndroidManifest.xml")
+        if (manifest.exists()) {
+            val scan = manifest.readLines().filter { "android.permission.BLUETOOTH_SCAN" in it }
+            assertEquals(1, scan.size)
+            assertTrue(scan.single().contains("usesPermissionFlags=\"neverForLocation\""))
         }
         assertEquals(0, context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_ALLOW_BACKUP)
     }
