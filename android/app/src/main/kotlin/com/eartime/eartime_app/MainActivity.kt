@@ -20,6 +20,9 @@ import io.flutter.plugin.common.MethodChannel
 import java.util.IdentityHashMap
 import java.util.UUID
 
+/** Process-scoped so a probe survives activity recreation; it is passive and in-memory only. */
+private var earProbe: com.eartime.eartime_app.tracking.EarProbe? = null
+
 class MainActivity : FlutterActivity() {
     private val METHOD_CHANNEL = "com.eartime.app/tracking"
     private val EVENT_CHANNEL = "com.eartime.app/tracking_events"
@@ -276,6 +279,18 @@ class MainActivity : FlutterActivity() {
                         "reason" to "user_requested_collection_stop", "continuityProven" to false))
                     stopTrackingService()
                     result.success(null)
+                }
+                "earProbeStart", "earProbeMark", "earProbeStop" -> {
+                    try {
+                        val probe = earProbe ?: com.eartime.eartime_app.tracking.EarProbe(applicationContext).also { earProbe = it }
+                        when (call.method) {
+                            "earProbeStart" -> result.success(probe.start(call.argument<Number>("durationMs")?.toLong() ?: 180_000L))
+                            "earProbeMark" -> { probe.mark(call.argument<String>("label") ?: ""); result.success(null) }
+                            else -> result.success(probe.stop())
+                        }
+                    } catch (error: Exception) {
+                        result.error("EAR_PROBE_UNAVAILABLE", error.message ?: error.javaClass.simpleName, null)
+                    }
                 }
                 "startBleDiagnostic" -> {
                     inspect(call.argument<String>("address") ?: "")

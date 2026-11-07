@@ -47,3 +47,7 @@ are explicit fixtures; disclosure navigation adds no native request or permissio
 prompt. Tests wait for/render lazy-list targets rather than ignoring missed taps.
 The full suite retains rapid-reopen, first-frame and retired-owner assertions.
 No real device, accessibility-service, OS backup or physical G verdict follows.
+
+## Ear detection probe (2026-11-07)
+
+Optional, user-started research screen requests Nearby devices scan permission (BLUETOOTH_SCAN, neverForLocation) to listen passively to Bluetooth advertisements for up to 5 minutes. Addresses are replaced by random per-session codes, nothing is stored, and data leaves the phone only if the user copies the report. See EAR_PROBE.md.

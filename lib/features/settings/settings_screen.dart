@@ -8,6 +8,7 @@ import '../../providers/listening_projection_provider.dart';
 import '../../data/application_data_access.dart';
 import 'audio_diagnostics_screen.dart';
 import 'developer_diagnostics_screen.dart';
+import 'ear_probe_screen.dart';
 import 'observation_journal_screen.dart';
 import 'legacy_history_screen.dart';
 import 'data_management_screen.dart';
@@ -191,6 +192,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'Audio diagnostics',
             Icons.monitor_heart_outlined,
             const AudioDiagnosticsScreen(),
+          ),
+          _link(
+            'Ear detection probe',
+            Icons.hearing_outlined,
+            const EarProbeScreen(),
           ),
           _link(
             'Experimental earbud diagnostics',
