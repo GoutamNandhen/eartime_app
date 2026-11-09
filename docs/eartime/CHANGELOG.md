@@ -20,3 +20,9 @@
 Automated evidence and remaining limitations live in [Resume](CODEX_RESUME.md)
 and [Implementation Ledger](PRODUCTION_IMPLEMENTATION_LEDGER.md). Historical G
 causality, hardware telemetry and production readiness are not claimed.
+
+## 2026-11-09 — UI redesign
+- New visual system (teal/coral Material 3 theme, rounded cards, dark and light).
+- Home: listening hero ring (daily goal progress when set), live status pill, stat tiles, Devices and Recent intervals cards.
+- Warnings shown as highlighted notices; measurement explanations moved to an "About these numbers" footnote.
+- Data, projection rules and wording of every measurement are unchanged.

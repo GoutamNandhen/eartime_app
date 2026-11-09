@@ -1,44 +1,83 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 import 'app_typography.dart';
 
+/// EarTime visual system, 2026-11 redesign: calm teal for listening, warm coral for
+/// breaks and alerts, soft rounded surfaces and quiet secondary text.
 class AppTheme {
-  static ThemeData get darkTheme {
+  static const Color teal = Color(0xFF2BB8A0);
+  static const Color coral = Color(0xFFFF8A73);
+
+  static ThemeData _build(ColorScheme scheme) {
+    final text = AppTypography.textTheme.apply(
+      bodyColor: scheme.onSurface,
+      displayColor: scheme.onSurface,
+    );
     return ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.obsidianDeep,
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF9BD8C4),
-        secondary: Color(0xFFE4A9AD),
-        surface: Color(0xFF17191C),
-        error: AppColors.error,
-        onPrimary: AppColors.obsidianDeep,
-        onSecondary: AppColors.obsidianDeep,
-        onSurface: AppColors.editorialWhite,
-        onSurfaceVariant: AppColors.onSurfaceVariant,
-        onError: AppColors.obsidianDeep,
-      ),
-      textTheme: AppTypography.textTheme.apply(
-        bodyColor: AppColors.editorialWhite,
-        displayColor: AppColors.editorialWhite,
-      ),
       useMaterial3: true,
-      // Liquid glass properties aren't native ThemeData concepts,
-      // they will be implemented in Custom Widgets using AppColors
+      colorScheme: scheme,
+      scaffoldBackgroundColor: scheme.surface,
+      textTheme: text,
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      cardTheme: CardThemeData(
+        color: scheme.surfaceContainerLow,
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: scheme.surfaceContainer,
+        indicatorColor: scheme.primaryContainer,
+        elevation: 0,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      ),
+      listTileTheme: const ListTileThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: scheme.primary,
+        linearTrackColor: scheme.surfaceContainerHighest,
+        linearMinHeight: 8,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
+  static ThemeData get darkTheme => _build(
+    ColorScheme.fromSeed(
+      seedColor: teal,
+      brightness: Brightness.dark,
+      secondary: coral,
+      surface: const Color(0xFF0E1214),
+    ),
+  );
+
+  static ThemeData get lightTheme => _build(
+    ColorScheme.fromSeed(
+      seedColor: teal,
       brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: Color(0xFF176B58),
-        secondary: Color(0xFF8F4254),
-        surface: Color(0xFFF5F5F7),
-        error: Color(0xFFDC2626), // Red-600
-      ),
-      textTheme: AppTypography.textTheme,
-    );
-  }
+      secondary: const Color(0xFFD9624B),
+      surface: const Color(0xFFF6F8F7),
+    ),
+  );
 }

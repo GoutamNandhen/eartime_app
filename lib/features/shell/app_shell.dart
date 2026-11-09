@@ -10,7 +10,6 @@ import '../wellbeing/wellbeing_screen.dart';
 import '../widgets/glass_navigation.dart';
 import '../settings/settings_screen.dart';
 import '../permissions/permission_screen.dart';
-import '../../core/theme/app_colors.dart';
 import '../../providers/permission_provider.dart';
 import '../../core/diagnostics/startup_trace.dart';
 
@@ -84,16 +83,23 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     final widget = Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'EarTime',
-          style: TextStyle(fontWeight: FontWeight.w500, letterSpacing: 0),
+        title: Row(
+          children: [
+            Icon(
+              Icons.graphic_eq,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'EarTime',
+              style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0),
+            ),
+          ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         actions: [
           IconButton(
             tooltip: 'Settings',
-            icon: const Icon(Icons.settings_outlined, color: AppColors.primary),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: _openSettings,
           ),
         ],

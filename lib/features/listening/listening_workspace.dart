@@ -9,6 +9,7 @@ import '../devices/device_identity_screen.dart';
 import 'listening_dates_dialog.dart';
 import 'listening_session_screen.dart';
 import 'listening_trends.dart';
+import 'listening_visuals.dart';
 
 enum ListeningView { home, timeline, analytics, devices, wellbeing }
 
@@ -95,60 +96,79 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            title,
+            style: widget.view == ListeningView.home
+                ? Theme.of(context).textTheme.labelLarge?.copyWith(
+                    letterSpacing: 1.2,
+                    color: Theme.of(context).colorScheme.primary,
+                  )
+                : Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+          ),
           const SizedBox(height: 12),
           if (widget.view != ListeningView.devices)
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButton<ListeningRange>(
-                    value: _range,
-                    isExpanded: true,
-                    items: ListeningRange.values
-                        .map(
-                          (range) => DropdownMenuItem(
-                            value: range,
-                            child: Text(switch (range) {
-                              ListeningRange.today => 'Today',
-                              ListeningRange.week => 'This week',
-                              ListeningRange.month => 'This month',
-                              ListeningRange.year => 'This year',
-                              ListeningRange.custom => 'Custom dates',
-                            }),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == ListeningRange.custom) {
-                        selectDates();
-                        return;
-                      }
-                      if (value != null) {
-                        setState(() {
-                          _range = value;
-                          _offset = 0;
-                          _deviceOffset = 0;
-                        });
-                      }
-                    },
+            Container(
+              padding: const EdgeInsets.only(left: 16, right: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DropdownButton<ListeningRange>(
+                      value: _range,
+                      isExpanded: true,
+                      underline: const SizedBox.shrink(),
+                      borderRadius: BorderRadius.circular(20),
+                      items: ListeningRange.values
+                          .map(
+                            (range) => DropdownMenuItem(
+                              value: range,
+                              child: Text(switch (range) {
+                                ListeningRange.today => 'Today',
+                                ListeningRange.week => 'This week',
+                                ListeningRange.month => 'This month',
+                                ListeningRange.year => 'This year',
+                                ListeningRange.custom => 'Custom dates',
+                              }),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == ListeningRange.custom) {
+                          selectDates();
+                          return;
+                        }
+                        if (value != null) {
+                          setState(() {
+                            _range = value;
+                            _offset = 0;
+                            _deviceOffset = 0;
+                          });
+                        }
+                      },
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: selectDates,
-                  tooltip: 'Select dates',
-                  icon: const Icon(Icons.date_range_outlined),
-                ),
-                IconButton(
-                  onPressed: () =>
-                      ref.invalidate(listeningProjectionProvider(query)),
-                  tooltip: 'Refresh',
-                  icon: const Icon(Icons.refresh),
-                ),
-              ],
+                  IconButton(
+                    onPressed: selectDates,
+                    tooltip: 'Select dates',
+                    icon: const Icon(Icons.date_range_outlined),
+                  ),
+                  IconButton(
+                    onPressed: () =>
+                        ref.invalidate(listeningProjectionProvider(query)),
+                    tooltip: 'Refresh',
+                    icon: const Icon(Icons.refresh),
+                  ),
+                ],
+              ),
             ),
           if (widget.view != ListeningView.devices)
             Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 16),
+              padding: const EdgeInsets.only(top: 8, bottom: 16, left: 16),
               child: Text(
                 '${MaterialLocalizations.of(context).formatShortDate(query.from)} to ${MaterialLocalizations.of(context).formatShortDate(DateTime(query.until.year, query.until.month, query.until.day - 1))}',
               ),
@@ -176,12 +196,7 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
             data: (snapshot) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (widget.deviceId != null)
-                  const _Notice(
-                    'Unattributed playback and other recorded device identities are excluded.',
-                    Icons.filter_alt_outlined,
-                  ),
-                if (widget.view != ListeningView.devices) ...[
+                if (widget.view != ListeningView.devices)
                   Semantics(
                     liveRegion: true,
                     child: _Notice(switch (snapshot.recordState) {
@@ -195,69 +210,81 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                         'Confirmed listening recorded.',
                     }, Icons.info_outline),
                   ),
-                  _Notice(
-                    snapshot.hasCollectionUncertainty
-                        ? 'History coverage is incomplete. Recorded totals are lower bounds.'
-                        : 'Recorded durations are lower bounds. Unknown time is excluded.',
-                    Icons.history_toggle_off,
-                  ),
-                ],
-                _Notice(snapshot.collectorHealth.label, Icons.sensors),
                 if (snapshot.lastError != null || snapshot.failedCount > 0)
                   const _Notice(
                     'Collection has reported an error. Some activity may be missing.',
                     Icons.warning_amber,
-                  ),
-                if (snapshot.pendingCount > 0)
-                  const _Notice(
-                    'Saving recent observations',
-                    Icons.save_outlined,
+                    warning: true,
                   ),
                 if (snapshot.gapCount > 0)
                   _Notice(
                     '${snapshot.gapCount} collection gap(s). Unknown time is excluded.',
                     Icons.history_toggle_off,
+                    warning: true,
                   ),
                 if (widget.view != ListeningView.devices) ...[
-                  _Metric(
-                    label: 'Confirmed external listening',
-                    value: recordedDuration(snapshot.confirmed),
-                    primary: true,
-                  ),
-                  _Metric(
-                    label: 'Unverified playback activity',
-                    value: recordedDuration(snapshot.unverified),
-                  ),
-                  if (snapshot.connected case final connected?) ...[
+                  const SizedBox(height: 8),
+                  if (widget.view == ListeningView.home)
+                    ListeningHero(
+                      label: 'Confirmed external listening',
+                      value: recordedDuration(snapshot.confirmed),
+                      live: snapshot.intervals.any(
+                        (i) => i.live && i.confirmed,
+                      ),
+                      activity:
+                          snapshot.intervals.any((i) => i.live && i.confirmed)
+                          ? 'Listening'
+                          : snapshot.intervals.any((i) => i.open)
+                          ? 'Last observed playback; current continuity unverified'
+                          : 'No active playback observed',
+                      progress: goal > 0 && _range == ListeningRange.today
+                          ? (snapshot.confirmed.inMilliseconds /
+                                    Duration(minutes: goal).inMilliseconds)
+                                .clamp(0.0, 1.0)
+                          : null,
+                      goalText: goal > 0 && _range == ListeningRange.today
+                          ? '${snapshot.confirmed.inMinutes} of $goal minutes'
+                          : null,
+                    )
+                  else
                     _Metric(
-                      label: 'Earbuds connected',
-                      value: recordedDuration(connected),
+                      label: 'Confirmed external listening',
+                      value: recordedDuration(snapshot.confirmed),
+                      primary: true,
                     ),
-                    _Metric(
-                      label: 'Connected, not listening',
-                      value: recordedDuration(snapshot.connectedIdle!),
-                    ),
-                  ],
-                  const _Notice(
-                    'Confirmed listening is measured for Bluetooth earbuds and headphones. Other outputs show as unverified activity and are not counted.',
-                    Icons.info_outline,
+                  StatGrid(
+                    children: [
+                      StatTile(
+                        label: 'Unverified playback activity',
+                        value: recordedDuration(snapshot.unverified),
+                        icon: Icons.help_outline,
+                      ),
+                      if (snapshot.connected case final connected?) ...[
+                        StatTile(
+                          label: 'Earbuds connected',
+                          value: recordedDuration(connected),
+                          icon: Icons.bluetooth_connected,
+                        ),
+                        StatTile(
+                          label: 'Connected, not listening',
+                          value: recordedDuration(snapshot.connectedIdle!),
+                          icon: Icons.hearing_disabled_outlined,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
                 if (widget.view == ListeningView.home) ...[
-                  if (goal > 0 && _range == ListeningRange.today)
-                    ...goalWidgets(snapshot, goal),
-                  const _Section('Current activity'),
-                  Text(
-                    snapshot.intervals.any((i) => i.live && i.confirmed)
-                        ? 'Listening'
-                        : snapshot.intervals.any((i) => i.open)
-                        ? 'Last observed playback; current continuity unverified'
-                        : 'No active playback observed',
+                  SectionCard(
+                    title: 'Devices',
+                    icon: Icons.headphones_outlined,
+                    children: deviceRows(snapshot),
                   ),
-                  const _Section('Devices'),
-                  ...deviceRows(snapshot),
-                  const _Section('Recent intervals'),
-                  ...intervalRows(snapshot, maximum: 5),
+                  SectionCard(
+                    title: 'Recent intervals',
+                    icon: Icons.schedule,
+                    children: intervalRows(snapshot, maximum: 5),
+                  ),
                 ],
                 if (widget.view == ListeningView.timeline) ...[
                   _Section(
@@ -512,6 +539,18 @@ class _ListeningWorkspaceState extends ConsumerState<ListeningWorkspace> {
                   ),
                   ...deviceRows(snapshot, details: true),
                 ],
+                _FinePrint([
+                  if (widget.deviceId != null)
+                    'Unattributed playback and other recorded device identities are excluded.',
+                  if (widget.view != ListeningView.devices) ...[
+                    snapshot.hasCollectionUncertainty
+                        ? 'History coverage is incomplete. Recorded totals are lower bounds.'
+                        : 'Recorded durations are lower bounds. Unknown time is excluded.',
+                    'Confirmed listening is measured for Bluetooth earbuds and headphones. Other outputs show as unverified activity and are not counted.',
+                  ],
+                  snapshot.collectorHealth.label,
+                  if (snapshot.pendingCount > 0) 'Saving recent observations',
+                ]),
               ],
             ),
           ),
@@ -770,31 +809,47 @@ class _Metric extends StatelessWidget {
   final String value;
   final bool primary;
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 4),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            style:
-                (primary
-                        ? Theme.of(context).textTheme.headlineLarge
-                        : Theme.of(context).textTheme.titleLarge)
-                    ?.copyWith(
-                      letterSpacing: 0,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: primary ? scheme.primaryContainer : scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: primary
+                  ? scheme.onPrimaryContainer
+                  : scheme.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style:
+                  (primary
+                          ? Theme.of(context).textTheme.headlineLarge
+                          : Theme.of(context).textTheme.titleLarge)
+                      ?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _Section extends StatelessWidget {
@@ -803,24 +858,90 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 24, bottom: 8),
-    child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+    child: Row(
+      children: [
+        Container(
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ),
+      ],
+    ),
   );
 }
 
 class _Notice extends StatelessWidget {
-  const _Notice(this.text, this.icon);
+  const _Notice(this.text, this.icon, {this.warning = false});
   final String text;
   final IconData icon;
+  final bool warning;
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20),
-        const SizedBox(width: 8),
-        Expanded(child: Text(text)),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = warning ? scheme.secondary : scheme.onSurfaceVariant;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: warning
+            ? scheme.secondary.withValues(alpha: 0.12)
+            : scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Muted footnotes explaining how the numbers are measured.
+class _FinePrint extends StatelessWidget {
+  const _FinePrint(this.lines);
+  final List<String> lines;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Expanded(child: Text('About these numbers', style: style)),
+            ],
+          ),
+          for (final line in lines)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(line, style: style),
+            ),
+        ],
+      ),
+    );
+  }
 }
